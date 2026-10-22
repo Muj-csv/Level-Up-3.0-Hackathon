@@ -115,6 +115,8 @@ body{background:var(--sky);color:var(--ink);font-family:var(--body);overflow:hid
 .card .ctrl,.card .note{font-size:13px;color:var(--muted)}
 .card .row{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}
 .card .row .btn{flex:1 1 auto}
+/* the closing buttons of a long card stay in view while its content scrolls */
+.card>.row:last-child{position:sticky;bottom:-16px;z-index:1;margin-bottom:-16px;padding:14px 0 16px;background:linear-gradient(rgba(255,246,230,0),var(--paper) 14px)}
 .rank{list-style:none;padding:0;margin:10px 0 2px;display:grid;gap:6px}
 .rank li{display:grid;grid-template-columns:22px 14px minmax(0,1fr) auto auto;align-items:center;gap:8px;background:var(--sand);border-radius:12px;padding:6px 10px;margin:0}
 .rank .pos{font-family:var(--display);font-size:16px}
@@ -167,9 +169,9 @@ body{background:var(--sky);color:var(--ink);font-family:var(--body);overflow:hid
 .legend,.steps{margin:8px 0 6px;padding-left:0;list-style:none;font-weight:700;font-size:14.5px;line-height:1.4;display:grid;gap:6px}
 .steps{list-style:decimal;padding-left:20px}
 .legend li{display:grid;grid-template-columns:14px 96px minmax(0,1fr);gap:8px;align-items:baseline}
-.legend.items li{grid-template-columns:14px minmax(0,1fr)}
+.legend.items li{grid-template-columns:26px minmax(0,1fr);align-items:start}
 .legend.items li b{white-space:normal}
-.legend.items li b::after{content:'';display:block}
+.legend .iic svg{width:24px;height:24px;display:block}
 .legend b{white-space:nowrap}
 .legend .sw{flex:none;width:14px;height:14px;border-radius:50%;border:2px solid var(--ink);transform:translateY(2px)}
 .pgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
@@ -953,6 +955,9 @@ function spaceArt(g,type){const st=SPACE[type];
   if(type==='start'){ell(g,0,0,16,10.5);g.strokeStyle='rgba(255,255,255,.9)';g.lineWidth=2;g.stroke();}
   drawSpaceIcon(g,type);
 }
+/* small chevrons between spaces on each island show which way everyone walks */
+function drawPathArrows(g){const ch=sprite('chev',-8,-7,8,7,c=>{c.beginPath();c.moveTo(-3.5,-4.5);c.lineTo(2.5,0);c.lineTo(-3.5,4.5);c.lineCap='round';c.lineJoin='round';c.lineWidth=5;c.strokeStyle='rgba(110,74,36,.45)';c.stroke();c.lineWidth=2.6;c.strokeStyle='rgba(255,250,235,.95)';c.stroke();});
+  for(let i=0;i<N;i++){const s=SP[i],t=SP[(i+1)%N];if(s.isl===undefined||t.isl!==s.isl)continue;const a=spacePos(i),b=spacePos((i+1)%N);g.save();g.translate((a.x+b.x)/2,(a.y+b.y)/2);g.rotate(Math.atan2(b.y-a.y,b.x-a.x));g.scale(1.25,1.25);blit(g,ch,0,0);g.restore();}}
 function drawSpace(g,i){
   const s=SP[i],p=spacePos(i);const k=1+s.pulse*.35;
   g.save();g.translate(p.x,p.y);g.scale(k,k);blit(g,sprite('space_'+s.type,-24,-17,24,21,c=>spaceArt(c,s.type)),0,0);g.restore();
@@ -1964,7 +1969,7 @@ async function hostFlow(){
   netPres({app:APPID,role:'host',name:nm,st:'lobby',roster:[],gid:''});
   setTimeout(hostRoster,300);
   const link=SHARE_URL+'#'+code;
-  const c=openCard('<h2>Online room</h2><p class="note">Ipa-scan ang QR, o ipasok ng kalaro ang code sa "Sumali gamit ang code".</p><div class="codebig">'+code+'</div><canvas class="qr" id="lbQr" width="344" height="344" aria-label="QR code ng room"></canvas><div class="linkrow"><code id="lbLink">'+esc(link)+'</code><button type="button" class="btn small" id="lbCopy">Kopyahin</button></div>'+rosterHTML(NET.roster)+'<div id="setBox"></div><p class="note">'+esc(netHelp())+'</p><div class="row"><button type="button" class="btn" data-v="back">Kanselahin</button><button type="button" class="btn primary" data-v="start" data-primary>Simulan ang laro</button></div>');
+  const c=openCard('<h2>Online room</h2><p class="note">Ipa-scan ang QR, o ipasok ng kalaro ang code sa Maglaro online → Sumali.</p><div class="codebig">'+code+'</div><canvas class="qr" id="lbQr" width="344" height="344" aria-label="QR code ng room"></canvas><div class="linkrow"><code id="lbLink">'+esc(link)+'</code><button type="button" class="btn small" id="lbCopy">Kopyahin</button></div>'+rosterHTML(NET.roster)+'<div id="setBox"></div><p class="note">'+esc(netHelp())+'</p><div class="row"><button type="button" class="btn" data-v="back">Kanselahin</button><button type="button" class="btn primary" data-v="start" data-primary>Simulan ang laro</button></div>');
   NET.cfg=normCfg(NET.cfg);if(NET.cfg.mode==='hamon')NET.cfg.mode='party';renderSettings(c.querySelector('#setBox'),NET.cfg,()=>netPres({cfg:normCfg(NET.cfg)}));netPres({cfg:normCfg(NET.cfg)});
   if(!drawQR(c.querySelector('#lbQr'),link))c.querySelector('#lbQr').hidden=true;
   c.querySelector('#lbCopy').addEventListener('click',e=>{const b=e.currentTarget;const done=()=>{b.textContent='Nakopya';setTimeout(()=>{if(b.isConnected)b.textContent='Kopyahin';},1500);};try{navigator.clipboard.writeText(link).then(done,()=>selectLink(c));}catch(err){selectLink(c);}});
@@ -2056,7 +2061,7 @@ function guidePages(){
     {t:'Layunin',h:'<p>Maging <b>Bida ng Ulap</b>: ang may pinakamaraming <b>korona</b> sa dulo ng laro ang panalo. Kapag tabla, piso ang batayan.</p><p>Hanggang 4 na tao sa iisang phone o computer, o online gamit ang QR o code. Bot ang papalit sa kulang na manlalaro. Bunutan kung sino ang unang titira.</p>'},
     {t:'Sa iyong turn',h:'<ol class="steps"><li>Pindutin ang <b>Tamaan ang dice</b>. Lalabas ang 1 hanggang 10.</li><li>May puting bilog ang mga espasyong maaabot mo, at nakasulat sa korona kung ilang hakbang ito.</li><li>Kapag <b>dumaan</b> ka sa korona na may 10 piso, puwede mo itong bilhin. Lilipat ito sa ibang lugar pagkatapos.</li><li>May item? Pindutin ang <b>Gamitin</b> bago gumulong.</li></ol>'},
     {t:'Mga espasyo',h:'<ul class="legend">'+sw(SPACE.piso.c,'Piso','+3 piso')+sw(SPACE.utang.c,'Utang','−3 piso')+sw(SPACE.swerte.c,'Swerte','bonus na piso o libreng item')+sw(SPACE.tikbalang.c,'Tikbalang','atras ng 3 espasyo')+sw(SPACE.sari.c,'Sari-sari','bumili ng item; puwede ring dumaan lang')+sw(SPACE.jack.c,'Jack en Poy','hamunin ang sinuman: hanggang 5 piso')+sw('#FFC93C','Korona','10 piso, dumaan para bumili')+'</ul>'},
-    {t:'Mga item',h:'<p>Isang item lang ang madadala. Bilhin sa Sari-sari store, o makuha sa Swerte.</p><ul class="legend items">'+Object.keys(ITEMS).map(k=>sw('#F6E7CC',ITEMS[k].name+' · '+ITEMS[k].cost,ITEMS[k].desc)).join('')+'</ul><p class="note">Itira ang 10 piso para sa korona bago bumili!</p>'},
+    {t:'Mga item',h:'<p>Isang item lang ang madadala. Bilhin sa Sari-sari store, o makuha sa Swerte.</p><ul class="legend items">'+Object.keys(ITEMS).map(k=>'<li><span class="iic">'+ITEM_ICON[k]+'</span><span><b>'+esc(ITEMS[k].name)+' · '+ITEMS[k].cost+' piso</b><br>'+esc(ITEMS[k].desc)+'</span></li>').join('')+'</ul><p class="note">Itira ang 10 piso para sa korona bago bumili!</p>'},
     {t:'Mga laro',h:'<p>Pagkatapos ng bawat ikot, maglalaro ang lahat ng isang larong kalye: <b>Tumbang Preso, Patintero, Sipa</b> o <b>Palosebo</b>.</p><p>Premyo: <b>+10</b> piso sa una, <b>+5</b> sa ikalawa, <b>+3</b> sa ikatlo.</p><p><b>Huling Hirit:</b> sa huling ikot, doble ang premyo at may tulong ang nasa huli.</p><p><b>Bonus na korona</b> sa dulo: <b>Hari ng Laro</b> (pinakamaraming panalo sa mga laro), <b>Mayaman</b> (pinakamaraming piso) at <b>Malas sa Dice</b> (pinakamababang average ng dice).</p>'},
     {t:'Mga paraan ng paglaro',h:'<ul><li><b>Party</b>: board, dice at laro, 3, 5 o 8 ikot.</li><li><b>Torneo</b>: laro lang, walang dice. Bawat panalo ay isang korona, kaya galing ang batayan.</li><li><b>Hamon ng Araw</b>: solo laban sa mahihirap na bot. Iisang hamon para sa lahat ngayong araw, may talaan ng iskor.</li><li><b>Online</b>: gumawa ng room at ipa-scan ang QR, o ibigay ang 4-letrang code.</li></ul>'},
     {t:'Album ng Laro',h:'<p>Ganito nilalaro ang mga ito sa totoong kalye at pista.</p>'+MG_KEYS.map(k=>'<div class="real"><b>'+esc(MG[k].title)+'</b><p>'+esc(MG[k].real)+'</p></div>').join('')+'<div class="row"><button type="button" class="btn small" data-v="tips">Ipakita ulit ang mga tip</button></div>'}
@@ -2157,6 +2162,7 @@ function drawBoard(g){
   const order=[...ISL].sort((a,b)=>a.y-b.y);
   for(const isl of order){const b=islandBob(isl.id),s=isl.spr;g.drawImage(s.c,isl.x-s.ox,isl.y+b-s.oy,s.w,s.h);if(isl.kind==='beach'){drawWaterfall(g,isl,b);drawLagoonGlints(g,isl,b);}}
   for(let i=0;i<4;i++)drawBridge(g,i);
+  drawPathArrows(g);
   for(let i=0;i<N;i++)drawSpace(g,i);
   const list=[];
   for(const pr of PROPS){const p=propPos(pr);list.push({y:p.y,f:()=>drawProp(g,pr,p.x,p.y)});}
@@ -2173,7 +2179,7 @@ function drawGallery(g){
   const cr=cv.getBoundingClientRect(),pr=$('#galPanel').getBoundingClientRect();const top=16,bottom=Math.max(top+160,pr.top-cr.top-12);
   const cols=W<560?2:4,rows=Math.ceil(4/cols),gw=Math.min(W-32,cols===4?900:520),x0=(W-gw)/2,cw=gw/cols,ch=(bottom-top)/rows;const an=ANIMS[galSel];
   CHARS.forEach((c,i)=>{const cx=x0+(i%cols)*cw,cy=top+Math.floor(i/cols)*ch;rr(g,cx+4,cy+4,cw-8,ch-8,16);fs(g,'rgba(255,246,230,.93)',INK,2.5);
-    g.font='900 14px '+BODY;g.textAlign='left';g.textBaseline='top';g.fillStyle=INK;g.fillText(c.name,cx+16,cy+14);g.font='800 11px '+BODY;g.fillStyle='rgba(59,35,22,.65)';g.fillText(an.id+' · '+an.n+' frames',cx+16,cy+31);
+    g.font='900 14px '+BODY;g.textAlign='left';g.textBaseline='top';g.fillStyle=INK;g.fillText(c.name,cx+16,cy+14);g.font='800 11px '+BODY;g.fillStyle='rgba(59,35,22,.65)';g.fillText(an.label+' · '+an.n+' frame',cx+16,cy+31);
     const fi=Math.floor(now*an.fps)%an.n,fw=Math.min(40,(cw-28)/6),prevH=ch-8-fw-64,s=clamp(prevH/66,.55,2.6);
     drawKid(g,c,cx+cw/2,cy+48+prevH,Object.assign({scale:s},an.f(fi)));
     for(let k=0;k<an.n;k++){const fx=cx+14+k*fw,fy=cy+ch-14-fw;rr(g,fx+1,fy,fw-2,fw,6);fs(g,k===fi?'rgba(255,201,60,.7)':'rgba(246,231,204,.95)');drawKid(g,c,fx+fw/2,fy+fw-3,Object.assign({scale:fw/72},an.f(k)));}
