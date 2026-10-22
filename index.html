@@ -1,6 +1,13 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html>
+<html lang="fil">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Laro sa Ulap</title>
+<meta name="description" content="Laro sa Ulap: isang party board game ng mga larong kalye ng Pilipinas para sa 1 hanggang 4 na manlalaro.">
+<meta name="theme-color" content="#9DD6DF">
 <meta name="claude:viewport-fit-sides" content="cover">
+<style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=Nunito:wght@700;800;900&display=swap">
@@ -22,6 +29,7 @@
   color-scheme: light;
 }
 html,body{height:100%}
+button,input{touch-action:manipulation}
 body{background:var(--sky);color:var(--ink);font-family:var(--body);overflow:hidden;-webkit-tap-highlight-color:transparent}
 #app{position:relative;height:100%;overflow:hidden;user-select:none;-webkit-user-select:none}
 #stage{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
@@ -39,6 +47,9 @@ body{background:var(--sky);color:var(--ink);font-family:var(--body);overflow:hid
 .pcard .st span{display:inline-flex;align-items:center;gap:3px}
 .pcard .it{font-family:var(--body);font-weight:900;font-size:10px;background:var(--ink);color:var(--paper);border-radius:6px;padding:1px 4px;margin-left:auto}
 .pcard.active{transform:translateY(3px);box-shadow:0 0 0 3px var(--pc),0 3px 0 3px var(--ink)}
+.pcard{position:relative}
+.pcard .rk{position:absolute;top:-8px;right:-7px;min-width:21px;height:21px;padding:0 3px;border-radius:999px;background:var(--paper);border:2px solid var(--ink);font:400 12px/17px var(--display);text-align:center;box-shadow:0 2px 0 var(--ink)}
+.pcard .rk.first{background:var(--sun)}
 .bump{animation:bump .35s ease}
 @keyframes bump{40%{transform:scale(1.3)}}
 .status{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
@@ -75,12 +86,14 @@ body{background:var(--sky);color:var(--ink);font-family:var(--body);overflow:hid
   text-shadow:0 7px 0 var(--ink),4px 0 0 var(--ink),-4px 0 0 var(--ink),0 -4px 0 var(--ink),3px 3px 0 var(--ink),-3px 3px 0 var(--ink),3px -3px 0 var(--ink),-3px -3px 0 var(--ink),4px 6px 0 var(--ink),-4px 6px 0 var(--ink)}
 .logo span{color:var(--sun)}
 .tagline{font-weight:900;font-size:14px;background:var(--paper);border:2.5px solid var(--ink);border-radius:999px;padding:4px 14px;box-shadow:0 3px 0 var(--ink);margin:6px 0 8px}
+.brand{display:flex;flex-direction:column;align-items:center;width:100%;min-width:0}
 .menu{display:flex;flex-direction:column;gap:12px;width:100%}
 .menu .btn{width:100%}
+.menu .btn small{display:block;margin-top:3px;font:800 12.5px var(--body);color:var(--muted)}
 
 .galpanel{pointer-events:auto;width:100%;max-width:620px;background:var(--paper);border:3px solid var(--ink);border-radius:20px;box-shadow:0 5px 0 var(--ink);padding:12px}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
-.chips button{font:900 13px var(--body);color:var(--ink);background:var(--sand);border:2px solid var(--ink);border-radius:999px;padding:5px 10px;cursor:pointer}
+.chips button{font:900 13px var(--body);color:var(--ink);background:var(--sand);border:2px solid var(--ink);border-radius:999px;padding:7px 12px;min-height:36px;cursor:pointer}
 .chips button[aria-pressed="true"]{background:var(--sun)}
 .chips button:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
 .galrow{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
@@ -117,7 +130,7 @@ body{background:var(--sky);color:var(--ink);font-family:var(--body);overflow:hid
 .jk .vs{font-family:var(--display);font-size:18px}
 .big{font-family:var(--display);font-size:34px;text-align:center;margin:10px 0 2px;min-height:40px}
 .seg{display:flex;gap:6px;margin:8px 0 6px}
-.seg button{flex:1 1 0;font:400 20px var(--display);color:var(--ink);background:var(--sand);border:2.5px solid var(--ink);border-radius:12px;padding:8px 0;box-shadow:0 3px 0 var(--ink);cursor:pointer}
+.seg button{flex:1 1 0;min-height:40px;font:400 20px var(--display);color:var(--ink);background:var(--sand);border:2.5px solid var(--ink);border-radius:12px;padding:8px 0;box-shadow:0 3px 0 var(--ink);cursor:pointer}
 .seg button[aria-pressed="true"]{background:var(--sun)}
 .seg button:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
 .field{display:flex;align-items:center;gap:8px;margin:7px 0}
@@ -132,6 +145,8 @@ body{background:var(--sky);color:var(--ink);font-family:var(--body);overflow:hid
 .linkrow code{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:700 12px ui-monospace,Menlo,Consolas,monospace;background:var(--sand);padding:7px 9px;border-radius:9px;user-select:text;-webkit-user-select:text}
 .linkrow .btn{flex:none}
 .err{font-weight:800;font-size:14px;color:#A92A18;margin:6px 0}
+.modal.top{z-index:7}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
 .btn.sky{background:#BFE3F2}
 .menurow{display:flex;gap:10px;width:100%}
 .menurow .btn{flex:1 1 0;min-width:0}
@@ -173,12 +188,45 @@ body{background:var(--sky);color:var(--ink);font-family:var(--body);overflow:hid
   .pcard .st{font-size:13px;gap:6px}
   .pill{font-size:12px;padding:2px 9px}
   .btn.primary{font-size:17px;padding:12px 15px}
+  .setrow{grid-template-columns:70px minmax(0,1fr)}
+  .seg.sm button{font-size:13px;padding-inline:0}
 }
+/* narrow phones: the shirt colour moves to a side stripe so the full name fits */
+@media (max-width:400px){
+  .pcard{grid-template-columns:minmax(0,1fr);border-left:7px solid var(--pc)}
+  .pcard canvas{display:none}
+}
+/* phones held sideways: brand beside the menu, one compact HUD row */
+@media (orientation:landscape) and (max-height:560px){
+  .titlebox{max-width:700px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:28px;align-items:center}
+  #kidsCv{height:80px}
+  .logo{font-size:clamp(34px,6.4vw,50px)}
+  .tagline{margin:4px 0 0}
+  .menu{gap:8px}
+  .menu .btn{padding-block:8px;font-size:17px}
+  .menu .btn.small{font-size:14px;padding-block:8px}
+}
+@media (orientation:landscape) and (max-height:500px){
+  .hud{padding-block:6px 8px}
+  .top{flex-direction:row;align-items:flex-start;justify-content:center;gap:8px}
+  .players{max-width:min(560px,64vw)}
+  .status{flex-direction:column;align-items:flex-start;flex-wrap:nowrap;gap:4px}
+  .pcard{padding:3px 6px 4px}
+  .pcard .st{margin-top:2px}
+  .btn.icon{width:44px;height:44px;border-radius:12px}
+  .btn.primary{padding:9px 18px;font-size:17px}
+  .btn.item{padding:8px 10px}
+  .tip{left:max(16px,env(safe-area-inset-left,0px));bottom:calc(66px + env(safe-area-inset-bottom,0px));transform:none;max-width:min(320px,40vw)}
+  .tip.show{animation-name:tipinL}
+  .toast{top:42%}
+}
+@keyframes tipinL{from{transform:translateY(10px);opacity:0}}
 @media (prefers-reduced-motion: reduce){
   .toast.show,.card,.bump,.tip.show{animation:none}
 }
 </style>
-
+</head>
+<body>
 <div id="app">
   <canvas id="stage" role="img" aria-label="Game board: four floating islands in the clouds joined by rope bridges"></canvas>
   <div class="hud">
@@ -193,6 +241,9 @@ body{background:var(--sky);color:var(--ink);font-family:var(--body);overflow:hid
     <div class="toast" id="toast" aria-live="polite"></div>
     <div class="tip" id="tip" role="status" hidden><span class="tipb">Tip</span><span id="tipText"></span></div>
     <div class="bottom" id="hudBottom">
+      <button class="btn icon" id="menuBtn" type="button" aria-label="Menu: pause, tunog, umalis" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="#3B2316" stroke-width="2.2" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="4.5" width="5" height="15" rx="1.6" fill="#FFC93C"/><rect x="14" y="4.5" width="5" height="15" rx="1.6" fill="#FFC93C"/></svg>
+      </button>
       <button class="btn icon" id="mapBtn" type="button" aria-pressed="false" aria-label="Tingnan ang buong mapa" hidden>
         <svg viewBox="0 0 24 24" fill="none" stroke="#3B2316" stroke-width="2.2" stroke-linejoin="round" aria-hidden="true"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z" fill="#BDE7A6"/><path d="M9 4v14M15 6v14"/></svg>
       </button>
@@ -206,26 +257,30 @@ body{background:var(--sky);color:var(--ink);font-family:var(--body);overflow:hid
   </div>
   <div class="screen" id="scrTitle">
     <div class="titlebox">
-      <canvas id="kidsCv" aria-hidden="true"></canvas>
-      <h1 class="logo">Laro sa <span>Ulap</span></h1>
-      <p class="tagline">Board party ng larong kalye</p>
+      <div class="brand">
+        <canvas id="kidsCv" aria-hidden="true"></canvas>
+        <h1 class="logo">Laro sa <span>Ulap</span></h1>
+        <p class="tagline">Board party ng larong kalye</p>
+      </div>
       <div class="menu">
-        <button class="btn primary" id="mLocal" type="button">Isang phone</button>
-        <button class="btn leaf" id="mHost" type="button">Gumawa ng online room</button>
-        <button class="btn" id="mJoin" type="button">Sumali gamit ang code</button>
+        <button class="btn leaf" id="mResume" type="button" hidden>Ituloy ang laro<small id="mResumeSub"></small></button>
+        <button class="btn primary" id="mLocal" type="button">Maglaro</button>
+        <button class="btn" id="mOnline" type="button">Maglaro online</button>
         <button class="btn sky" id="mHamon" type="button">Hamon ng Araw</button>
-        <div class="menurow"><button class="btn small" id="mGuide" type="button">Paano maglaro</button><button class="btn small" id="mSprites" type="button">Mga sprite</button></div>
+        <div class="menurow"><button class="btn small" id="mGuide" type="button">Paano maglaro</button><button class="btn small" id="mSprites" type="button">Mga karakter</button></div>
       </div>
     </div>
   </div>
   <div class="screen bottomed" id="scrGallery" hidden>
     <div class="galpanel" id="galPanel">
       <div class="chips" id="animChips" role="group" aria-label="Animation"></div>
-      <div class="galrow"><button class="btn small" id="galBack" type="button">Balik sa menu</button><button class="btn small primary" id="galDl" type="button" hidden>I-download ang sprite sheet</button></div>
-      <p class="galnote" id="galNote">Bawat frame ay 128×128 px. Isang hanay bawat animation, 6 na column bawat karakter.</p>
+      <div class="galrow"><button class="btn small" id="galBack" type="button">Balik sa menu</button><button class="btn small primary" id="galDl" type="button">I-download ang sprite sheet</button></div>
+      <p class="galnote" id="galNote">Jun, Neneng, Totoy at Bunso: pumili ng galaw sa itaas. Ang sprite sheet ay PNG na 128×128 px bawat frame, isang hanay bawat galaw.</p>
     </div>
   </div>
   <div class="modal" id="modal" hidden><div class="card" id="card" role="dialog" aria-modal="true" aria-live="polite"></div></div>
+  <div class="modal top" id="menu" hidden><div class="card" id="menuCard" role="dialog" aria-modal="true" aria-labelledby="menuTitle"></div></div>
+  <div class="sr" id="sr" aria-live="polite"></div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script>
@@ -258,24 +313,34 @@ function otext(g,text,x,y,size,fill,lw){g.font=size+'px '+DISPLAY;g.textAlign='c
 function star(g,x,y,r,ri,n){g.beginPath();n=n||5;for(let i=0;i<n*2;i++){const a=-Math.PI/2+i*Math.PI/n,rad=i%2?ri:r;g.lineTo(x+Math.cos(a)*rad,y+Math.sin(a)*rad);}g.closePath();}
 
 /* ================= sound ================= */
-const Sfx={ac:null,on:true,
-  init(){if(!this.ac){try{this.ac=new (window.AudioContext||window.webkitAudioContext)();}catch(e){this.ac=null;}}if(this.ac&&this.ac.state==='suspended')this.ac.resume().catch(()=>{});},
-  tone(f,d,type,v,f2,delay){if(!this.on||!this.ac)return;try{const t=this.ac.currentTime+(delay||0);const o=this.ac.createOscillator(),gn=this.ac.createGain();o.type=type||'square';o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+d);gn.gain.setValueAtTime(v||.04,t);gn.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(gn).connect(this.ac.destination);o.start(t);o.stop(t+d+.03);}catch(e){}},
+/* settings kept on this device: music, sound effects, vibration */
+const PREFS=(()=>{const d={music:true,sfx:true,vib:true};try{const o=JSON.parse(localStorage.getItem('lsu-prefs')||'{}');for(const k in d)if(typeof o[k]==='boolean')d[k]=o[k];}catch(e){}return d;})();
+function savePrefs(){try{localStorage.setItem('lsu-prefs',JSON.stringify(PREFS));}catch(e){}}
+/* audio graph: effects and music buses -> master -> limiter, so stacked sounds never clip */
+const Sfx={ac:null,out:null,fx:null,lastTick:0,
+  get on(){return PREFS.music||PREFS.sfx;},
+  init(){if(!this.ac){try{const ac=new (window.AudioContext||window.webkitAudioContext)(),lim=ac.createDynamicsCompressor();lim.threshold.value=-10;lim.knee.value=6;lim.ratio.value=8;lim.attack.value=.003;lim.release.value=.2;lim.connect(ac.destination);
+      this.out=ac.createGain();this.out.connect(lim);this.fx=ac.createGain();this.fx.connect(this.out);this.ac=ac;}catch(e){this.ac=null;}}
+    if(this.ac&&this.ac.state==='suspended'&&!document.hidden)this.ac.resume().catch(()=>{});},
+  tone(f,d,type,v,f2,delay){if(!PREFS.sfx||!this.ac)return;try{const t=this.ac.currentTime+(delay||0);const o=this.ac.createOscillator(),gn=this.ac.createGain();o.type=type||'square';o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+d);gn.gain.setValueAtTime(v||.04,t);gn.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(gn).connect(this.fx);o.start(t);o.stop(t+d+.03);}catch(e){}},
   hop(b){this.tone(b?440:540,.08,'square',.025,b?300:780);},
   coin(){this.tone(988,.07,'square',.03);this.tone(1319,.15,'square',.03,null,.07);},
   bad(){this.tone(330,.3,'sawtooth',.03,140);},
   dice(){this.tone(660,.06,'square',.035,990);this.tone(1320,.12,'triangle',.04,null,.05);},
   clang(){this.tone(1500,.28,'triangle',.05,1100);this.tone(2300,.2,'sine',.025);},
   whoosh(){this.tone(280,.18,'sine',.035,900);},
-  tick(n){this.tone(560+(n||0)*28,.06,'square',.025);},
+  tick(n){const t=performance.now();if(t-this.lastTick<35)return;this.lastTick=t;this.tone(560+(n||0)*28,.06,'square',.025);},
   thud(){this.tone(150,.12,'sine',.06,70);},
   fanfare(){[523,659,784,1047].forEach((f,i)=>this.tone(f,.17,'square',.03,null,i*.11));},
   whistle(){this.tone(1850,.18,'sine',.04,1750);this.tone(1850,.3,'sine',.04,1650,.22);},
   slip(){this.tone(520,.22,'triangle',.035,180);},
-  climb(n){this.tone(380+(n%8)*30,.05,'triangle',.03,520+(n%8)*30);}
+  climb(n){this.tone(380+(n%8)*30,.05,'triangle',.03,520+(n%8)*30);},
+  sparkle(){[1568,2093,2637].forEach((f,i)=>this.tone(f,.12,'triangle',.022,null,i*.06));},
+  shield(){this.tone(392,.32,'triangle',.04,784);this.tone(1175,.25,'sine',.02,null,.12);}
 };
-/* haptics: short pulses on phones that support it, off when sound is off */
-function buzz(p){try{if(Sfx.on&&navigator.vibrate)navigator.vibrate(p);}catch(e){}}
+document.addEventListener('visibilitychange',()=>{const ac=Sfx.ac;if(!ac)return;if(document.hidden)ac.suspend().catch(()=>{});else if(Sfx.on)ac.resume().catch(()=>{});});
+/* haptics: short pulses on phones that support it, when vibration is on */
+function buzz(p){try{if(PREFS.vib&&navigator.vibrate)navigator.vibrate(p);}catch(e){}}
 
 /* ================= music: small procedural rondalla-style loops ================= */
 const Music={cur:null,step:0,next:0,timer:0,bus:null,noise:null,
@@ -296,8 +361,8 @@ const Music={cur:null,step:0,next:0,timer:0,bus:null,noise:null,
   CH:{C:[0,4,7],Am:[-3,0,4],F:[-7,-3,0],G:[-5,-1,2]},ROOT:{C:0,Am:-3,F:-7,G:-5},
   play(name){if(this.cur===name)return;this.cur=name;this.step=0;if(Sfx.ac)this.next=Sfx.ac.currentTime+.1;if(!this.timer)this.timer=setInterval(()=>this.pump(),70);},
   stop(){this.cur=null;},
-  setup(ac){if(this.bus)return;try{this.bus=ac.createGain();this.bus.gain.value=1.9;this.bus.connect(ac.destination);const sr=ac.sampleRate,n=sr*.06|0,b=ac.createBuffer(1,n,sr),d=b.getChannelData(0);let prev=0,pk=0;for(let i=0;i<n;i++){const r=Math.random()*2-1;d[i]=(r-prev)*.5*Math.exp(-i/(sr*.012));prev=r;pk=Math.max(pk,Math.abs(d[i]));}for(let i=0;i<n;i++)d[i]/=pk||1;this.noise=b;}catch(e){this.bus=null;}},
-  pump(){const ac=Sfx.ac;if(!ac||!this.cur||!Sfx.on||ac.state!=='running'||document.hidden){if(ac)this.next=ac.currentTime+.08;return;}
+  setup(ac){if(this.bus)return;try{this.bus=ac.createGain();this.bus.gain.value=1.9;this.bus.connect(Sfx.out||ac.destination);const sr=ac.sampleRate,n=sr*.06|0,b=ac.createBuffer(1,n,sr),d=b.getChannelData(0);let prev=0,pk=0;for(let i=0;i<n;i++){const r=Math.random()*2-1;d[i]=(r-prev)*.5*Math.exp(-i/(sr*.012));prev=r;pk=Math.max(pk,Math.abs(d[i]));}for(let i=0;i<n;i++)d[i]/=pk||1;this.noise=b;}catch(e){this.bus=null;}},
+  pump(){const ac=Sfx.ac;if(!ac||!this.cur||!PREFS.music||ac.state!=='running'||document.hidden){if(ac)this.next=ac.currentTime+.08;return;}
     this.setup(ac);if(!this.bus)return;const T=this.tracks[this.cur];if(!T)return;const spb=60/T.bpm/4;
     if(this.next<ac.currentTime)this.next=ac.currentTime+.03;
     while(this.next<ac.currentTime+.3){try{this.at(T,this.step,this.next,spb);}catch(e){}this.step++;this.next+=spb;}},
@@ -988,7 +1053,9 @@ function toWorld(sx,sy){return{x:(sx-W/2)/cam.z+cam.x,y:(sy-H/2-camOffY())/cam.z
 
 /* ================= state ================= */
 const APP={screen:'title'};
-const APPID='lsu1',SHARE_URL='https://claude.ai/artifact/FQqtor9NZvLytPNJotsPuc';
+/* online rooms ride on the Claude artifact room service; anywhere else the link points at the page itself */
+const roomAvailable=()=>!!(window.claude&&window.claude.use);
+const APPID='lsu1',SHARE_URL=roomAvailable()?'https://claude.ai/artifact/FQqtor9NZvLytPNJotsPuc':location.href.split(/[?#]/)[0];
 const KCOST=10;
 const ITEMS={doble:{name:'Dobleng dice',tag:'x2',cost:5},kendi:{name:'Kendi',tag:'+3',cost:3}};
 const state={players:[],round:1,turn:0,active:null,overview:false,focus:null,checkpoint:null,party:false,setup:null,cfg:{mode:'party',rounds:5,diff:1},plan:[],ended:false};
@@ -1000,6 +1067,9 @@ const maxR=()=>state.cfg.rounds;
 const isParty=()=>state.cfg.mode==='party',isTorneo=()=>state.cfg.mode==='torneo',isHamon=()=>state.cfg.mode==='hamon';
 let scene=null,gameToken=0,hitstop=0,decK=0,mgSeq=0;
 const HALT=new Promise(()=>{});
+/* test hook: "?debug" logs game events and allows "&speed=N" (N simulation steps per frame) for automated play-tests; inert otherwise */
+const DEBUG=/[?&]debug\b/.test(location.search),DBG=[];let SPEED=1;
+function dbg(type,o){if(DEBUG)DBG.push(Object.assign({type,round:state.round},o||{}));}
 let gs=1;
 function G(){gs|=0;gs=gs+0x6D2B79F5|0;let t=Math.imul(gs^gs>>>15,1|gs);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;}
 const gpick=a=>a[Math.floor(G()*a.length)];
@@ -1027,17 +1097,20 @@ function buildHUD(){
   const wrap=$('#players');wrap.innerHTML='';cards.length=0;
   for(const p of state.players){
     const el=document.createElement('div');el.className='pcard';el.style.setProperty('--pc',p.color);
-    el.innerHTML='<canvas width="52" height="52" aria-hidden="true"></canvas><div class="nm"><span class="role"></span><span class="nmt"></span></div><div class="st"><span class="k">'+CROWN_SVG+'<i>0</i></span><span class="c">'+COIN_SVG+'<i>10</i></span><span class="it" hidden></span></div>';
+    el.innerHTML='<span class="rk" hidden></span><canvas width="52" height="52" aria-hidden="true"></canvas><div class="nm"><span class="role"></span><span class="nmt"></span></div><div class="st"><span class="k">'+CROWN_SVG+'<i>0</i></span><span class="c">'+COIN_SVG+'<i>10</i></span><span class="it" hidden></span></div>';
     el.querySelector('.nmt').textContent=p.name;el.querySelector('.role').textContent=roleOf(p);wrap.appendChild(el);portrait(el.querySelector('canvas'),p);
-    cards.push({el,k:el.querySelector('.k i'),c:el.querySelector('.c i'),it:el.querySelector('.it'),ks:el.querySelector('.k'),cs:el.querySelector('.c'),role:el.querySelector('.role'),bg:null});
+    cards.push({el,k:el.querySelector('.k i'),c:el.querySelector('.c i'),it:el.querySelector('.it'),ks:el.querySelector('.k'),cs:el.querySelector('.c'),role:el.querySelector('.role'),rk:el.querySelector('.rk'),bg:null});
     p.shown=p.piso;p.shownK=p.korona;cards[p.id].c.textContent=p.piso;cards[p.id].k.textContent=p.korona;
   }
   updateStatus();
 }
 function bumpEl(el){el.classList.remove('bump');void el.offsetWidth;el.classList.add('bump');}
+/* standing: most korona first, then most piso; ties share a place */
+function standings(){const P=state.players;return P.map(p=>1+P.filter(q=>q.korona>p.korona||(q.korona===p.korona&&q.piso>p.piso)).length);}
 function hudTick(dt){
-  if(APP.screen!=='game')return;
+  if(APP.screen!=='game')return;let rk=isHamon()?null:standings();if(rk&&rk.every(r=>r===1))rk=null;
   for(const p of state.players){const c=cards[p.id];if(!c)continue;
+    const r=rk?String(rk[p.id]):'';if(c.rk.textContent!==r){c.rk.textContent=r;c.rk.hidden=!r;c.rk.classList.toggle('first',r==='1');c.rk.setAttribute('aria-label','Puwesto '+r);}
     if(p.shown!==p.piso&&!(p.pend>0)){p.acc+=dt;if(p.acc>.045){p.acc=0;p.shown+=Math.sign(p.piso-p.shown);c.c.textContent=p.shown;if(p.shown===p.piso)bumpEl(c.cs);}}
     if(p.shownK!==p.korona){p.shownK=p.korona;c.k.textContent=p.korona;bumpEl(c.ks);}
     const it=p.item?ITEMS[p.item].tag:'';if(c.it.textContent!==it){c.it.textContent=it;c.it.hidden=!it;}
@@ -1084,17 +1157,22 @@ function drawFlyers(g){for(const f of flyers){if(f.t<0)continue;const u=Ez.inOut
 /* action button */
 const actionBtn=$('#actionBtn'),itemBtn=$('#itemBtn'),mapBtn=$('#mapBtn');
 let actionResolver=null;
-function waitAction(label){actionBtn.textContent=label;actionBtn.hidden=false;setHint('');return new Promise(res=>{actionResolver=()=>{actionResolver=null;actionBtn.hidden=true;itemBtn.hidden=true;res();};});}
+let actionAt=0;
+function waitAction(label){actionBtn.textContent=label;actionBtn.hidden=false;setHint('');actionAt=performance.now();return new Promise(res=>{actionResolver=()=>{actionResolver=null;actionBtn.hidden=true;itemBtn.hidden=true;res();};});}
 actionBtn.addEventListener('click',()=>{Sfx.init();if(scene&&scene.action)scene.action();else if(actionResolver)actionResolver();});
 itemBtn.addEventListener('click',()=>{const on=itemBtn.getAttribute('aria-pressed')!=='true';itemBtn.setAttribute('aria-pressed',String(on));applyItemPreview(on);});
 mapBtn.addEventListener('click',()=>{state.overview=!state.overview;mapBtn.setAttribute('aria-pressed',String(state.overview));});
-$('#soundBtn').addEventListener('click',e=>{Sfx.on=!Sfx.on;Sfx.init();e.currentTarget.setAttribute('aria-pressed',String(Sfx.on));$('#sndWave').style.display=Sfx.on?'':'none';$('#sndOff').style.display=Sfx.on?'none':'';});
+/* the speaker button mutes or restores music and effects together; the menu sets them one by one */
+function syncSoundBtn(){const on=Sfx.on;$('#soundBtn').setAttribute('aria-pressed',String(on));$('#sndWave').style.display=on?'':'none';$('#sndOff').style.display=on?'none':'';}
+$('#soundBtn').addEventListener('click',()=>{const on=!Sfx.on;PREFS.music=PREFS.sfx=on;savePrefs();Sfx.init();syncSoundBtn();if(on)Sfx.tick(4);});
+syncSoundBtn();
 
 /* cards */
 let CARD_VALS={},cardTimer=0;
-function openCard(html){clearInterval(cardTimer);const m=$('#modal'),c=$('#card');c.innerHTML=html;m.hidden=false;const f=c.querySelector('[data-focus]')||c.querySelector('[data-primary]')||c.querySelector('button');if(f)setTimeout(()=>{try{f.focus({preventScroll:true});}catch(e){}},40);return c;}
+function openCard(html){clearInterval(cardTimer);const m=$('#modal'),c=$('#card');c.innerHTML=html;m.hidden=false;const h2=c.querySelector('h2');if(h2){h2.id='cardTitle';c.setAttribute('aria-labelledby','cardTitle');}else c.removeAttribute('aria-labelledby');const f=c.querySelector('[data-focus]')||c.querySelector('[data-primary]')||c.querySelector('button');if(f)setTimeout(()=>{try{f.focus({preventScroll:true});}catch(e){}},40);return c;}
 function closeCard(){clearInterval(cardTimer);$('#modal').hidden=true;$('#card').innerHTML='';}
-function cardChoice(c){return new Promise(res=>{c.querySelectorAll('button[data-v]').forEach(b=>b.addEventListener('click',()=>{Sfx.init();Sfx.tick(4);CARD_VALS={};c.querySelectorAll('input[id]').forEach(i=>{CARD_VALS[i.id]=i.value;});closeCard();res(b.dataset.v);},{once:true}));});}
+function topDialog(){return !$('#menu').hidden?$('#menuCard'):($('#modal').hidden?null:$('#card'));}
+function cardChoice(c){return new Promise(res=>{c.querySelectorAll('button[data-v]').forEach(b=>b.addEventListener('click',()=>{Sfx.init();Sfx.tick(4);CARD_VALS={};c.querySelectorAll('input[id]').forEach(i=>{CARD_VALS[i.id]=i.value;});if(c.id==='card')closeCard();res(b.dataset.v);},{once:true}));});}
 function esc(s){return String(s).replace(/[&<>"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));}
 function ask(o){
   let h='';if(o.chip)h+='<span class="chip">'+esc(o.chip)+'</span>';h+='<h2>'+esc(o.title)+'</h2>';if(o.aka)h+='<p class="aka">'+esc(o.aka)+'</p>';
@@ -1174,7 +1252,7 @@ async function decide(p,ui,botFn,autoV,timeoutMs){
 function applyLog(p,r){if(r&&r.a&&p.ctrl!=='bot'){p.ctrl='bot';toast(p.name+' ay bot na muna','#fff',1400);}return r?r.v:undefined;}
 
 /* ================= board flow ================= */
-function checkpoint(){if(NET.on||isHamon()){state.checkpoint=null;return;}state.checkpoint={mode:'local',setup:state.setup,round:state.round,turn:state.turn,korona:korona.spots.slice(),gs,decK,mgSeq,plan:state.plan.slice(),players:state.players.map(p=>({pos:p.pos,piso:p.piso,korona:p.korona,item:p.item,ctrl:p.ctrl,stats:Object.assign({},p.stats)}))};}
+function checkpoint(){if(NET.on||isHamon()){state.checkpoint=null;return;}state.checkpoint={mode:'local',setup:state.setup,round:state.round,turn:state.turn,korona:korona.spots.slice(),gs,decK,mgSeq,plan:state.plan.slice(),players:state.players.map(p=>({pos:p.pos,piso:p.piso,korona:p.korona,item:p.item,ctrl:p.ctrl,stats:Object.assign({},p.stats)}))};saveGame(state.checkpoint);}
 async function hop(p,to,back){
   const from=p.pos;p.hopping=true;const A0=spacePos(from),B0=spacePos(to);const dx=B0.x-A0.x,dy=B0.y-A0.y;
   if(Math.abs(dy)>Math.abs(dx)*1.1){p.dir=dy<0?'back':'front';}else{p.dir='side';p.face=dx>=0?1:-1;}p.dirT=.8;
@@ -1201,7 +1279,7 @@ async function rollDice(p){
   tween(.35,e=>{dice.punch=1-e;},Ez.out);
   await tween(.18,e=>{p.lift=26*(1-e);},Ez.inOut);p.sy=1;p.sx=1;
   tween(.16,e=>{p.sy=lerp(.8,1,e);p.sx=lerp(1.15,1,e);},Ez.out);
-  const total=dice.vals.reduce((a,b)=>a+b,0)+dice.bonus;
+  const total=dice.vals.reduce((a,b)=>a+b,0)+dice.bonus;dbg('roll',{p:p.id,vals:dice.vals.slice(),bonus:dice.bonus,item:useItem});
   if(dice.vals.length>1||dice.bonus)floatText('= '+total,p.x,p.y-140,'#fff',24);
   await wait(520);dice.on=false;dice.bonus=0;return total;
 }
@@ -1212,11 +1290,11 @@ async function moveSteps(p,n){
 }
 async function koronaStop(p,kk){
   await wait(160);
-  if(p.piso<KCOST){if(p.ctrl==='local')tip('kulang','Kailangan ng 10 piso para sa korona. Mag-ipon sa mga asul na espasyo at sa mga laro.');await say('Kulang ang piso ('+KCOST+')','#fff',1200);return;}
+  if(p.piso<KCOST){dbg('short',{p:p.id,piso:p.piso});if(p.ctrl==='local')tip('kulang','Kailangan ng 10 piso para sa korona. Mag-ipon sa mga asul na espasyo at sa mga laro.');await say('Kulang ang piso ('+KCOST+')','#fff',1200);return;}
   const v=await decide(p,()=>ask({title:isYou(p)?'Korona!':'Korona, '+p.name+'!',body:'Bilhin ang korona sa halagang '+KCOST+' piso? May '+p.piso+' piso '+(isYou(p)?'ka':'si '+p.name)+'.',buttons:[{label:'Bilhin · '+KCOST+' piso',value:'y',primary:true},{label:'Huwag muna',value:'n'}]}),
     async()=>{await wait(450);return'y';},'y',40000);
   if(v!=='y')return;
-  p.piso-=KCOST;p.korona++;Sfx.fanfare();setMood(p,'cheer',1.6);hitstop=.1;cam.shake=.2;if(p.ctrl==='local')buzz([30,40,70]);
+  p.piso-=KCOST;p.korona++;dbg('korona',{p:p.id,piso:p.piso});Sfx.fanfare();setMood(p,'cheer',1.6);hitstop=.1;cam.shake=.2;if(p.ctrl==='local')buzz([30,40,70]);
   const kp=koronaPos(kk);burst(kp.x,kp.y-50,18,'star',{spd:200,life:.9,size:7,color:'#FFC93C',g:200});
   floatText('+1 korona',p.x,p.y-80,'#FFC93C',22);
   await say(isYou(p)?'Sa iyo ang korona!':'Kay '+p.name+' ang korona!','#FFC93C',1300);
@@ -1235,7 +1313,7 @@ async function moveKorona(kk){
 async function gain(p,n,label){p.piso+=n;coinFly(p,n);Sfx.coin();if(p.ctrl==='local')buzz(12);setMood(p,'happy',1);burst(p.x,p.y-30,Math.min(10,3+n),'coin',{up:true,spd:220,life:.7,size:5,g:520});floatText((label||'')+'+'+n,p.x,p.y-70,'#FFE07A',22);await wait(700);}
 async function lose(p,n,label){const m=Math.min(n,p.piso);p.piso-=m;Sfx.bad();if(p.ctrl==='local')buzz(40);setMood(p,'sad',1.3);burst(p.x,p.y-30,8,'spark',{spd:140,color:'#E04A3A',size:5});floatText((label||'')+'−'+m,p.x,p.y-70,'#FF8A7A',22);cam.shake=.15;await wait(800);}
 async function land(p){
-  const s=SP[p.pos];s.pulse=1;
+  const s=SP[p.pos];s.pulse=1;dbg('land',{p:p.id,space:s.type,piso:p.piso});
   if(p.ctrl==='local'&&SPACE_TIP[s.type])tip('sp_'+s.type,SPACE_TIP[s.type]);
   switch(s.type){
     case'start':case'piso':await gain(p,3);break;
@@ -1251,7 +1329,7 @@ async function shop(p){
   const v=await decide(p,()=>ask({title:isYou(p)?'Sari-sari store':'Sari-sari, '+p.name,body:p.item?'Isang item lang ang madadala. Papalitan nito ang hawak ngayon.':'Ano ang bibilhin? Isang item lang ang madadala.',
       buttons:[{label:'Dobleng dice · 5 piso',value:'doble',primary:true,disabled:p.piso<5},{label:'Kendi (+3) · 3 piso',value:'kendi',disabled:p.piso<3},{label:'Wala, salamat',value:'none'}]}),
     async()=>{await wait(500);if(!p.item&&p.piso>=8)return'doble';if(!p.item&&p.piso>=3)return'kendi';return'none';},'none',40000);
-  if((v==='doble'||v==='kendi')&&p.piso>=ITEMS[v].cost){p.piso-=ITEMS[v].cost;p.item=v;Sfx.coin();if(p.ctrl==='local')tip('item','May item ka na. Sa susunod mong turn, pindutin ang "Gamitin" bago gumulong.');setMood(p,'happy',1);floatText(ITEMS[v].name,p.x,p.y-70,'#fff',19);
+  if((v==='doble'||v==='kendi')&&p.piso>=ITEMS[v].cost){p.piso-=ITEMS[v].cost;p.item=v;dbg('buy',{p:p.id,item:v});Sfx.coin();if(p.ctrl==='local')tip('item','May item ka na. Sa susunod mong turn, pindutin ang "Gamitin" bago gumulong.');setMood(p,'happy',1);floatText(ITEMS[v].name,p.x,p.y-70,'#fff',19);
     if(p.ctrl==='local')await wait(600);else await say('Bumili si '+p.name+' ng '+ITEMS[v].name.toLowerCase(),'#7FE3D9',1100);}
   else if(p.ctrl!=='local')await say('Walang binili si '+p.name,'#fff',900);
 }
@@ -1288,7 +1366,7 @@ async function jackEnPoy(p){
   }while(res===0&&tries<3);
   if(res===0)return;
   const win=res===1?p:opp,los=res===1?opp:p;const amt=Math.min(5,los.piso);
-  los.piso-=amt;win.piso+=amt;coinFly(win,amt);setMood(win,'cheer',1.4);setMood(los,'sad',1.4);Sfx.coin();
+  los.piso-=amt;win.piso+=amt;dbg('jack',{p:p.id,opp:opp.id,win:win.id,amt});coinFly(win,amt);setMood(win,'cheer',1.4);setMood(los,'sad',1.4);Sfx.coin();
   floatText('+'+amt,win.x,win.y-70,'#FFE07A',22);floatText('−'+amt,los.x,los.y-70,'#FF8A7A',22);
   if(!anyLocal)await say('Panalo si '+win.name+'!',win.color,1100);else await wait(700);
 }
@@ -1453,13 +1531,18 @@ function mkPatintero(runner,mgi){
 function mkSipa(pre,mgi){
   let resolve;const L1=locals();
   const sc={kind:'sipa',view:{w:540,h:520},focusY:70,t:0,cd:3.6,ended:false,actionLabel:L1.length===1?'Sipa!':null,hint:L1.length===1?'Sumipa kapag umiilaw ang bilog':'I-tap malapit sa bilog mo kapag umilaw'};sc.done=new Promise(r=>resolve=r);
-  const POS=[[-140,-40],[140,-40],[-140,195],[140,195]],WIN=.27,keys=localKeyMap();
-  const S=state.players.map((p,i)=>({p,mode:p.ctrl,x:POS[i][0],y:POS[i][1],h:0,v:0,g:950,kicks:0,out:false,started:false,kick:0,cool:0,plan:null,startAt:.1+i*.18,spin:0,target:pre[i]}));
+  /* WIN: the ring is lit for the last .27 s of each fall. A press up to BUF before it lights is kept (touch latency); earlier presses lock the foot, and mashing keeps it locked */
+  const POS=[[-140,-40],[140,-40],[-140,195],[140,195]],WIN=.27,BUF=.09,LOCK=.25,keys=localKeyMap();
+  const S=state.players.map((p,i)=>({p,mode:p.ctrl,x:POS[i][0],y:POS[i][1],h:0,v:0,g:950,kicks:0,out:false,started:false,kick:0,lock:0,buf:false,plan:null,startAt:.1+i*.18,spin:0,target:pre[i]}));
   const ttl=s=>(s.v+Math.sqrt(Math.max(0,s.v*s.v+2*s.g*s.h)))/s.g;
   const kickable=s=>s.started&&!s.out&&s.v<0&&ttl(s)<WIN;
   const publish=s=>{if(NET.on&&s.mode==='local')netMg({i:mgi,kk:s.kicks,o:s.out?1:0,s:s.kicks,d:s.out?1:0});};
-  function doKick(s){s.v=410+s.kicks*5;s.g*=1.045;s.kicks++;s.kick=.22;Sfx.tick(s.kicks%10);burst(s.x+4,s.y-10,3,'dust',{spd:40,life:.35,g:-20});if(s.mode==='local'&&s.kicks%5===0)floatText(s.kicks+'!',s.x,s.y-60,'#FFE07A',22);publish(s);}
-  function act(pid){if(sc.cd>.6)return;const s=S[pid];if(!s||s.mode!=='local')return;if(kickable(s))doKick(s);else if(s.started&&!s.out&&s.cool<=0){s.cool=.32;floatText('Maaga!',s.x,s.y-56,'#fff',17);}}
+  function doKick(s){s.buf=false;s.v=410+s.kicks*5;s.g*=1.045;s.kicks++;s.kick=.22;Sfx.tick(s.kicks%10);burst(s.x+4,s.y-10,3,'dust',{spd:40,life:.35,g:-20});if(s.mode==='local'&&s.kicks%5===0)floatText(s.kicks+'!',s.x,s.y-60,'#FFE07A',22);publish(s);}
+  function act(pid){if(sc.cd>.6)return;const s=S[pid];if(!s||s.mode!=='local'||!s.started||s.out)return;
+    if(s.lock>0){s.lock=LOCK;return;}
+    if(kickable(s)){doKick(s);return;}
+    if(s.v<0&&ttl(s)<WIN+BUF){s.buf=true;return;}
+    s.lock=LOCK;Sfx.tick(0);floatText('Maaga!',s.x,s.y-56,'#fff',17);}
   sc.action=()=>{if(L1.length===1)act(L1[0].id);};
   sc.pointerDown=(x,y)=>{if(L1.length===1){act(L1[0].id);return;}const w=toWorld(x,y);let best=0,bd=1e9;S.forEach((s,i)=>{const d=Math.hypot(w.x-s.x,w.y-s.y);if(d<bd){bd=d;best=i;}});act(best);};
   sc.key=(e,down)=>{if(!down)return;const pid=keys[e.code];if(pid!=null){e.preventDefault();act(pid);}};
@@ -1470,8 +1553,8 @@ function mkSipa(pre,mgi){
       if(s.started&&!s.out){s.v-=s.g*dt;s.h+=s.v*dt;s.spin+=dt*(5+Math.abs(s.v)/60);
         if(s.mode==='bot'){if(kickable(s)&&s.plan==null)s.plan=s.kicks<s.target?sc.t+R()*WIN*.7:Infinity;if(s.plan!=null&&s.plan!==Infinity&&sc.t>=s.plan){s.plan=null;if(kickable(s))doKick(s);}}
         if(s.mode==='remote'){const m=netPeerMg(s.p.peer,mgi),rk=m?m.kk|0:0;if(kickable(s)&&rk>s.kicks)doKick(s);else if(!(m&&m.o&&rk<=s.kicks)&&s.v<0&&ttl(s)<.04){s.v=410+s.kicks*5;s.kick=.22;}}
-        if(s.h<=0){s.h=0;s.out=true;s.plan=null;hitstop=.05;Sfx.bad();if(s.mode==='local')buzz(45);floatText('Bagsak!',s.x,s.y-56,'#FF8A7A',20);burst(s.x+4,s.y-6,6,'dust',{spd:60,life:.5,g:-20});setMood(s.p,'sad',30);publish(s);}}
-      s.kick=Math.max(0,s.kick-dt);s.cool-=dt;
+        if(s.h<=0){s.h=0;s.out=true;s.buf=false;s.plan=null;hitstop=.05;Sfx.bad();if(s.mode==='local')buzz(45);floatText('Bagsak!',s.x,s.y-56,'#FF8A7A',20);burst(s.x+4,s.y-6,6,'dust',{spd:60,life:.5,g:-20});setMood(s.p,'sad',30);publish(s);}}
+      s.kick=Math.max(0,s.kick-dt);s.lock=Math.max(0,s.lock-dt);if(s.buf&&!s.out&&s.lock<=0&&kickable(s))doKick(s);
     }
     if(!sc.ended&&(S.every(s=>s.out||s.mode==='remote')||sc.t>45)){sc.ended=true;S.forEach(publish);setTimeout(()=>resolve({scores:S.map(s=>s.kicks)}),1000);}
   };
@@ -1484,7 +1567,7 @@ function mkSipa(pre,mgi){
   }
   sc.draw=g=>{
     const list=drawArenaBase(g);
-    for(const s of S){const kb=kickable(s),me=s.mode==='local';ell(g,s.x,s.y,40,22);if(kb){g.fillStyle=me?'rgba(255,233,140,.75)':'rgba(255,255,255,.3)';g.fill();}g.strokeStyle=kb&&me?'#FFC93C':'rgba(255,255,255,.85)';g.lineWidth=kb&&me?5:3;g.stroke();
+    for(const s of S){const kb=kickable(s),me=s.mode==='local',lk=me&&s.lock>0;ell(g,s.x,s.y,40,22);if(lk){g.fillStyle='rgba(59,35,22,.28)';g.fill();}else if(kb){g.fillStyle=me?'rgba(255,233,140,.75)':'rgba(255,255,255,.3)';g.fill();}g.strokeStyle=lk?'rgba(59,35,22,.7)':(kb&&me?'#FFC93C':'rgba(255,255,255,.85)');g.lineWidth=kb&&me?5:3;if(lk)g.setLineDash([6,5]);g.stroke();g.setLineDash([]);
       list.push({y:s.y,f:()=>{drawKid(g,s.p,s.x-14,s.y+4,{mood:s.kick>0?'kick':s.p.mood,sy:s.kick>0?.92:1,blink:s.p.blink>0,dir:s.kick>0?'side':'front'});}});
       list.push({y:s.y+.5,f:()=>drawSipa(g,s.x+6,s.y+2,s.started?s.h:0,s.spin,s.out)});}
     list.sort((a,b)=>a.y-b.y).forEach(o=>o.f());
@@ -1504,7 +1587,7 @@ const MG={
     real:'Gumuguhit ng mga linya sa lupa, minsan gamit ang tubig, kaya tinatawag din itong tubigan. Dalawang koponan ang naglalaro: nakatayo sa mga linya ang mga bantay at doon lang sila puwedeng gumalaw, habang sinusubukan ng kabilang koponan na tumawid hanggang dulo at pabalik. Kapag may nataya, magpapalit ang dalawang koponan.'},
   sipa:{title:'Sipa',aka:'Pambansang laro ng Pilipinas hanggang 2009',chip:'4 na manlalaro · sabay-sabay',unit:'sipa',make:(pre,mgi)=>mkSipa(pre,mgi),
     preroll:d=>[2,3,8][d]+Math.floor(G()*[8,14,16][d]),botScore:pre=>pre,
-    rules:['Sipain ang sipa bago ito bumagsak.','Umiilaw ang bilog kapag puwede nang sumipa.','Pabilis nang pabilis. Pinakamaraming sipa ang panalo.'],
+    rules:['Sipain ang sipa bago ito bumagsak.','Pindutin kapag umiilaw ang bilog. Kapag masyadong maaga o pindot nang pindot, saglit na hindi makakasipa.','Pabilis nang pabilis. Pinakamaraming sipa ang panalo.'],
     real:'Ang sipa ay maliit na pabigat, gaya ng tingga o washer, na may makukulay na papel o tela. Sinisipa ito pataas gamit ang loob ng paa o tuhod nang hindi pinababagsak. Pambansang laro ito hanggang 2009, nang ideklara ang arnis bilang pambansang sining ng pakikipaglaban at isport.'},
   palosebo:{title:'Palosebo',aka:'Galing sa Espanyol na palo ensebado: kawayang pinahiran ng grasa',chip:'4 na manlalaro · sabay-sabay',unit:'puntos',make:(pre,mgi)=>mkPalosebo(pre,mgi),
     preroll:d=>Math.round([20,40,70][d]+G()*[55,75,55][d]),botScore:pre=>pre,
@@ -1528,7 +1611,7 @@ function mkPalosebo(pre,mgi){
   const T=12,TOP=10,PX=33,BASE=168,GAP=.16,GREASE=[[3,4.2],[6.5,7.6]];
   const greasy=h=>GREASE.some(z=>h>=z[0]&&h<z[1]);
   const sc={kind:'palosebo',view:{w:500,h:540},focusY:-34,t:0,cd:3.6,ended:false,actionLabel:L1.length===1?'Akyat!':null,hint:L1.length===1?'I-tap kapag berde ang kamay. Huwag magmadali!':'I-tap ang sarili mong poste kapag berde ang kamay'};sc.done=new Promise(r=>resolve=r);
-  const lanes=state.players.map((p,i)=>{const tg=pre[i],goal=tg>=100?TOP:tg/10,tf=tg>=100?Math.max(4.5,T-(tg-100)/10):T;return{p,i,mode:p.ctrl,x:(i-1.5)*118,h:0,last:-9,stun:0,taps:0,done:false,fin:0,wob:0,goal,rate:goal/tf,nextTap:0};});
+  const lanes=state.players.map((p,i)=>{const tg=pre[i],goal=tg>=100?TOP:tg/10,tf=tg>=100?Math.max(4.5,T-(tg-100)/10):T*.88;return{p,i,mode:p.ctrl,x:(i-1.5)*118,h:0,last:-9,stun:0,taps:0,done:false,fin:0,wob:0,goal,rate:goal/tf,nextTap:0};});
   const scoreOf=L=>Math.round(Math.min(TOP,L.h)*10)+(L.h>=TOP?Math.round(Math.max(0,T-L.fin)*10):0);
   const kidY=L=>BASE-Math.min(TOP,L.h)*PX+4;
   const publish=(L,th)=>{if(NET.on&&L.mode==='local')netMg({i:mgi,h:Math.round(L.h*100),f:Math.round(L.fin*100),s:scoreOf(L),d:L.done?1:0},th);};
@@ -1603,7 +1686,7 @@ async function runMinigame(kind,opt){
   const scores=[];
   for(const p of P){const v=await decide(p,async()=>localScores[p.id]||0,async()=>def.botScore(pre[p.id]),()=>{const m=netPeerMg(p.peer,mgi);return m?(m.s|0):0;},45000);scores[p.id]=Number(v)||0;}
   setHint('');
-  const rp=rankPay(scores),pay=rp.pay.map(v=>v*mult);const top=P.filter(p=>rp.rank[p.id]===0);
+  const rp=rankPay(scores),pay=rp.pay.map(v=>v*mult);dbg('mg',{kind,scores:scores.slice(),pay:pay.slice()});const top=P.filter(p=>rp.rank[p.id]===0);
   top.forEach(p=>p.stats.wins++);
   if(opt.hamon)return{scores,rank:rp.rank};
   const title=top.length>1?'Tabla sa una!':(isYou(top[0])?'Panalo ka!':'Panalo si '+top[0].name+'!');
@@ -1624,7 +1707,7 @@ async function runMinigame(kind,opt){
 function bonusList(){const P=state.players;const mk=(name,desc,val,best)=>{const vals=P.map(val);const tgt=best(...vals);const w=P.filter((p,i)=>vals[i]===tgt);return w.length&&w.length<P.length?{name,desc,w,val:tgt}:null;};
   return[mk('Hari ng Laro','Pinakamaraming panalo sa mga laro',p=>p.stats.wins,Math.max),mk('Lakwatsero','Pinakamaraming espasyong nilakad',p=>p.stats.steps,Math.max),mk('Malas sa Dice','Pinakamababang kabuuan ng dice',p=>p.stats.dice,Math.min)].filter(Boolean).filter(b=>!(b.name==='Hari ng Laro'&&b.val===0));}
 async function bonusAwards(tok){
-  const list=bonusList();if(!list.length)return;
+  const list=bonusList();dbg('bonus',{list:list.map(b=>({name:b.name,w:b.w.map(p=>p.id)}))});if(!list.length)return;
   await say('Mga bonus na korona!','#FFC93C',1300);if(tok!==gameToken)return;
   const html='<ol class="rank">'+list.map(b=>'<li><span class="pos">+1</span><span class="dot" style="background:'+b.w[0].color+'"></span><span class="who">'+esc(b.name)+'</span><span class="sc">'+esc(b.w.map(p=>p.name).join(', '))+'</span><span class="pay">'+CROWN_SVG+'</span></li>').join('')+'</ol><p class="note">'+list.map(b=>esc(b.name)+': '+esc(b.desc.toLowerCase())+'.').join(' ')+'</p>';
   await ask({title:'Bonus na korona',html,buttons:[{label:'Tingnan ang panalo',value:'ok',primary:true}],autoMs:NET.on?9000:0});
@@ -1652,17 +1735,20 @@ function buildResultImage(P,head){
   rr(g,110,h-92,w-220,60,30);fs(g,PAPER,INK,4);g.font='800 27px '+BODY;g.textAlign='center';g.textBaseline='middle';g.fillStyle=INK;g.fillText(cfgSummary(state.cfg).split(' · Bot')[0]+' · '+prettyDay()+', '+new Date().getFullYear()+' · Board party ng larong kalye',w/2,h-61);
   return c;
 }
-function saveResultImage(P,head){const c=buildResultImage(P,head);c.toBlob(b=>{if(!b)return;const fn='laro-sa-ulap-resulta.png';
-  if(DL){DL.save({filename:fn,data:b}).then(()=>toast('Na-save ang larawan','#BDE7A6',1400)).catch(()=>{});return;}
-  try{const u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=fn;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);toast('Na-save ang larawan','#BDE7A6',1400);}catch(e){}},'image/png');}
+/* save a canvas as a PNG: the artifact downloads capability inside Claude, a plain download link everywhere else */
+function saveCanvas(c,fn,msg){c.toBlob(b=>{if(!b){toast('Hindi ma-save','#FF8A7A',1400);return;}
+  if(DL){DL.save({filename:fn,data:b}).then(()=>toast(msg,'#BDE7A6',1400)).catch(()=>toast('Hindi na-save','#FF8A7A',1400));return;}
+  try{const u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=fn;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);toast(msg,'#BDE7A6',1400);}catch(e){toast('Hindi ma-save','#FF8A7A',1400);}},'image/png');}
+function saveResultImage(P,head){saveCanvas(buildResultImage(P,head),'laro-sa-ulap-resulta.png','Na-save ang larawan');}
 
 async function finale(){
-  const tok=gameToken;state.active=null;state.overview=true;state.round=maxR();state.ended=true;updateStatus('Tapos na');mapBtn.setAttribute('aria-pressed','true');
+  clearSave();const tok=gameToken;state.active=null;state.overview=true;state.round=maxR();state.ended=true;updateStatus('Tapos na');mapBtn.setAttribute('aria-pressed','true');
   await wait(700);
   if(isParty())await bonusAwards(tok);
   if(tok!==gameToken)return;
   const P=[...state.players].sort((a,b)=>b.korona-a.korona||b.piso-a.piso||a.id-b.id);const top=P[0];
   const winners=P.filter(p=>p.korona===top.korona&&p.piso===top.piso);
+  dbg('final',{mode:state.cfg.mode,players:state.players.map(p=>({id:p.id,ctrl:p.ctrl,korona:p.korona,piso:p.piso,stats:Object.assign({},p.stats)})),winners:winners.map(p=>p.id)});
   winners.forEach(w=>setMood(w,'cheer',999));state.party=true;Sfx.fanfare();Music.play('win');if(winners.some(p=>p.ctrl==='local'))buzz([60,50,60,50,120]);
   await say(winners.length>1?'Tabla sa tuktok!':(isYou(top)?'Panalo ka!':'Panalo si '+top.name+'!'),top.color,1600);
   let pos=0;const rows=P.map((p,k)=>{if(k>0&&!(p.korona===P[k-1].korona&&p.piso===P[k-1].piso))pos=k;return{pos:pos+1,color:p.color,name:p.name,score:p.korona+' korona',pay:p.piso+' piso'};});
@@ -1733,10 +1819,10 @@ function startOnline(pr){
 }
 
 /* ================= screens & menus ================= */
-function setScreen(s){APP.screen=s;$('#scrTitle').hidden=s!=='title';$('#scrGallery').hidden=s!=='gallery';$('#hudTop').hidden=s!=='game';mapBtn.hidden=s!=='game';$('#hudBottom').hidden=s==='gallery';
+function setScreen(s){APP.screen=s;$('#scrTitle').hidden=s!=='title';$('#scrGallery').hidden=s!=='gallery';$('#hudTop').hidden=s!=='game';mapBtn.hidden=s!=='game';$('#menuBtn').hidden=s!=='game';$('#soundBtn').hidden=s==='game';$('#hudBottom').hidden=s==='gallery';closeMenu();
   if(s!=='game'){actionBtn.hidden=true;itemBtn.hidden=true;setHint('');clearTips();}measureHud();Music.play(s==='game'?'board':'title');}
 function demoPlayers(){state.players=makePlayers(CHARS.map(c=>({name:c.name,ctrl:'bot'})));state.players.forEach((p,i)=>{p.pos=[0,1,0,1][i];});state.active=null;}
-function toTitle(){gameToken++;scene=null;closeCard();clearRun();if(NET.rm)netLeave();state.party=false;state.ended=false;state.checkpoint=null;state.cfg=normCfg({});demoPlayers();resetKorona();setScreen('title');setTimeout(()=>{try{$('#mLocal').focus({preventScroll:true});}catch(e){}},50);}
+function toTitle(){gameToken++;scene=null;closeCard();clearRun();if(NET.rm)netLeave();state.party=false;state.ended=false;state.checkpoint=null;state.cfg=normCfg({});demoPlayers();resetKorona();setScreen('title');refreshResume();setTimeout(()=>{try{($('#mResume').hidden?$('#mLocal'):$('#mResume')).focus({preventScroll:true});}catch(e){}},50);}
 function showMsg(title,body){openCard('<h2>'+esc(title)+'</h2><p>'+esc(body)+'</p>');}
 function netHelp(){return'Kailangang bukas ang laro sa claude.ai, naka-sign in ka, at naka-share ang laro sa mga kalaro mo (hindi gumagana sa public link).';}
 
@@ -1753,7 +1839,7 @@ async function localFlow(){
   const prev=state.setup&&state.setup.n?state.setup:{};let n=prev.n||1;const names=prev.names?prev.names.slice():CHARS.map(c=>c.name);const cfg=normCfg(prev.cfg);if(cfg.mode==='hamon')cfg.mode='party';
   const render=c=>{const box=c.querySelector('#nmBox');box.innerHTML=CHARS.map((ch,i)=>i<n?'<div class="field"><span class="dot" style="background:'+ch.color+'"></span><input id="nm'+i+'" maxlength="12" autocomplete="off" aria-label="Pangalan ng manlalaro '+(i+1)+'" value="'+esc(names[i]||ch.name)+'"></div>':'<div class="field"><span class="dot" style="background:'+ch.color+'"></span><span class="bot">'+esc(ch.name)+' · bot</span></div>').join('');
     c.querySelectorAll('#nSeg button').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.n===n)));};
-  const c=openCard('<h2>Isang phone</h2><div id="setBox"></div><div class="setrow"><span class="setlbl">Ilang tao</span><div class="seg sm" id="nSeg" role="group" aria-label="Bilang ng tao">'+[1,2,3,4].map(k=>'<button type="button" data-n="'+k+'">'+k+'</button>').join('')+'</div></div><div id="nmBox"></div><p class="note">Bot ang iba. Sa minigame, may sariling bahagi ng screen ang bawat tao.</p><div class="row"><button type="button" class="btn" data-v="back">Balik</button><button type="button" class="btn primary" data-v="go" data-primary>Simulan</button></div>');
+  const c=openCard('<h2>Maglaro</h2><div id="setBox"></div><div class="setrow"><span class="setlbl">Ilang tao</span><div class="seg sm" id="nSeg" role="group" aria-label="Bilang ng tao">'+[1,2,3,4].map(k=>'<button type="button" data-n="'+k+'">'+k+'</button>').join('')+'</div></div><div id="nmBox"></div><p class="note">Lahat ng tao ay sa iisang phone o computer; bot ang iba. Sa laro, may sariling hanay ang bawat tao.</p><div class="row"><button type="button" class="btn" data-v="back">Balik</button><button type="button" class="btn primary" data-v="go" data-primary>Simulan</button></div>');
   renderSettings(c.querySelector('#setBox'),cfg);render(c);
   c.querySelectorAll('#nSeg button').forEach(b=>b.addEventListener('click',()=>{c.querySelectorAll('input[id^="nm"]').forEach(inp=>{names[+inp.id.slice(2)]=inp.value;});n=+b.dataset.n;render(c);Sfx.init();Sfx.tick(3);}));
   const v=await cardChoice(c);if(v!=='go')return;
@@ -1787,6 +1873,13 @@ function hostStart(){
   const cfg=normCfg(NET.cfg);NET.gid=gid;NET.log={};netPres({st:'play',gid,seed,roster,cfg,log:{},inp:null,mg:null});startOnline({gid,seed,roster,cfg});
 }
 function hostRematch(){NET.roster=NET.roster.slice(0,4).map((e,i)=>e&&e.p&&(e.p===myPeer()||netPeer(e.p))?e:{n:CHARS[i].name,p:null});hostStart();}
+async function onlineFlow(){
+  if(!roomAvailable()){
+    const c=openCard('<span class="chip">Online</span><h2>Wala pang online dito</h2><p>Sa ngayon, gumagana lang ang online room kapag binuksan ang laro sa claude.ai, naka-sign in, at naka-share sa mga kalaro.</p><p>Puwede pa rin kayong maglaro nang sabay sa iisang phone o computer: hanggang 4 na tao.</p><div class="row"><button type="button" class="btn" data-v="back">Balik</button><button type="button" class="btn primary" data-v="local" data-primary>Maglaro sa isang device</button></div>');
+    if(await cardChoice(c)==='local')localFlow();return;}
+  const c=openCard('<span class="chip">Online</span><h2>Maglaro online</h2><p>Hanggang 4 na manlalaro, bawat isa sa sariling phone. Bot ang papalit sa kulang.</p><div class="pgrid"><button type="button" class="btn" data-v="host" data-primary><span>Gumawa ng room</span><small>Ikaw ang host: ipa-scan ang QR o ibigay ang code</small></button><button type="button" class="btn" data-v="join"><span>Sumali</span><small>Gamit ang 4-letrang code ng room</small></button></div><div class="row"><button type="button" class="btn" data-v="back">Balik</button></div>');
+  const v=await cardChoice(c);if(v==='host')hostFlow();else if(v==='join')joinFlow('');
+}
 function netFail(){const c=openCard('<h2>Hindi makakonekta</h2><p>'+esc(netHelp())+'</p><div class="row"><button type="button" class="btn primary" data-v="ok" data-primary>Sige</button></div>');cardChoice(c);}
 async function joinFlow(pref){
   const c=openCard('<h2>Sumali sa room</h2><div class="field"><label for="jcode">Code</label><input id="jcode" maxlength="4" autocomplete="off" autocapitalize="characters" value="'+esc(pref||'')+'" placeholder="ABCD"'+(pref?'':' data-focus')+'></div><div class="field"><label for="nmMe">Pangalan</label><input id="nmMe" maxlength="12" autocomplete="off" value="'+esc(NET.name||'')+'" placeholder="Hal. Neneng"'+(pref?' data-focus':'')+'></div><p class="note">'+esc(netHelp())+'</p><div class="row"><button type="button" class="btn" data-v="back">Balik</button><button type="button" class="btn primary" data-v="go" data-primary>Sumali</button></div>');
@@ -1861,40 +1954,81 @@ function guidePages(){
     {t:'Album ng Laro',h:'<p>Ganito nilalaro ang mga ito sa totoong kalye at pista.</p>'+MG_KEYS.map(k=>'<div class="real"><b>'+esc(MG[k].title)+'</b><p>'+esc(MG[k].real)+'</p></div>').join('')+'<div class="row"><button type="button" class="btn small" data-v="tips">Ipakita ulit ang mga tip</button></div>'}
   ];
 }
-async function guideFlow(){
-  const P=guidePages();let i=0;
+async function guideFlow(open){
+  open=open||openCard;const P=guidePages();let i=0;
   for(;;){const pg=P[i],lastPg=i===P.length-1;
-    const c=openCard('<span class="chip">Paano maglaro · '+(i+1)+'/'+P.length+'</span><h2>'+esc(pg.t)+'</h2>'+pg.h+'<div class="row"><button type="button" class="btn" data-v="prev">'+(i?'Balik':'Isara')+'</button><button type="button" class="btn primary" data-v="next" data-primary>'+(lastPg?'Tapos':'Susunod')+'</button></div>');
+    const c=open('<span class="chip">Paano maglaro · '+(i+1)+'/'+P.length+'</span><h2>'+esc(pg.t)+'</h2>'+pg.h+'<div class="row"><button type="button" class="btn" data-v="prev">'+(i?'Balik':'Isara')+'</button><button type="button" class="btn primary" data-v="next" data-primary>'+(lastPg?'Tapos':'Susunod')+'</button></div>');
     const v=await cardChoice(c);
     if(v==='tips'){resetTips();toast('Lalabas ulit ang mga tip','#BDE7A6',1300);continue;}
     if(v==='next'){if(lastPg)return;i++;}else if(v==='prev'){if(!i)return;i--;}else return;}
 }
 
+/* ================= in-game menu: pause (local games), settings, leave ================= */
+let PAUSED=false;
+function closeMenu(){const m=$('#menu');if(m.hidden)return;m.hidden=true;$('#menuCard').innerHTML='';PAUSED=false;}
+function openMenuCard(html){const m=$('#menu'),c=$('#menuCard');c.innerHTML=html;m.hidden=false;const h2=c.querySelector('h2');if(h2)h2.id='menuTitle';const f=c.querySelector('[data-focus]')||c.querySelector('[data-primary]')||c.querySelector('button');if(f)setTimeout(()=>{try{f.focus({preventScroll:true});}catch(e){}},40);return c;}
+function prefRow(key,label){return segRow(key,label,[{v:1,l:'Bukas'},{v:0,l:'Sarado'}],PREFS[key]?1:0);}
+async function openMenu(){
+  if(APP.screen!=='game'||!$('#menu').hidden)return;Sfx.init();PAUSED=!NET.on;const back=document.activeElement;
+  for(;;){
+    const c=openMenuCard('<h2>'+(PAUSED?'Naka-pause':'Menu')+'</h2>'+(NET.on?'<p class="note">Hindi tumitigil ang online na laro habang bukas ito.</p>':'')+
+      prefRow('music','Musika')+prefRow('sfx','Tunog')+(navigator.vibrate?prefRow('vib','Vibrate'):'')+
+      '<div class="row"><button type="button" class="btn" data-v="guide">Paano maglaro</button><button type="button" class="btn" data-v="quit">Umalis sa laro</button></div><div class="row"><button type="button" class="btn primary" data-v="close" data-primary>Tuloy</button></div>');
+    c.querySelectorAll('button[data-k]').forEach(b=>b.addEventListener('click',()=>{const k=b.dataset.k;PREFS[k]=b.dataset.val==='1';savePrefs();Sfx.init();syncSoundBtn();
+      c.querySelectorAll('button[data-k="'+k+'"]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));if(k==='sfx'&&PREFS.sfx)Sfx.tick(4);if(k==='vib'&&PREFS.vib)buzz(30);}));
+    const v=await cardChoice(c);
+    if(v==='guide'){await guideFlow(openMenuCard);continue;}
+    if(v==='quit'){if(await confirmQuit()){closeMenu();toTitle();return;}continue;}
+    break;}
+  closeMenu();try{if(back&&back.isConnected&&!back.hidden)back.focus({preventScroll:true});}catch(e){}
+}
+async function confirmQuit(){
+  const msg=NET.on?'Aalis ka sa online room at bot ang papalit sa iyo.':(state.checkpoint?'Naka-save ang laro mula sa simula ng turn na ito. Ituloy ito mula sa main menu.':'Hindi mase-save ang larong ito.');
+  return await cardChoice(openMenuCard('<h2>Umalis sa laro?</h2><p>'+esc(msg)+'</p><div class="row"><button type="button" class="btn primary" data-v="back" data-primary>Huwag</button><button type="button" class="btn" data-v="leave">Umalis</button></div>'))==='leave';
+}
+$('#menuBtn').addEventListener('click',()=>openMenu());
+
+/* ================= saved game: a local game resumes from the start of its last turn ================= */
+const SAVE_KEY='lsu-save',SAVE_V=2;
+function saveGame(cp){try{localStorage.setItem(SAVE_KEY,JSON.stringify({v:SAVE_V,n:N,at:Date.now(),cp}));}catch(e){}}
+function clearSave(){try{localStorage.removeItem(SAVE_KEY);}catch(e){}}
+function loadSave(){try{const o=JSON.parse(localStorage.getItem(SAVE_KEY)||'null'),cp=o&&o.cp;
+  if(!o||o.v!==SAVE_V||o.n!==N||!cp||cp.mode!=='local'||!cp.setup||!Array.isArray(cp.setup.names)||!Array.isArray(cp.players)||cp.players.length!==4)return null;return o;}catch(e){return null;}}
+function refreshResume(){const o=loadSave(),b=$('#mResume');b.hidden=!o;if(!o)return;const cp=o.cp,c=normCfg(cp.setup.cfg),who=cp.setup.names.slice(0,cp.setup.n|0).map(cleanName).filter(Boolean);
+  $('#mResumeSub').textContent=MODES[c.mode]+' · '+(c.mode==='torneo'?'Laro ':'Ikot ')+clamp(cp.round|0,1,c.rounds)+'/'+c.rounds+(who.length?' · '+who.join(', '):'');}
+$('#mResume').addEventListener('click',()=>{Sfx.init();const o=loadSave();if(o)startLocal(o.cp.setup,o.cp);else refreshResume();});
+
 /* sprite gallery */
 let galSel=1,DL=null;
 function showGallery(){setScreen('gallery');const box=$('#animChips');box.innerHTML=ANIMS.map((a,i)=>'<button type="button" data-i="'+i+'" aria-pressed="'+(i===galSel)+'">'+esc(a.label)+'</button>').join('');
   box.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{galSel=+b.dataset.i;box.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));}));
-  $('#galDl').hidden=!DL;setTimeout(()=>{try{$('#galBack').focus({preventScroll:true});}catch(e){}},50);}
+  setTimeout(()=>{try{$('#galBack').focus({preventScroll:true});}catch(e){}},50);}
 $('#galBack').addEventListener('click',()=>toTitle());
-$('#galDl').addEventListener('click',()=>{if(!DL)return;const c=buildSheet();c.toBlob(b=>{if(!b)return;DL.save({filename:'laro-sa-ulap-sprites.png',data:b}).then(()=>toast('Na-save ang sheet','#BDE7A6',1400)).catch(()=>{});},'image/png');});
+$('#galDl').addEventListener('click',()=>{Sfx.init();saveCanvas(buildSheet(),'laro-sa-ulap-sprites.png','Na-save ang sprite sheet');});
 $('#mLocal').addEventListener('click',()=>{Sfx.init();localFlow();});
-$('#mHost').addEventListener('click',()=>{Sfx.init();hostFlow();});
-$('#mJoin').addEventListener('click',()=>{Sfx.init();joinFlow('');});
+$('#mOnline').addEventListener('click',()=>{Sfx.init();onlineFlow();});
 $('#mSprites').addEventListener('click',()=>{Sfx.init();showGallery();});
 $('#mHamon').addEventListener('click',()=>{Sfx.init();hamonFlow();});
 $('#mGuide').addEventListener('click',()=>{Sfx.init();guideFlow();});
 
 /* ================= input ================= */
 cv.addEventListener('pointerdown',e=>{Sfx.init();if(APP.screen!=='game')return;const r=cv.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;try{cv.setPointerCapture(e.pointerId);}catch(_){}
-  if(scene){scene.pointerDown&&scene.pointerDown(x,y,e.pointerId);}else if(actionResolver){actionResolver();}});
+  /* a tap on the board also rolls, but not while looking at the map or in the first moments after the button appears */
+  if(scene){scene.pointerDown&&scene.pointerDown(x,y,e.pointerId);}else if(actionResolver&&!state.overview&&performance.now()-actionAt>350){actionResolver();}});
 cv.addEventListener('pointermove',e=>{if(!scene||!scene.pointerMove)return;const r=cv.getBoundingClientRect();scene.pointerMove(e.clientX-r.left,e.clientY-r.top,e.pointerId);});
 const ptrUp=e=>{if(scene&&scene.pointerUp){const r=cv.getBoundingClientRect();scene.pointerUp(e.clientX-r.left,e.clientY-r.top,e.pointerId);}};
 cv.addEventListener('pointerup',ptrUp);cv.addEventListener('pointercancel',ptrUp);
-window.addEventListener('keydown',e=>{if(!$('#modal').hidden||APP.screen!=='game')return;Sfx.init();const onBtn=e.target&&e.target.tagName==='BUTTON';
+window.addEventListener('keydown',e=>{if(e.defaultPrevented||topDialog()||APP.screen!=='game')return;if(e.key==='Escape'){e.preventDefault();openMenu();return;}Sfx.init();const onBtn=e.target&&e.target.tagName==='BUTTON';
   if(scene){if(onBtn&&(e.code==='Space'||e.code==='Enter'))return;scene.key&&scene.key(e,true);return;}
   if((e.code==='Space'||e.code==='Enter')&&!onBtn&&actionResolver){e.preventDefault();actionResolver();}
   if(e.code==='KeyM'){mapBtn.click();}});
 window.addEventListener('keyup',e=>{if(scene&&scene.key)scene.key(e,false);});
+/* dialogs: Tab stays inside the open card, Escape presses its back/close button */
+const ESC_V=['back','prev','n','none','leave','close'];
+document.addEventListener('keydown',e=>{const top=topDialog();if(!top)return;
+  if(e.key==='Tab'){const f=[...top.querySelectorAll('button:not([disabled]),input')].filter(x=>x.offsetParent);if(!f.length)return;const i=f.indexOf(document.activeElement);
+    if(i<0||(e.shiftKey&&i===0)||(!e.shiftKey&&i===f.length-1)){e.preventDefault();f[i<0||!e.shiftKey?0:f.length-1].focus();}}
+  else if(e.key==='Escape'){const b=top.querySelector(ESC_V.map(v=>'button[data-v="'+v+'"]').join(','));if(b){e.preventDefault();b.click();}}},true);
 
 /* ================= render loop ================= */
 function drawSky(g){
@@ -1941,6 +2075,7 @@ function drawTitleKids(){
 }
 let last=performance.now(),frameN=0,jeepT=2;
 function update(dt){
+  if(PAUSED){updCam(dt);return;}
   now+=dt;
   if(hitstop>0){hitstop-=dt;updCam(dt);return;}
   let gdt=dt;if(NET.on&&!NET.host&&!scene&&NET.logMax-decK>=2)gdt=dt*3;
@@ -1958,19 +2093,21 @@ function draw(){const g=ctx;g.setTransform(DPR,0,0,DPR,0,0);drawSky(g);
   if(APP.screen==='gallery')drawGallery(g);else if(scene)drawScene(g);else drawBoard(g);
   g.fillStyle=pat(g,'grain');g.fillRect(0,0,W,H);
   drawFlyers(g);drawWipe(g);if(APP.screen==='title')drawTitleKids();}
-function frame(t){const dt=Math.min(.05,Math.max(0,(t-last)/1000));last=t;try{update(dt);draw();}catch(err){console.error(err);}requestAnimationFrame(frame);}
+function frame(t){const dt=Math.min(.05,Math.max(0,(t-last)/1000));last=t;try{for(let i=0;i<SPEED;i++)update(dt);draw();}catch(err){console.error(err);}requestAnimationFrame(frame);}
 
 /* ================= boot ================= */
 function start(data){
   resize();
   ISL.forEach(isl=>renderIsland(isl,false));renderIsland(ARENA,true);
-  try{if(window.claude&&window.claude.use)window.claude.use('downloads').then(d=>{DL=d||null;if(APP.screen==='gallery')$('#galDl').hidden=!DL;}).catch(()=>{});}catch(e){}
+  try{if(window.claude&&window.claude.use)window.claude.use('downloads').then(d=>{DL=d||null;}).catch(()=>{});}catch(e){}
   const cp=data&&data.checkpoint;
   if(cp&&cp.mode==='local'&&cp.setup){startLocal(cp.setup,cp);}
   else{toTitle();const a={x:870,y:780};cam.x=cam.tx=a.x;cam.y=cam.ty=a.y;cam.z=cam.tz=fitZoom(1150,1000)*1.15;
-    const hc=(location.hash||'').replace('#','').toUpperCase();if(/^[A-Z0-9]{4}$/.test(hc))setTimeout(()=>joinFlow(hc),400);}
+    const hc=(location.hash||'').replace('#','').toUpperCase();if(/^[A-Z0-9]{4}$/.test(hc))setTimeout(()=>roomAvailable()?joinFlow(hc):onlineFlow(),400);}
   requestAnimationFrame(t=>{last=t;requestAnimationFrame(frame);});
 }
+if(DEBUG){const m=/[?&]speed=(\d+)/.exec(location.search);if(m)SPEED=clamp(+m[1],1,60);
+  window.__lsu={state,NET,MG,SP,N,korona,DBG,get scene(){return scene;},get screen(){return APP.screen;},setSpeed:v=>{SPEED=clamp(v|0,1,60);},startLocal:(s,cp)=>startLocal(s,cp),toTitle:()=>toTitle(),bench:n=>{const t=performance.now();for(let i=0;i<n;i++)draw();return(performance.now()-t)/n;}};}
 try{window.claude&&window.claude.hot&&window.claude.hot.snapshot&&window.claude.hot.snapshot(()=>({checkpoint:NET.on?null:state.checkpoint}));}catch(e){}
 const boot=()=>{const h=window.claude&&window.claude.hot;if(h&&h.ready)h.ready(start);else start((h&&h.data)||{});};
 if(document.fonts&&document.fonts.load){Promise.race([Promise.all([document.fonts.load('20px "Bagel Fat One"'),document.fonts.load('900 12px "Nunito"')]),new Promise(r=>setTimeout(r,1200))]).then(boot,boot);}else boot();
