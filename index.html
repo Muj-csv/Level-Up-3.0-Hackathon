@@ -979,7 +979,7 @@ function drawFarIslands(g){const z=cam.z*.45,TWx=3200,TWy=1600;g.save();g.global
   for(const c of FAR){const wx=c.x+(RM?0:now*2)-cam.x*.22,wy=c.y-cam.y*.22+Math.sin(now*.5+c.x)*6;const sx=((wx%TWx)+TWx)%TWx-TWx/2,sy=((wy%TWy)+TWy)%TWy-TWy/2;const spr=FAR_SPR[c.k],w=spr.w*c.s*z*2.2,h=spr.h*c.s*z*2.2;
     for(const ox of [-TWx,0,TWx])for(const oy of [-TWy,0,TWy]){const X=W/2+(sx+ox)*z-w/2,Y=H/2+camOffY()+(sy+oy)*z-h/2;if(X>W||X+w<0||Y>H||Y+h<0)continue;g.drawImage(spr.c,X,Y,w,h);}}
   g.restore();}
-function drawSunRays(g){if(RM)return;const sx=W*.86,sy=H*.04,R2=Math.max(W,H)*1.1;g.save();g.translate(sx,sy);g.rotate(now*.02);
+function drawSunRays(g){const sx=W*.86,sy=H*.04,R2=Math.max(W,H)*1.1;g.save();g.translate(sx,sy);g.rotate(.3);
   for(let i=0;i<9;i++){g.rotate(TAU/9);const gr=g.createLinearGradient(0,0,R2,0);gr.addColorStop(0,'rgba(255,248,215,.16)');gr.addColorStop(1,'rgba(255,248,215,0)');g.beginPath();g.moveTo(0,0);g.lineTo(R2,-R2*.06);g.lineTo(R2,R2*.06);g.closePath();g.fillStyle=gr;g.fill();}
   g.restore();}
 /* ================= props drawing ================= */
@@ -2140,10 +2140,16 @@ document.addEventListener('keydown',e=>{const top=topDialog();if(!top)return;
   else if(e.key==='Escape'){const b=top.querySelector(ESC_V.map(v=>'button[data-v="'+v+'"]').join(','));if(b){e.preventDefault();b.click();}}},true);
 
 /* ================= render loop ================= */
-function drawSky(g){
+/* the sky gradient, sun glow, rays and paper grain are painted once per screen size, then stamped each frame */
+let skyC=null;
+function skyCanvas(){const w=Math.round(W*DPR),h=Math.round(H*DPR);if(skyC&&skyC.width===w&&skyC.height===h)return skyC;
+  skyC=skyC||document.createElement('canvas');skyC.width=w;skyC.height=h;const g=skyC.getContext('2d');g.setTransform(DPR,0,0,DPR,0,0);
   const gr=g.createLinearGradient(0,0,0,H);gr.addColorStop(0,'#86CBDD');gr.addColorStop(.55,'#BCE4DC');gr.addColorStop(1,'#F7DDB0');g.fillStyle=gr;g.fillRect(0,0,W,H);
   const sr=Math.max(W,H)*.6,sun=g.createRadialGradient(W*.86,H*.04,0,W*.86,H*.04,sr);sun.addColorStop(0,'rgba(255,246,218,.9)');sun.addColorStop(1,'rgba(255,246,218,0)');g.fillStyle=sun;g.fillRect(0,0,W,H);
-  drawSunRays(g);drawCloudLayer(g,CLOUDS.far,.35,.5,.7);drawFarIslands(g);drawCloudLayer(g,CLOUDS.below,.72,.85,.95);
+  if(!RM)drawSunRays(g);g.fillStyle=pat(g,'grain');g.fillRect(0,0,W,H);return skyC;}
+function drawSky(g){
+  g.save();g.setTransform(1,0,0,1,0,0);g.drawImage(skyCanvas(),0,0);g.restore();
+  drawCloudLayer(g,CLOUDS.far,.35,.5,.7);drawFarIslands(g);drawCloudLayer(g,CLOUDS.below,.72,.85,.95);
 }
 function drawBoard(g){
   g.save();applyCam(g);
@@ -2201,7 +2207,6 @@ function update(dt){
 }
 function draw(){const g=ctx;g.setTransform(DPR,0,0,DPR,0,0);drawSky(g);
   if(APP.screen==='gallery')drawGallery(g);else if(scene)drawScene(g);else drawBoard(g);
-  g.fillStyle=pat(g,'grain');g.fillRect(0,0,W,H);
   drawFlyers(g);drawWipe(g);if(APP.screen==='title')drawTitleKids();}
 function frame(t){const dt=Math.min(.05,Math.max(0,(t-last)/1000));last=t;try{for(let i=0;i<SPEED;i++)update(dt);draw();}catch(err){console.error(err);}requestAnimationFrame(frame);}
 
