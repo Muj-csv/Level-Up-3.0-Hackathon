@@ -1898,7 +1898,7 @@ async function gameLoop(startRound,startTurn,token){
   if(token===gameToken)await finale();
 }
 function resetKorona(){korona.spots=[KORONA_CANDS.find(i=>i>=6)||KORONA_CANDS[0],KORONA_CANDS.find(i=>i>=Math.floor(N*.55))||KORONA_CANDS[KORONA_CANDS.length-1]];korona.fly=null;korona.flyK=-1;}
-function clearRun(){tweens.length=0;parts.length=0;floats.length=0;flyers.length=0;hitstop=0;dice.on=false;dice.counter=null;wipe.r=-1;actionResolver=null;actionBtn.hidden=true;itemBtn.hidden=true;setHint('');clearTips();}
+function clearRun(){tweens.length=0;parts.length=0;floats.length=0;flyers.length=0;hitstop=0;dice.on=false;dice.gold=false;dice.counter=null;state.reach=null;state.fast=false;wipe.r=-1;actionResolver=null;actionBtn.hidden=true;itemBtn.hidden=true;setHint('');clearTips();}
 function beginGame(spec,seed,cp,cfg){
   gameToken++;const tok=gameToken;scene=null;closeCard();clearRun();
   state.cfg=normCfg(cfg);gs=seed|0;decK=0;mgSeq=0;state.ended=false;
@@ -2228,7 +2228,7 @@ function start(data){
   requestAnimationFrame(t=>{last=t;requestAnimationFrame(frame);});
 }
 if(DEBUG){const m=/[?&]speed=(\d+)/.exec(location.search);if(m)SPEED=clamp(+m[1],1,60);
-  window.__lsu={state,NET,MG,SP,N,korona,DBG,get scene(){return scene;},get screen(){return APP.screen;},setSpeed:v=>{SPEED=clamp(v|0,1,60);},startLocal:(s,cp)=>startLocal(s,cp),toTitle:()=>toTitle(),bench:n=>{const t=performance.now();for(let i=0;i<n;i++)draw();return(performance.now()-t)/n;}};}
+  window.__lsu={state,NET,MG,SP,N,korona,DBG,get scene(){return scene;},get screen(){return APP.screen;},setSpeed:v=>{SPEED=clamp(v|0,1,60);},startLocal:(s,cp)=>startLocal(s,cp),toTitle:()=>toTitle(),bot:{usesItem:botUsesItem,shop:botShop,rival:botRival,ginto:botGintoPick},bench:n=>{const t=performance.now();for(let i=0;i<n;i++)draw();return(performance.now()-t)/n;}};}
 try{window.claude&&window.claude.hot&&window.claude.hot.snapshot&&window.claude.hot.snapshot(()=>({checkpoint:NET.on?null:state.checkpoint}));}catch(e){}
 const boot=()=>{const h=window.claude&&window.claude.hot;if(h&&h.ready)h.ready(start);else start((h&&h.data)||{});};
 if(document.fonts&&document.fonts.load){Promise.race([Promise.all([document.fonts.load('20px "Bagel Fat One"'),document.fonts.load('900 12px "Nunito"')]),new Promise(r=>setTimeout(r,1200))]).then(boot,boot);}else boot();

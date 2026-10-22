@@ -1,0 +1,14 @@
+{
+  "name": "laro-sa-ulap",
+  "private": true,
+  "description": "Laro sa Ulap: a party board game of Filipino street games. The game is index.html; this file only sets up the play-tests.",
+  "scripts": {
+    "test": "node tests/play.mjs && node tests/minigames.mjs && node tests/online.mjs",
+    "test:play": "node tests/play.mjs",
+    "test:minigames": "node tests/minigames.mjs",
+    "test:online": "node tests/online.mjs"
+  },
+  "devDependencies": {
+    "playwright": "1.56.1"
+  }
+}

@@ -10,6 +10,11 @@ this repo are AI-written.
 
 | Date | Work done | Who | Evidence |
 |---|---|---|---|
+| Oct 22, 2026 | Play-test suite: screen sizes, every button, full Party and Torneo matches with score checks, bots per difficulty, save/resume, restarts, resizing, reduced motion, downloads, name input; scripted minigame players; two-device online match through a stand-in for the room service | Claude, on the team's request | `tests/`, `package.json` (this commit) |
+| Oct 22, 2026 | Polish: path arrows, items guide page, card buttons that stay in view, online lobby copy, gallery labels | Claude, on the team's request | Commit 1dd9e76 |
+| Oct 22, 2026 | Performance: sky painted once per screen size; static props, bridges and spaces cached as sprites. Board frame draw time 48 ms to 11 ms (headless phone-size test) | Claude, on the team's request | Commits d99bc1f, 439823a |
+| Oct 22, 2026 | Gameplay rework from 30-game bot simulations: board events, pass-by shopping, Gintong dice and Agimat items, pick-your-rival Jack en Poy, Mayaman bonus, seeded turn order, bots by difficulty, reach preview; Patintero tag-grace scoring and Sipa speed fixes | Claude, on the team's request | Commit 439823a |
+| Oct 22, 2026 | Fixes and new menus: landscape and narrow-phone layouts, standalone share link, honest online-unavailable message, Sipa anti-mashing, dialog keyboard handling; in-game menu with pause and sound settings; save and resume; standings on player cards | Claude, on the team's request | Commit f06a07f |
 | Oct 22, 2026 | Imported prototype version 4 into this repo, unchanged, as the starting point for version control | Claude, on the team's request | First commit of `index.html` |
 | Oct 22, 2026 | Version 4: Palosebo minigame; round and bot-skill settings; Torneo and Hamon ng Araw modes with a device score board; How to Play guide, tips and real-life rules cards; music and phone vibration; Huling Hirit, bonus crowns, rematch and a shareable result picture | Claude, on the team's request | Game prototype, version 4 (Claude artifact; private) |
 | Oct 22, 2026 | Drafted the submission pack from the official mechanics PDF | Claude drafted; team reviews and edits | Laro sa Ulap — Level Up 3.0 Submission Pack |
