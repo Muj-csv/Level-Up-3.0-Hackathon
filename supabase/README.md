@@ -39,6 +39,17 @@ are actually made.
   decision on the data/privacy side, which is a separate question from the
   realtime-rooms side F7 already uses it for.
 
+## Update (same day): `daily_scores` now has a real, if coarse, anti-cheat check
+
+Used for F9.3 (separate branch `joey/f9.3-online-hamon-scores`). The original draft
+left score validation entirely to a future Edge Function; `daily_scores` now has a
+`check` constraint with generous per-game score ceilings (2-3x what the hardest bots
+produce) instead — it rejects obviously-impossible values without needing anything
+deployed, while staying loose enough not to reject a genuinely great human score. This
+is a coarse sanity filter, not real anti-cheat: a determined player can still submit a
+plausible-looking lie within the bounds. Closing that gap for real still needs the
+Edge Function BUILD_PLAN describes.
+
 ## Files
 
 - `migrations/20261023120000_phase3_schema_draft.sql` — the 10 tables and RLS policies

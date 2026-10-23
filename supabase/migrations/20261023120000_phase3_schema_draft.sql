@@ -167,23 +167,44 @@ create policy "anyone can read daily challenges" on public.daily_challenges
 
 -- ============================================================================
 -- daily_scores: Hamon ng Araw leaderboard, nickname + score only.
--- Access rule: public read of nickname + score only. No insert policy here on
--- purpose — BUILD_PLAN calls for "a score submit endpoint that rejects
--- impossible scores," which means validation logic that belongs in an Edge
--- Function (service_role), not a client-writable RLS policy.
+-- Access rule: public read of nickname + score only; insert allowed for
+-- anyone, but bounded by the CHECK below. BUILD_PLAN calls for "a score
+-- submit endpoint that rejects impossible scores" — a server-authoritative
+-- Edge Function would be the tighter version of this, but a plain CHECK
+-- constraint catches the actual failure mode (negative/corrupted/absurd
+-- values) without needing anything deployed. The per-game ceilings are
+-- deliberately generous (2-3x what the bots in index.html's MG[kind].preroll
+-- produce at the hardest difficulty) so a great human score is never
+-- rejected — this is a coarse sanity filter, not real anti-cheat. A
+-- determined player could still submit a plausible-looking lie; closing
+-- that gap for real still needs the Edge Function BUILD_PLAN describes.
 -- ============================================================================
 create table public.daily_scores (
   id uuid primary key default gen_random_uuid (),
   day date not null references public.daily_challenges (day),
+  game_key text not null,
   child_id uuid references public.child_profiles (id) on delete set null,
   nickname_snapshot text not null,
   score integer not null,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  constraint daily_scores_score_plausible check (
+    score >= 0
+    and score <= case game_key
+      when 'tumbang' then 10     -- 5 throws, 1 can each; ~2x the real cap
+      when 'sipa' then 400       -- bot ceiling ~114; generous multiple for real play
+      when 'palosebo' then 400   -- bot ceiling ~145
+      when 'patintero' then 300  -- bot ceiling ~34; human play with the full 20s can run higher
+      when 'luksong' then 20     -- bot ceiling 8; a few levels of headroom
+      else 1000                  -- any minigame not listed above: wide but not unbounded
+    end
+  )
 );
 alter table public.daily_scores enable row level security;
 
 create policy "anyone can read daily scores" on public.daily_scores
   for select using (true);
+create policy "anyone can submit a daily score within the CHECK bounds" on public.daily_scores
+  for insert with check (true);
 
 -- ============================================================================
 -- content_items: trivia / history / outdoor-challenge content, versioned.
