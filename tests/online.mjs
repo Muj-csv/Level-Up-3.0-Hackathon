@@ -1,14 +1,20 @@
 // Online play-test: a host and a guest play a full Party match through tests/mock-room.js,
 // then the guest drops out of a rematch and the host must finish with a bot in its seat.
-// Run: node tests/online.mjs
+// Run: node tests/online.mjs            (the Claude room service, through tests/mock-room.js)
+//      node tests/online.mjs supabase   (the game's Supabase room adapter, through tests/mock-supabase.js)
 import path from 'path';
 import { chromium, serve, watchErrors, check, done, ROOT, renderer } from './lib.mjs';
 
+const SUPA = process.argv[2] === 'supabase';
+console.log('room service: ' + (SUPA ? 'Supabase adapter (mock-supabase.js)' : 'Claude room (mock-room.js)'));
 const srv = await serve();
 const browser = await chromium();
 const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
 await renderer(ctx, '2d');
-await ctx.addInitScript({ path: path.join(ROOT, 'tests/mock-room.js') });
+if (SUPA) {
+  await ctx.addInitScript(() => { window.LSU_SUPA = { url: 'https://mock.supabase.co', key: 'mock-anon-key' }; });
+  await ctx.route('**/vendor/supabase-*.js', r => r.fulfill({ path: path.join(ROOT, 'tests/mock-supabase.js'), contentType: 'text/javascript' }));
+} else await ctx.addInitScript({ path: path.join(ROOT, 'tests/mock-room.js') });
 
 const host = await ctx.newPage(); const hostErrs = watchErrors(host, 'host');
 await host.goto(srv.url + '?debug&speed=3');
@@ -44,7 +50,8 @@ async function playUntilFinal(pages, ms) {
       const st = await p.evaluate(() => {
         const L = window.__lsu, fin = L.DBG.filter(e => e.type === 'final').pop();
         if (fin) return { fin };
-        const card = document.querySelector('#card [data-primary]');
+        // cards with no primary button (Tanong ni Lola) get their first answer, as in play.mjs
+        const card = document.querySelector('#card [data-primary]') || document.querySelector('#card .row button');
         if (!document.querySelector('#modal').hidden && card) { card.click(); return {}; }
         const a = document.querySelector('#actionBtn');
         if (!a.hidden) a.click();

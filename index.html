@@ -1126,9 +1126,12 @@ function toWorld(sx,sy){if(B3.on&&B3.unproj){const w=B3.unproj(sx,sy);if(w)retur
 
 /* ================= state ================= */
 const APP={screen:'title'};
-/* online rooms ride on the Claude artifact room service; anywhere else the link points at the page itself */
-const roomAvailable=()=>!!(window.claude&&window.claude.use);
-const APPID='lsu1',SHARE_URL=roomAvailable()?'https://claude.ai/artifact/FQqtor9NZvLytPNJotsPuc':location.href.split(/[?#]/)[0];
+/* online rooms ride on the Claude artifact room service inside Claude, and on our Supabase project (F7) everywhere else.
+   SUPA holds the public project URL and anon key only, never the service_role key; window.LSU_SUPA can override it (tests) */
+const SUPA=Object.assign({url:'',key:''},window.LSU_SUPA||{});
+const inClaude=()=>!!(window.claude&&window.claude.use);
+const roomAvailable=()=>inClaude()||!!(SUPA.url&&SUPA.key);
+const APPID='lsu1',SHARE_URL=inClaude()?'https://claude.ai/artifact/FQqtor9NZvLytPNJotsPuc':location.href.split(/[?#]/)[0];
 const KCOST=10;
 const ITEMS={
   doble:{name:'Dobleng dice',tag:'x2',cost:5,desc:'Dalawang dice: 2 hanggang 20 hakbang.'},
@@ -1279,7 +1282,40 @@ function cancelLocalUI(){closeCard();actionResolver=null;actionBtn.hidden=true;i
 const NET={cfg:null,on:false,host:false,rm:null,code:'',my:null,hostPeer:null,hostSeenAt:0,gid:'',log:{},logMax:0,inp:{},peers:[],seen:new Map(),roster:[],rosterKey:'',name:'',started:'',onUpdate:null,unsub:null,gone:false,mgAt:0};
 function cleanName(s){return String(s||'').replace(/[^\p{L}\p{N} ._'-]/gu,'').replace(/\s+/g,' ').trim().slice(0,12);}
 function makeCode(){const A='ABCDEFGHJKMNPQRSTUVWXYZ23456789';let s='';for(let i=0;i<4;i++)s+=A[Math.floor(R()*A.length)];return s;}
-async function netRoom(){try{if(!window.claude||!window.claude.use)return null;return await window.claude.use('room');}catch(e){return null;}}
+async function netRoom(){try{if(inClaude())return await window.claude.use('room');if(SUPA.url&&SUPA.key)return supaRoom(await supaLoad());return null;}catch(e){return null;}}
+/* Supabase room: the same join(name) -> {peers, onPeers, presence, leave} shape as the Claude room (see tests/mock-room.js).
+   Free plan (Oct 2026): 100 messages/s and 20 presence messages/s per project; a broadcast counts once sent plus once per listener.
+   So each device broadcasts its whole presence object, at most every SUPA_GAP ms (the latest state wins), plus a heartbeat;
+   Supabase presence is only tracked once, to hear when a device's connection closes.
+   ponytail: one busy 4-phone room uses about 64 messages/s in minigames; raise SUPA_GAP or move to a paid plan for more rooms */
+const SUPA_GAP=250,SUPA_BEAT=2000,SUPA_DROP=6000,SUPA_LOST=15000;
+let supaLib=null;
+function supaLoad(){return supaLib||(supaLib=new Promise((res,rej)=>{const s=document.createElement('script');s.src='vendor/supabase-2.118.0.js';
+  s.onload=()=>window.supabase?res(window.supabase.createClient(SUPA.url,SUPA.key)):rej(new Error('nolib'));s.onerror=()=>{supaLib=null;rej(new Error('nolib'));};document.head.appendChild(s);}));}
+function supaRoom(client){return{join(name){return new Promise((resolve,reject)=>{
+  const me='p'+Math.random().toString(36).slice(2,9),peers=new Map(),ch=client.channel(name,{config:{broadcast:{self:false},presence:{key:me}}});
+  let mine={},subs=[],left=false,joined=false,lastSend=0,timer=0,beat=0,lostT=0;
+  const list=()=>[{peer:me,sameTab:true,presence:mine}].concat([...peers].map(([peer,v])=>({peer,sameTab:false,presence:v.presence})));
+  const emit=()=>{const ps=list();subs.forEach(s=>{try{s.cb({peers:ps});}catch(e){console.error(e);}});};
+  const sendNow=()=>{clearTimeout(timer);timer=0;if(left||!joined)return;lastSend=Date.now();ch.send({type:'broadcast',event:'p',payload:{id:me,presence:mine}});};
+  const send=()=>{if(timer)return;const w=lastSend+SUPA_GAP-Date.now();if(w<=0)sendNow();else timer=setTimeout(sendNow,w);};
+  ch.on('broadcast',{event:'p'},({payload:m})=>{if(!m||m.id===me)return;const had=peers.has(m.id);peers.set(m.id,{presence:m.presence||{},seen:Date.now()});if(!had)send();emit();});
+  ch.on('broadcast',{event:'bye'},({payload:m})=>{if(m&&peers.delete(m.id))emit();});
+  ch.on('presence',{event:'join'},({key})=>{if(key!==me)send();});
+  ch.on('presence',{event:'leave'},({key})=>{if(peers.delete(key))emit();});
+  /* supabase-js rejoins by itself after a network blip; the game is only told the room is gone if that takes longer than SUPA_LOST */
+  ch.subscribe((st,err)=>{
+    if(st==='SUBSCRIBED'){clearTimeout(lostT);lostT=0;ch.track({at:Date.now()});
+      if(!joined){joined=true;sendNow();beat=setInterval(()=>{if(Date.now()-lastSend>=SUPA_BEAT)sendNow();const t=Date.now();let gone=false;for(const [id,v] of peers)if(t-v.seen>SUPA_DROP){peers.delete(id);gone=true;}if(gone)emit();},500);resolve(api);}
+      else sendNow();}
+    else if(st==='CHANNEL_ERROR'||st==='TIMED_OUT'||st==='CLOSED'){if(left)return;if(!joined){reject(err||new Error(st));return;}
+      if(!lostT)lostT=setTimeout(()=>{subs.forEach(s=>{try{s.err&&s.err(err||new Error(st));}catch(e){}});},SUPA_LOST);}});
+  const api={peers:list,
+    onPeers(cb,err){const s={cb,err};subs.push(s);setTimeout(emit,0);return()=>{subs=subs.filter(x=>x!==s);};},
+    presence(patch){mine=Object.assign({},mine,patch);send();setTimeout(emit,0);return Promise.resolve();},
+    leave(){if(left)return Promise.resolve();left=true;clearInterval(beat);clearTimeout(timer);clearTimeout(lostT);
+      try{ch.send({type:'broadcast',event:'bye',payload:{id:me}});}catch(e){}return client.removeChannel(ch).then(()=>{},()=>{});}};
+});}};}
 async function netJoin(code){
   const room=await netRoom();if(!room)throw new Error('noroom');
   const rm=await room.join('lsu-'+code.toLowerCase());NET.rm=rm;NET.code=code;NET.seen=new Map();NET.peers=rm.peers()||[];
