@@ -2,11 +2,12 @@
 // then the guest drops out of a rematch and the host must finish with a bot in its seat.
 // Run: node tests/online.mjs
 import path from 'path';
-import { chromium, serve, watchErrors, check, done, ROOT } from './lib.mjs';
+import { chromium, serve, watchErrors, check, done, ROOT, renderer } from './lib.mjs';
 
 const srv = await serve();
 const browser = await chromium();
 const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+await renderer(ctx, '2d');
 await ctx.addInitScript({ path: path.join(ROOT, 'tests/mock-room.js') });
 
 const host = await ctx.newPage(); const hostErrs = watchErrors(host, 'host');

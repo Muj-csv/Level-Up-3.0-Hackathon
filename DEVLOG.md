@@ -10,8 +10,10 @@ this repo are AI-written.
 
 | Date | Work done | Who | Evidence |
 |---|---|---|---|
-| Oct 23, 2026 | Set up the `main` branch and GitHub Pages files (`.nojekyll`, README link) | Claude, on the team's request | This commit |
-| Oct 22, 2026 | Play-test suite: screen sizes, every button, full Party and Torneo matches with score checks, bots per difficulty, save/resume, restarts, resizing, reduced motion, downloads, name input; scripted minigame players; two-device online match through a stand-in for the room service | Claude, on the team's request | `tests/`, `package.json` (this commit) |
+| Oct 23, 2026 | Merged the 3D build into the overhauled game: Three.js board, kids and minigame arenas; Kasama and Tanong ni Lola spaces; Luksong Tinik; Pasaporte ng Laro and "Subukan sa labas" cards. Added: 3D reach rings and step tags, gold die in 3D, a Grapiko 3D/2D setting with 2D fallback, allies in saves, bot and roll-preview maths that count allies. Tests: 3D suite, Luksong Tinik scripted players | Claude, on the team's request | This commit; `tests/3d.mjs` |
+| By Oct 23, 2026 | 3D version of the prototype (Laro sa Ulap 3D): Three.js renderer, Kasama, Tanong ni Lola, Luksong Tinik, Pasaporte | Claude, on the team's request (team to confirm) | Game prototype, 3D copy (Claude artifact; private) |
+| Oct 23, 2026 | Set up the `main` branch and GitHub Pages files (`.nojekyll`, README link) | Claude, on the team's request | Commit 80face2 |
+| Oct 22, 2026 | Play-test suite: screen sizes, every button, full Party and Torneo matches with score checks, bots per difficulty, save/resume, restarts, resizing, reduced motion, downloads, name input; scripted minigame players; two-device online match through a stand-in for the room service | Claude, on the team's request | `tests/`, `package.json` (commit 1f3c4d9) |
 | Oct 22, 2026 | Polish: path arrows, items guide page, card buttons that stay in view, online lobby copy, gallery labels | Claude, on the team's request | Commit 1dd9e76 |
 | Oct 22, 2026 | Performance: sky painted once per screen size; static props, bridges and spaces cached as sprites. Board frame draw time 48 ms to 11 ms (headless phone-size test) | Claude, on the team's request | Commits d99bc1f, 439823a |
 | Oct 22, 2026 | Gameplay rework from 30-game bot simulations: board events, pass-by shopping, Gintong dice and Agimat items, pick-your-rival Jack en Poy, Mayaman bonus, seeded turn order, bots by difficulty, reach preview; Patintero tag-grace scoring and Sipa speed fixes | Claude, on the team's request | Commit 439823a |

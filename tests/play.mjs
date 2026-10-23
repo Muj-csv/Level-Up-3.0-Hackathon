@@ -1,7 +1,7 @@
 // Main play-test: screens and sizes, every title button, full matches in each mode with score bookkeeping
 // checks, bots per difficulty, save/resume, restarts, resizing, reduced motion, downloads, name input.
 // Run: node tests/play.mjs        (see tests/README.md)
-import { chromium, serve, watchErrors, check, done } from './lib.mjs';
+import { chromium, serve, watchErrors, check, done, renderer } from './lib.mjs';
 
 const srv = await serve();
 const browser = await chromium();
@@ -9,6 +9,7 @@ const allErrs = [];
 
 async function newPage(opts = {}, query = '?debug') {
   const ctx = await browser.newContext(Object.assign({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1, acceptDownloads: true }, opts));
+  await renderer(ctx, '2d');
   const page = await ctx.newPage();
   allErrs.push(watchErrors(page, JSON.stringify(opts.viewport || '')));
   await page.goto(srv.url + query);
@@ -25,7 +26,7 @@ async function playToEnd(page, { ms = 300000, human = true } = {}) {
       const L = window.__lsu, f = L.DBG.filter(e => e.type === 'final').pop();
       if (f) return f;
       if (L.screen !== 'game') return { notGame: L.screen };
-      if (!document.querySelector('#modal').hidden) { const b = document.querySelector('#card [data-primary]'); if (b) b.click(); return null; }
+      if (!document.querySelector('#modal').hidden) { const b = document.querySelector('#card [data-primary]') || document.querySelector('#card .row button'); if (b) b.click(); return null; }
       const a = document.querySelector('#actionBtn'); if (h && !a.hidden) a.click();
       return null;
     }, human);

@@ -1,8 +1,8 @@
 // Minigame play-test: each street game is started from Pagsasanay (practice) and played by a scripted
-// "skilled" player that reacts within one frame, plus a "masher" for Sipa and Palosebo. It checks that
+// "skilled" player that reacts within one frame, plus a "masher" for Sipa, Palosebo and Luksong Tinik. It checks that
 // every game starts, takes input, ends, records a score, and that timing beats button-mashing.
 // Run: node tests/minigames.mjs
-import { chromium, serve, watchErrors, check, done } from './lib.mjs';
+import { chromium, serve, watchErrors, check, done, renderer } from './lib.mjs';
 
 const srv = await serve();
 const browser = await chromium();
@@ -26,11 +26,15 @@ const PLAYERS = {
       if (dist > 42 || open || r.inv > 0) k[fwd] = true;
       if (dist < 90) k[st.side > 0 ? 'ArrowRight' : 'ArrowLeft'] = true; }
     for (const c in k) sc.key({ code: c, preventDefault() {} }, k[c]); }`,
+  // luksong tinik: jump as soon as the feet are in the yellow take-off zone; the masher jumps whenever
+  luksong: `sc => { const L = sc.peek()[0]; if (L.cd <= .6 && L.st === 'run' && L.inZone) sc.action(); }`,
+  luksongMash: `sc => { if (Math.random() < 0.35) sc.action(); }`,
   patinteroStraight: `sc => { const v = sc.peek(); const up = v.run.dir < 0; sc.key({ code: 'ArrowUp', preventDefault() {} }, up); sc.key({ code: 'ArrowDown', preventDefault() {} }, !up); }`
 };
 
 async function practice(kind, player) {
   const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+  await renderer(page, '2d');
   const errs = watchErrors(page, kind);
   await page.goto(srv.url + '?debug');
   await page.waitForTimeout(1200);
@@ -58,7 +62,7 @@ async function practice(kind, player) {
 
 const results = {};
 const only = process.argv[2];
-for (const [kind, player] of [['tumbang', 'tumbang'], ['sipa', 'sipa'], ['sipa', 'sipaMash'], ['palosebo', 'palosebo'], ['palosebo', 'paloseboMash'], ['patintero', 'patintero'], ['patintero', 'patinteroStraight']].filter(([k]) => !only || k === only)) {
+for (const [kind, player] of [['tumbang', 'tumbang'], ['sipa', 'sipa'], ['sipa', 'sipaMash'], ['palosebo', 'palosebo'], ['palosebo', 'paloseboMash'], ['patintero', 'patintero'], ['patintero', 'patinteroStraight'], ['luksong', 'luksong'], ['luksong', 'luksongMash']].filter(([k]) => !only || k === only)) {
   const r = await practice(kind, player);
   results[player] = r.score;
   check(r.score >= 0 && r.back === 'title', `${player}: starts, takes input, ends and returns to the menu`, 'score ' + r.score);
@@ -70,5 +74,7 @@ if (!only || only === 'palosebo') check(results.palosebo >= 100, 'Palosebo: stea
 if (!only || only === 'palosebo') check(results.palosebo > results.paloseboMash, 'Palosebo: rhythm beats mashing', results.palosebo + ' vs ' + results.paloseboMash);
 if (!only || only === 'patintero') check(results.patintero > 0, 'Patintero: a dodging runner scores past the guards', results.patintero);
 if (!only || only === 'patintero') check(results.patintero > results.patinteroStraight, 'Patintero: dodging beats running straight into the guards', results.patintero + ' vs ' + results.patinteroStraight);
+if (!only || only === 'luksong') check(results.luksong >= 6, 'Luksong Tinik: jumping from the zone clears most heights', results.luksong + '/8');
+if (!only || only === 'luksong') check(results.luksong > results.luksongMash, 'Luksong Tinik: timing beats mashing', results.luksong + ' vs ' + results.luksongMash);
 console.log('scores', JSON.stringify(results));
 await browser.close(); srv.close(); done();

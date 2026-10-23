@@ -8,7 +8,11 @@ themes: **Philippine Games and Sports**, and **Board Games / Brain Games**.
 
 Four barrio kids race across four floating islands (Plaza, Palengke, Aplaya, Bukid),
 collect piso, buy korona (crowns), and play a street-game minigame after every round:
-Tumbang Preso, Patintero, Sipa and Palosebo.
+Tumbang Preso, Patintero, Sipa, Palosebo and Luksong Tinik.
+
+The game is now **3D**: the board, the kids and every minigame arena are drawn with
+Three.js. When WebGL or Three.js is not available, it falls back to the original 2D
+canvas board, and players can pick 2D in the menu (see Controls and settings).
 
 ## Play it
 
@@ -26,9 +30,10 @@ The whole game is one file, `index.html`. There is no build step and nothing to 
   Deploy from a branch → `main` / root). `.nojekyll` makes Pages serve the files as-is.
 - **itch.io:** zip `index.html` and mark it "This file will be played in the browser".
 
-The game loads two things from the internet: Google Fonts (Bagel Fat One, Nunito) and the
-`qrcode-generator` library from jsDelivr. Without a connection it still runs with fallback
-fonts and no QR image (the room code still shows).
+The game loads three things from the internet: Google Fonts (Bagel Fat One, Nunito), and
+the `qrcode-generator` and `three` (r149) libraries from jsDelivr. Without a connection it
+still runs: fallback fonts, no QR image (the room code still shows), and the 2D board
+instead of the 3D one.
 
 ## Modes
 
@@ -51,13 +56,18 @@ reserve when shopping, and pick their Jack en Poy rivals (Mahirap goes after the
   many steps away it is. Pass a korona with 10 piso to buy it; it then moves.
 - **Spaces:** Piso +3, Utang −3, Swerte (bonus piso or a free item), Tikbalang (back 3),
   Sari-sari (shop; you may also shop when you walk past with empty hands), Jack en Poy
-  (pick any rival, winner takes up to 5 piso).
+  (pick any rival, winner takes up to 5 piso), **Kasama** (a friend joins you and adds 1 or
+  2 steps to every roll; up to 2), **Tanong ni Lola** (a question about Filipino games,
+  +5 piso if right).
 - **Items** (carry one): Dobleng dice 5 (two dice), Kendi 3 (+3 steps), Gintong dice 8
   (pick your number), Agimat 4 (blocks the next Utang, Tikbalang or Jack en Poy loss).
 - **Minigames:** +10 / +5 / +3 piso for 1st / 2nd / 3rd. Last round (**Huling Hirit**):
   double prizes and help for the player in last place.
 - **Bonus korona at the end:** Hari ng Laro (most minigame wins), Mayaman (most piso),
   Malas sa Dice (lowest average roll).
+- **Pasaporte ng Laro** (title screen): a stamp for each street game played in the app,
+  and a gold stamp when you tick that you played it for real outside. Each result card
+  says how to play the game outside ("Subukan sa labas"). Kept on the device.
 
 ## Controls and settings
 
@@ -66,10 +76,17 @@ reserve when shopping, and pick their Jack en Poy rivals (Mahirap goes after the
 - Keyboard: Space or Enter to act, M for the map, Esc for the menu, arrows/WASD in
   Patintero. Tab moves between buttons; dialogs keep focus inside and close with Esc.
 - The **menu** (pause button) pauses local games and holds Musika, Tunog and Vibrate
-  switches (kept on the device), How to Play, and Umalis sa laro.
+  switches, **Grapiko 3D / 2D** (kept on the device), How to Play, and Umalis sa laro.
+  Pick 2D on slow phones; the 3D option only shows when the device can draw 3D.
 - Local games save at the start of every turn. If the page closes, **Ituloy ang laro**
   on the title screen picks up where you were.
 - Reduced-motion settings are respected (no screen shake, sway or long wipes).
+
+### Known limitation: 3D on real phones
+
+The 3D board has been tested in headless Chromium with software WebGL (SwiftShader), not
+yet on real phones. Before the event, try it on the slowest phone the team expects; if it
+stutters, switch **Grapiko** to 2D in the menu.
 
 ### Known limitation: online rooms
 
@@ -86,7 +103,8 @@ object with the same `join / peers / onPeers / presence / leave` shape
 
 `npm install && npx playwright install chromium && npm test` plays the game in headless
 Chromium: screen sizes, every button, full matches with score bookkeeping checks, bots per
-difficulty, save/resume, minigames against scripted players, and a two-device online match.
+difficulty, save/resume, minigames against scripted players, a two-device online match,
+and the 3D board and minigame arenas (software WebGL).
 Details in [`tests/README.md`](tests/README.md).
 
 ## Credits and licences
@@ -95,10 +113,12 @@ Details in [`tests/README.md`](tests/README.md).
 |---|---|---|
 | Bagel Fat One, Nunito (Google Fonts) | Title and UI type | SIL Open Font License 1.1 |
 | qrcode-generator 1.4.4 by Kazuhiko Arase (jsDelivr) | Draws the room QR code | MIT |
+| three.js r149 (0.149.0) by the three.js authors (jsDelivr) | Draws the 3D board, kids and minigame arenas | MIT |
 | Playwright (development only, not part of the game) | Automated play-tests | Apache-2.0 |
 
-All art is drawn in code on an HTML canvas. All music and sound effects are synthesized in
-code with the Web Audio API. No outside images, audio or game code are used.
+All art is drawn in code: 2D on an HTML canvas, 3D as Three.js shapes built in code (no
+model files). All music and sound effects are synthesized in code with the Web Audio API.
+No outside images, 3D models, audio or game code are used.
 
 ## AI use
 
