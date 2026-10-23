@@ -1,4 +1,4 @@
-# Only the game is deployed: index.html and vendor/. Tests and docs stay in the repo.
+# Only the game is deployed: index.html, vendor/ and content/. Tests and docs stay in the repo.
 tests
 test-results
 node_modules
