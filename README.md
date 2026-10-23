@@ -1,6 +1,9 @@
-# Laro sa Ulap
+# Taympers
 
 *Ang mga laro sa kalye, nasa ulap na.*
+
+"Taym pers!" is what kids shout to pause a game on the street. In Taympers, the street
+games themselves are the game.
 
 A party board game for 1 to 4 players built on Filipino street games, made for the
 **Level Up 3.0 Esports Game Dev Challenge** (Student Category). It covers two official
@@ -16,10 +19,11 @@ canvas board, and players can pick 2D in the menu (see Controls and settings).
 
 ## Play it
 
-The whole game is one file, `index.html`. There is no build step and nothing to install.
+The game is `index.html` plus two libraries in `vendor/` (Three.js and a QR code
+generator). There is no build step and nothing to install.
 
 - **Online:** https://muj-csv.github.io/Level-Up-3.0-Hackathon/ (GitHub Pages, built from
-  the `main` branch).
+  the `main` branch), or the team's Vercel address once it is set up (below).
 - **Quickest:** open `index.html` in a phone or computer browser.
 - **Local server** (needed on some browsers for clipboard and sharing):
   ```bash
@@ -28,12 +32,25 @@ The whole game is one file, `index.html`. There is no build step and nothing to 
   ```
 - **GitHub Pages:** every push to `main` republishes the site (Settings → Pages →
   Deploy from a branch → `main` / root). `.nojekyll` makes Pages serve the files as-is.
-- **itch.io:** zip `index.html` and mark it "This file will be played in the browser".
+- **itch.io:** zip `index.html` with the `vendor/` folder and mark it "This file will be
+  played in the browser".
 
-The game loads three things from the internet: Google Fonts (Bagel Fat One, Nunito), and
-the `qrcode-generator` and `three` (r149) libraries from jsDelivr. Without a connection it
-still runs: fallback fonts, no QR image (the room code still shows), and the 2D board
-instead of the 3D one.
+The only thing loaded from the internet is Google Fonts (Bagel Fat One, Nunito). Without
+a connection the game uses fallback fonts.
+
+### Deploy on Vercel
+
+The repo is ready to import as is:
+
+1. On vercel.com, **Add New → Project**, and import `Muj-csv/Level-Up-3.0-Hackathon`.
+2. Leave every setting as Vercel shows it (`vercel.json` sets them: no framework, no
+   install, no build, output is the repo root) and press **Deploy**.
+3. Every push to `main` then redeploys; pushes to other branches get preview links.
+
+What gets deployed: only `index.html` and `vendor/` (`.vercelignore` leaves out the
+tests, docs and `package.json`, so Vercel never installs the test tools). `vercel.json`
+caches `vendor/` for a year (the version is in each file name) and adds basic security
+headers. The settings were checked with `vercel build` (Vercel CLI 65).
 
 ## Modes
 
@@ -92,9 +109,9 @@ stutters, switch **Grapiko** to 2D in the menu.
 
 Online rooms use the room service of the Claude artifact the prototype was built in
 (`window.claude.use('room')`). They work only when the game is opened as that Claude
-artifact by signed-in, invited users. On any other host (GitHub Pages, itch.io, a local
-file), **Maglaro online** says that online play is unavailable here and offers a game on
-one device instead. Moving rooms to a free service the team controls (for example
+artifact by signed-in, invited users. On any other host (Vercel, GitHub Pages, itch.io, a
+local file), **Maglaro online** says that online play is unavailable here and offers a
+game on one device instead. Moving rooms to a free service the team controls (for example
 Supabase Realtime or PeerJS) is on the to-do list before finals; the game only needs an
 object with the same `join / peers / onPeers / presence / leave` shape
 (see `tests/mock-room.js`).
@@ -112,13 +129,26 @@ Details in [`tests/README.md`](tests/README.md).
 | Item | Use | Licence |
 |---|---|---|
 | Bagel Fat One, Nunito (Google Fonts) | Title and UI type | SIL Open Font License 1.1 |
-| qrcode-generator 1.4.4 by Kazuhiko Arase (jsDelivr) | Draws the room QR code | MIT |
-| three.js r149 (0.149.0) by the three.js authors (jsDelivr) | Draws the 3D board, kids and minigame arenas | MIT |
+| qrcode-generator 1.4.4 by Kazuhiko Arase (`vendor/`) | Draws the room QR code | MIT |
+| three.js r149 (0.149.0) by the three.js authors (`vendor/`) | Draws the 3D board, kids and minigame arenas | MIT |
 | Playwright (development only, not part of the game) | Automated play-tests | Apache-2.0 |
 
 All art is drawn in code: 2D on an HTML canvas, 3D as Three.js shapes built in code (no
 model files). All music and sound effects are synthesized in code with the Web Audio API.
 No outside images, 3D models, audio or game code are used.
+
+## Team
+
+| Name | Role |
+|---|---|
+| Ian Patrick A. Flores | Team lead |
+| Mary Princess Angel L. Dizon | To be assigned |
+| Joey T. Cuison | To be assigned |
+| Mark Jemiel P. Guevarra | To be assigned |
+| Jace Matthew M. Catriz | To be assigned |
+
+The plan for growing the game past the contest prototype is in
+[`docs/BUILD_PLAN.md`](docs/BUILD_PLAN.md).
 
 ## AI use
 

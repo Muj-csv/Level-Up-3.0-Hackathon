@@ -18,10 +18,9 @@ npm test
 
 ## 2D and 3D
 
-The game loads Three.js from jsDelivr. The tests never use the network for it:
-`play.mjs`, `minigames.mjs` and `online.mjs` block it, so they always test the 2D board
-(the game logic is the same in both); `3d.mjs` serves `node_modules/three` instead
-(installed by `npm install`). Chromium is started with SwiftShader so WebGL works without
+The game loads its bundled Three.js from `vendor/`. `play.mjs`, `minigames.mjs` and
+`online.mjs` block that file, so they always test the 2D board (the game logic is the
+same in both); `3d.mjs` lets it load. Chromium is started with SwiftShader so WebGL works without
 a GPU; software WebGL is slow, so `3d.mjs` takes a few minutes and its frame times say
 nothing about real phones.
 

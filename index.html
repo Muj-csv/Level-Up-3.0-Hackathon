@@ -3,8 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Laro sa Ulap</title>
-<meta name="description" content="Laro sa Ulap: isang party board game ng mga larong kalye ng Pilipinas para sa 1 hanggang 4 na manlalaro.">
+<title>Taympers</title>
+<meta name="description" content="Taympers: isang party board game ng mga larong kalye ng Pilipinas para sa 1 hanggang 4 na manlalaro.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Taympers">
+<meta property="og:description" content="Board party ng larong kalye: Tumbang Preso, Patintero, Sipa, Palosebo at Luksong Tinik sa mga islang lumulutang sa ulap.">
 <meta name="theme-color" content="#9DD6DF">
 <meta name="claude:viewport-fit-sides" content="cover">
 <style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
@@ -288,7 +291,7 @@ body{background:var(--sky);color:var(--ink);font-family:var(--body);overflow:hid
     <div class="titlebox">
       <div class="brand">
         <canvas id="kidsCv" aria-hidden="true"></canvas>
-        <h1 class="logo">Laro sa <span>Ulap</span></h1>
+        <h1 class="logo">Taym<span>pers</span></h1>
         <p class="tagline">Board party ng larong kalye</p>
       </div>
       <div class="menu">
@@ -311,8 +314,8 @@ body{background:var(--sky);color:var(--ink);font-family:var(--body);overflow:hid
   <div class="modal top" id="menu" hidden><div class="card" id="menuCard" role="dialog" aria-modal="true" aria-labelledby="menuTitle"></div></div>
   <div class="sr" id="sr" aria-live="polite"></div>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js"></script>
+<script src="vendor/qrcode-1.4.4.js"></script>
+<script src="vendor/three-r149.min.js"></script>
 <script>
 (function(){
 'use strict';
@@ -627,7 +630,7 @@ function buildSheet(){
   CHARS.forEach((ch,ci)=>ANIMS.forEach((an,ri)=>{for(let i=0;i<an.n;i++){const ox=(ci*cols+i)*CELL,oy=ri*CELL;g.save();g.beginPath();g.rect(ox,oy,CELL,CELL);g.clip();drawKid(g,ch,ox+CELL/2,oy+CELL-8,Object.assign({scale:CELLS,direct:true},an.f(i)));g.restore();}}));
   return c;
 }
-function sheetMeta(){return{image:'laro-sa-ulap-sprites.png',frameWidth:CELL,frameHeight:CELL,columnsPerCharacter:6,characters:CHARS.map((c,i)=>({name:c.name,columnOffset:i*6})),animations:ANIMS.map((a,i)=>({name:a.id,row:i,frames:a.n,fps:a.fps})),anchor:{x:CELL/2,y:CELL-8,note:'feet'}};}
+function sheetMeta(){return{image:'taympers-sprites.png',frameWidth:CELL,frameHeight:CELL,columnsPerCharacter:6,characters:CHARS.map((c,i)=>({name:c.name,columnOffset:i*6})),animations:ANIMS.map((a,i)=>({name:a.id,row:i,frames:a.n,fps:a.fps})),anchor:{x:CELL/2,y:CELL-8,note:'feet'}};}
 
 /* ================= world geometry ================= */
 const ISL=[
@@ -1451,7 +1454,7 @@ async function shop(p,passing){
     if(p.ctrl==='local')await wait(600);else await say('Bumili si '+p.name+' ng '+ITEMS[v].name.toLowerCase(),'#7FE3D9',1100);}
   else if(p.ctrl!=='local'&&!passing)await say('Walang binili si '+p.name,'#fff',900);
 }
-const KASAMA=[{n:'Lito',look:0},{n:'Mayumi',look:1},{n:'Bebot',look:2},{n:'Tisoy',look:3}];
+const KASAMA=[{n:'Lito',look:0},{n:'Mayumi',look:1},{n:'Boyet',look:2},{n:'Dodong',look:3}];
 async function kasama(p){
   await say('Kasama!','#C9F2B4',900);
   if(p.allies.length>=2){await say('Puno na ang barkada'+(isYou(p)?' mo':' ni '+p.name),'#fff',1000);await gain(p,3);return;}
@@ -1965,7 +1968,7 @@ function buildResultImage(P,head){
   const gr=g.createLinearGradient(0,0,0,h);gr.addColorStop(0,'#86CBDD');gr.addColorStop(.6,'#BCE4DC');gr.addColorStop(1,'#F7DDB0');g.fillStyle=gr;g.fillRect(0,0,w,h);
   try{[[160,300,1.7,0],[900,250,1.4,1],[960,760,1.9,2],[110,820,1.5,1]].forEach(([x,y,k,i])=>{const spr=CLOUD_SPR[i%CLOUD_SPR.length];g.globalAlpha=.8;g.drawImage(spr.c,x-spr.w*k/2,y-spr.h*k/2,spr.w*k,spr.h*k);});}catch(e){}g.globalAlpha=1;
   for(let x=-40;x<w+40;x+=28){g.beginPath();g.moveTo(x,0);g.lineTo(x+14,0);g.lineTo(x+40,26);g.lineTo(x+26,26);g.closePath();g.fillStyle=(x/28|0)%2?'#E2452E':'#F2B21B';g.fill();}g.fillStyle=INK;g.fillRect(0,26,w,5);
-  otext(g,'Laro sa Ulap',w/2,118,92,PAPER,20);
+  otext(g,'Taympers',w/2,118,92,PAPER,20);
   g.font='900 38px '+BODY;g.textAlign='center';g.fillStyle=INK;g.fillText(head,w/2,206);
   const s=ARENA.spr,k=1.2;g.drawImage(s.c,w/2-s.ox*k,690-s.oy*k,s.w*k,s.h*k);
   const pod=[{r:1,x:w/2-250,ph:110,col:'#C9D1D9'},{r:0,x:w/2,ph:180,col:'#FFC93C'},{r:2,x:w/2+250,ph:70,col:'#D9A06F'}],base=760;
@@ -1983,7 +1986,7 @@ function buildResultImage(P,head){
 function saveCanvas(c,fn,msg){c.toBlob(b=>{if(!b){toast('Hindi ma-save','#FF8A7A',1400);return;}
   if(DL){DL.save({filename:fn,data:b}).then(()=>toast(msg,'#BDE7A6',1400)).catch(()=>toast('Hindi na-save','#FF8A7A',1400));return;}
   try{const u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=fn;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);toast(msg,'#BDE7A6',1400);}catch(e){toast('Hindi ma-save','#FF8A7A',1400);}},'image/png');}
-function saveResultImage(P,head){saveCanvas(buildResultImage(P,head),'laro-sa-ulap-resulta.png','Na-save ang larawan');}
+function saveResultImage(P,head){saveCanvas(buildResultImage(P,head),'taympers-resulta.png','Na-save ang larawan');}
 
 async function finale(){
   clearSave();const tok=gameToken;state.active=null;state.overview=true;state.round=maxR();state.ended=true;updateStatus('Tapos na');mapBtn.setAttribute('aria-pressed','true');
@@ -2252,7 +2255,7 @@ function showGallery(){setScreen('gallery');const box=$('#animChips');box.innerH
   box.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{galSel=+b.dataset.i;box.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));}));
   setTimeout(()=>{try{$('#galBack').focus({preventScroll:true});}catch(e){}},50);}
 $('#galBack').addEventListener('click',()=>toTitle());
-$('#galDl').addEventListener('click',()=>{Sfx.init();saveCanvas(buildSheet(),'laro-sa-ulap-sprites.png','Na-save ang sprite sheet');});
+$('#galDl').addEventListener('click',()=>{Sfx.init();saveCanvas(buildSheet(),'taympers-sprites.png','Na-save ang sprite sheet');});
 $('#mLocal').addEventListener('click',()=>{Sfx.init();localFlow();});
 $('#mOnline').addEventListener('click',()=>{Sfx.init();onlineFlow();});
 $('#mSprites').addEventListener('click',()=>{Sfx.init();showGallery();});

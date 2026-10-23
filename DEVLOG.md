@@ -8,9 +8,13 @@ date, what changed, who did it, and the evidence (a commit, a link, a file).
 "Claude, on the team's request" (AI-written). Commits authored by `Claude` in
 this repo are AI-written.
 
+The game was called *Laro sa Ulap* until Oct 23, 2026. Older rows keep that name
+where it is the title of a file or artifact.
+
 | Date | Work done | Who | Evidence |
 |---|---|---|---|
-| Oct 23, 2026 | Merged the 3D build into the overhauled game: Three.js board, kids and minigame arenas; Kasama and Tanong ni Lola spaces; Luksong Tinik; Pasaporte ng Laro and "Subukan sa labas" cards. Added: 3D reach rings and step tags, gold die in 3D, a Grapiko 3D/2D setting with 2D fallback, allies in saves, bot and roll-preview maths that count allies. Tests: 3D suite, Luksong Tinik scripted players | Claude, on the team's request | This commit; `tests/3d.mjs` |
+| Oct 23, 2026 | Renamed the game to Taympers; renamed two Kasama friends (Boyet, Dodong); Three.js and the QR library now ship in `vendor/` instead of loading from a CDN; Vercel setup (`vercel.json`, `.vercelignore`, checked with `vercel build`); build plan added as `docs/BUILD_PLAN.md`, brought up to date with the game; team list in the README | Claude, on the team's request | This commit |
+| Oct 23, 2026 | Merged the 3D build into the overhauled game: Three.js board, kids and minigame arenas; Kasama and Tanong ni Lola spaces; Luksong Tinik; Pasaporte ng Laro and "Subukan sa labas" cards. Added: 3D reach rings and step tags, gold die in 3D, a Grapiko 3D/2D setting with 2D fallback, allies in saves, bot and roll-preview maths that count allies. Tests: 3D suite, Luksong Tinik scripted players | Claude, on the team's request | Commit 1899ff0; `tests/3d.mjs` |
 | By Oct 23, 2026 | 3D version of the prototype (Laro sa Ulap 3D): Three.js renderer, Kasama, Tanong ni Lola, Luksong Tinik, Pasaporte | Claude, on the team's request (team to confirm) | Game prototype, 3D copy (Claude artifact; private) |
 | Oct 23, 2026 | Set up the `main` branch and GitHub Pages files (`.nojekyll`, README link) | Claude, on the team's request | Commit 80face2 |
 | Oct 22, 2026 | Play-test suite: screen sizes, every button, full Party and Torneo matches with score checks, bots per difficulty, save/resume, restarts, resizing, reduced motion, downloads, name input; scripted minigame players; two-device online match through a stand-in for the room service | Claude, on the team's request | `tests/`, `package.json` (commit 1f3c4d9) |
@@ -24,5 +28,5 @@ this repo are AI-written.
 | Oct 22, 2026 | Texture pass on islands, buildings, sky and characters; sprite sheet re-exported | Claude, on the team's request | Game prototype, version 3; laro-sa-ulap-sprites.png and .json |
 | Oct 22, 2026 | Version 2: online rooms by QR or room code, shared-phone mode, sprite gallery and sheet, motion polish | Claude, built to the team's choices of web, shared phone plus online, and cartoon style | Game prototype, version 2 |
 | Oct 22, 2026 | Version 1: floating-island board, Tumbang Preso, Patintero, Sipa, bots | Claude, from the team's brief | Game prototype, version 1 |
-| Oct 22, 2026 | Research on party board game structure and the reference games | Claude | Larong Pinoy Party Game research doc (Claude artifact; private) |
-| Oct 22, 2026 | Concept: party board game with larong kalye minigames on a floating-island, top-down board | Team (team leader) | Prompts in the Claude chat |
+| Oct 22, 2026 | Research on party board game structure | Claude | Larong Pinoy Party Game research doc (Claude artifact; private) |
+| Oct 22, 2026 | Concept: party board game with larong kalye minigames on a floating-island, top-down board | Ian Patrick A. Flores (team lead) | Prompts in the Claude chat |

@@ -1,7 +1,7 @@
 // 3D play-test: the board and minigames drawn with Three.js (WebGL through SwiftShader, so no GPU is needed).
 // Checks the 3D title and board, reach rings, screen-to-board mapping, the 3D/2D setting, save and resume
 // with Kasama allies, every minigame's 3D arena, and the 2D fallback when Three.js cannot load.
-// Screenshots go to test-results/3d-*.png. Run: npm install && node tests/3d.mjs
+// Screenshots go to test-results/3d-*.png. Run: node tests/3d.mjs
 import fs from 'fs';
 import path from 'path';
 import { chromium, serve, watchErrors, check, done, renderer, ROOT } from './lib.mjs';
@@ -44,6 +44,9 @@ const step = page => page.evaluate(() => {
       return { min: rc.min, max: rc.max, rings: L.b3.reach.filter(m => m.visible).length }; });
     if (!reach) { const m = await page.evaluate(() => !document.querySelector('#modal').hidden); if (m) await step(page); await page.waitForTimeout(150); }
   }
+  // the rings are placed by the next 3D frame, so give the renderer a moment before counting them
+  if (reach) reach = await page.waitForFunction(() => { const L = window.__lsu, rc = L.state.reach, n = L.b3.reach.filter(m => m.visible).length;
+    return rc && n ? { min: rc.min, max: rc.max, rings: n } : null; }, null, { timeout: 5000 }).then(h => h.jsonValue(), () => reach);
   check(reach && reach.rings === reach.max - reach.min + 1, '3D board: every space the roll can reach has a ring', JSON.stringify(reach));
   await page.waitForTimeout(400); await shot(page, 'board-reach');
 

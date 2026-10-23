@@ -68,7 +68,7 @@ for (const [label, w, h] of [['phone 360x740', 360, 740], ['phone landscape 740x
   await page.click('#animChips button:nth-child(5)');
   check(await page.getAttribute('#animChips button:nth-child(5)', 'aria-pressed') === 'true', 'gallery animation chips select');
   const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 10000 }), page.click('#galDl')]);
-  check(dl.suggestedFilename() === 'laro-sa-ulap-sprites.png', 'sprite sheet downloads outside Claude', dl.suggestedFilename());
+  check(dl.suggestedFilename() === 'taympers-sprites.png', 'sprite sheet downloads outside Claude', dl.suggestedFilename());
   await page.click('#galBack');
   const before = await page.getAttribute('#soundBtn', 'aria-pressed');
   await page.click('#soundBtn');
@@ -98,7 +98,7 @@ for (const [label, w, h] of [['phone 360x740', 360, 740], ['phone landscape 740x
     check(log.filter(e => e.type === 'mg').length === 3, 'one minigame per round');
     check(!(await page.evaluate(() => localStorage.getItem('lsu-save'))), 'finished game clears its save');
     const [img] = await Promise.all([page.waitForEvent('download', { timeout: 10000 }), page.click('#saveRes')]);
-    check(img.suggestedFilename() === 'laro-sa-ulap-resulta.png', 'result picture downloads');
+    check(img.suggestedFilename() === 'taympers-resulta.png', 'result picture downloads');
   }
   await page.context().close();
 }

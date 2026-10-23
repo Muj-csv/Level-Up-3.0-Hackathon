@@ -19,12 +19,10 @@ export async function chromium() {
   return (pw.chromium || pw.default.chromium).launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 }
 
-// The game loads Three.js from jsDelivr. Each suite picks the renderer it tests: '3d' serves Three.js from
-// node_modules (npm install), '2d' blocks it so the game falls back to the 2D canvas, as it does without WebGL.
-export const THREE_FILE = path.join(ROOT, 'node_modules', 'three', 'build', 'three.min.js');
+// Each suite picks the renderer it tests: '3d' lets the game load its bundled Three.js (vendor/), '2d' blocks
+// it so the game falls back to the 2D canvas, as it does on a device without WebGL.
 export async function renderer(target, mode) {
-  if (mode === '3d' && !fs.existsSync(THREE_FILE)) throw new Error('three.js not found at ' + THREE_FILE + '. Run "npm install" in the repo.');
-  await target.route('**/npm/three@*/build/three.min.js', r => mode === '3d' ? r.fulfill({ path: THREE_FILE, contentType: 'text/javascript' }) : r.abort());
+  await target.route('**/vendor/three-*.min.js', r => mode === '3d' ? r.continue() : r.abort());
 }
 
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.mjs': 'text/javascript', '.json': 'application/json', '.png': 'image/png', '.md': 'text/plain; charset=utf-8' };
@@ -40,7 +38,7 @@ export function serve() {
   });
 }
 
-// Watch a page for script errors; the CDN font/QR/Three.js requests may fail offline, which is not a game error.
+// Watch a page for script errors; the Google Fonts request may fail offline, and a blocked Three.js is on purpose.
 export function watchErrors(page, tag) {
   const errs = [];
   page.on('pageerror', e => errs.push(`${tag} pageerror: ${e.message}`));
