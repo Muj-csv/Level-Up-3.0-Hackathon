@@ -3,7 +3,8 @@
 //   A. the guest drops out for 8 s: no bot takes over, the guest keeps its seat;
 //   B. the guest drops out while the host waits on it, for longer than the grace: a bot takes the seat,
 //      and the guest gets it back at the next turn or minigame after it returns;
-//   C. the host drops out for 8 s: the guest keeps waiting instead of ending the game.
+//   C. the host drops out for 8 s: the guest keeps waiting instead of ending the game;
+//   E. the guest's page reloads: it comes back into the same game; F. the same for the host.
 // Both devices must still agree on every korona and piso at the end. Run: node tests/rejoin.mjs
 import path from 'path';
 import { chromium, serve, watchErrors, check, done, ROOT, renderer } from './lib.mjs';
@@ -84,6 +85,18 @@ await offline(host, true); await host.waitForTimeout(8000); await offline(host, 
 await host.waitForTimeout(3000);
 const gs = await guest.evaluate(() => ({ screen: window.__lsu.screen, card: document.querySelector('#modal').hidden ? '' : document.querySelector('#card').textContent.slice(0, 40) }));
 check(gs.screen === 'game' && !/Natapos ang laro/.test(gs.card), 'C. host drops out for 8 s: the guest keeps the game going', JSON.stringify(gs));
+
+// E. the guest's page reloads mid-game: it rejoins from the host's turn checkpoint, still a player
+await guest.reload();
+const backE = await until(guest, () => window.__lsu.screen === 'game' && window.__lsu.state.players[1].ctrl === 'local', 30000);
+check(backE, 'E. guest page reloads: it comes back into the same game as a player', JSON.stringify(await seat(guest)));
+
+// F. the host's page reloads mid-game: it comes back from its own checkpoint and log, and the guest carries on with it
+await host.waitForTimeout(5000);
+await host.reload();
+const backF = await until(host, () => window.__lsu.screen === 'game' && window.__lsu.state.players[0].ctrl === 'local', 30000);
+const gF = await guest.evaluate(() => ({ screen: window.__lsu.screen, card: document.querySelector('#modal').hidden ? '' : document.querySelector('#card').textContent.slice(0, 40) }));
+check(backF && gF.screen === 'game' && !/Natapos ang laro/.test(gF.card), 'F. host page reloads: it comes back and the guest carries on', JSON.stringify(gF));
 
 // D. play to the end
 const t0 = Date.now();
