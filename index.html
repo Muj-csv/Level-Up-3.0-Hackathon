@@ -1787,6 +1787,19 @@ const MG={
     real:'Dalawang manlalaro ang nakaupo sa lupa at pinagpapatong ang kanilang mga paa, tapos ang mga kamay, para tumaas ang tinik. Lumulukso ang iba nang hindi sumasagi. Kapag may sumabit, siya ang papalit sa nakaupo.'}
 };
 const MG_KEYS=Object.keys(MG);
+/* F9.1: trivia, real-street rules and Subukan sa labas text live in content/fil.json so
+   writers edit that file, not this one. The arrays above stay as a built-in fallback if
+   the fetch fails (offline first load, file:// preview, etc.); whichever resolves first wins. */
+(async function loadContent(){
+  try{
+    const res=await fetch('content/fil.json');
+    if(!res.ok)return;
+    const c=await res.json();
+    if(Array.isArray(c.trivia)&&c.trivia.length){TANONG.length=0;c.trivia.forEach(t=>TANONG.push({q:t.q,a:t.a,f:t.f}));}
+    if(c.minigames)for(const k in c.minigames)if(MG[k])Object.assign(MG[k],c.minigames[k]);
+    if(Array.isArray(c.soon)&&c.soon.length){SOON.length=0;c.soon.forEach(s=>SOON.push(s));}
+  }catch(e){console.warn('content/fil.json not loaded, using built-in fallback text',e);}
+})();
 function mgCtrl(kind){const L=locals();if(kind==='patintero')return L.length>1&&!NET.on?'Isa-isang tatakbo ang mga tao. I-drag ang daliri o arrow keys / WASD.':'I-drag ang daliri kahit saan, o arrow keys / WASD.';
   if(L.length>1)return'Bawat tao: i-tap ang sariling hanay, o pindutin ang '+L.map(p=>'['+keyLabel(p)+'] '+p.name).join(', ')+'.';return kind==='sipa'?'Tap, Space, o ang Sipa! na button.':(kind==='palosebo'?'Tap, Space, o ang Akyat! na button.':kind==='luksong'?'Tap, Space, o ang Talon! na button.':'Tap, Space, o ang Tira! na button.');}
 /* the minigame order for a whole game, fixed by the seed (same on every device), no game twice in a row */
