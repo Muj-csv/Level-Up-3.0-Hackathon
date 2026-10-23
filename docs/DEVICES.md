@@ -36,11 +36,15 @@ are close.
 
 ## Weekly test log (F10.5)
 
-One row per device per week. fps columns: board / a representative minigame.
+One row per device per week. fps columns: board / a representative minigame. Until the
+real devices above have specs filled in, the "headless proxy" rows below stand in —
+they catch bundle-size and load-time regressions early, but they are not a substitute
+for a real fps reading on the actual demo devices. See `docs/F10_PERFORMANCE.md` for
+the full method and findings behind each headless row.
 
 | Date | Device | Build (commit or Vercel URL) | fps (board) | fps (minigame) | First load | Offline after first load? | Notes | Tester |
 |---|---|---|---|---|---|---|---|---|
-|  |  |  |  |  |  |  |  |  |
+| Oct 23, 2026 | headless proxy (no real device yet) | local, commit at time of test | n/a (not measured headless) | n/a | ~3.0 s to menu-ready (simulated Fast 4G, Playwright CDP) | No (no service worker yet; see F10_PERFORMANCE.md) | Bundle 961 KB total (well under the 15 MB budget) | Joey (Claude) |
 
 ## Action items
 
@@ -48,5 +52,11 @@ One row per device per week. fps columns: board / a representative minigame.
   their owners, by Oct 31 (ahead of the Nov 1 F10.1 deadline)
 - [ ] Decide the slowest device / performance floor once specs are in
 - [ ] Decide whether to source an Android tablet or test without one
-- [ ] Start the weekly test log once a build is ready to measure (first candidate:
-  the Nov 8 "Playtest build 1" milestone)
+- [ ] Get a real fps reading on each named device once specs are in — see
+  `docs/F10_PERFORMANCE.md` for what's been checked headless so far (bundle size, load
+  time, offline behavior) and what still needs a real device (fps, true offline-after-
+  close test on a phone)
+- [x] Fonts are now self-hosted (`vendor/fonts/`), closing part of the F10.3 offline gap
+- [ ] F10.3's bigger piece — actually caching the game for offline play after the first
+  load (a service worker / cache strategy) — is still missing; see
+  `docs/F10_PERFORMANCE.md`
