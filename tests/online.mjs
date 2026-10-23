@@ -2,11 +2,12 @@
 // then the guest drops out of a rematch and the host must finish with a bot in its seat.
 // Run: node tests/online.mjs            (the Claude room service, through tests/mock-room.js)
 //      node tests/online.mjs supabase   (the game's Supabase room adapter, through tests/mock-supabase.js)
+//      node tests/online.mjs live       (the real Supabase project in index.html; needs internet)
 import path from 'path';
 import { chromium, serve, watchErrors, check, done, ROOT, renderer } from './lib.mjs';
 
-const SUPA = process.argv[2] === 'supabase';
-console.log('room service: ' + (SUPA ? 'Supabase adapter (mock-supabase.js)' : 'Claude room (mock-room.js)'));
+const MODE = process.argv[2] || 'claude', SUPA = MODE === 'supabase';
+console.log('room service: ' + { claude: 'Claude room (mock-room.js)', supabase: 'Supabase adapter (mock-supabase.js)', live: 'Supabase adapter, real project' }[MODE]);
 const srv = await serve();
 const browser = await chromium();
 const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
@@ -14,7 +15,7 @@ await renderer(ctx, '2d');
 if (SUPA) {
   await ctx.addInitScript(() => { window.LSU_SUPA = { url: 'https://mock.supabase.co', key: 'mock-anon-key' }; });
   await ctx.route('**/vendor/supabase-*.js', r => r.fulfill({ path: path.join(ROOT, 'tests/mock-supabase.js'), contentType: 'text/javascript' }));
-} else await ctx.addInitScript({ path: path.join(ROOT, 'tests/mock-room.js') });
+} else if (MODE !== 'live') await ctx.addInitScript({ path: path.join(ROOT, 'tests/mock-room.js') });
 
 const host = await ctx.newPage(); const hostErrs = watchErrors(host, 'host');
 await host.goto(srv.url + '?debug&speed=3');
@@ -50,8 +51,9 @@ async function playUntilFinal(pages, ms) {
       const st = await p.evaluate(() => {
         const L = window.__lsu, fin = L.DBG.filter(e => e.type === 'final').pop();
         if (fin) return { fin };
-        // cards with no primary button (Tanong ni Lola) get their first answer, as in play.mjs
-        const card = document.querySelector('#card [data-primary]') || document.querySelector('#card .row button');
+        // in a game, cards with no primary button (Tanong ni Lola) get their first answer, as in play.mjs;
+        // never outside one, where the guest's lobby card has only "Umalis" (leave the room)
+        const card = document.querySelector('#card [data-primary]') || (L.screen === 'game' && document.querySelector('#card .row button'));
         if (!document.querySelector('#modal').hidden && card) { card.click(); return {}; }
         const a = document.querySelector('#actionBtn');
         if (!a.hidden) a.click();
