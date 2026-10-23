@@ -2251,12 +2251,37 @@ function dailyKind(){return MG_KEYS[dayNum()%MG_KEYS.length];}
 function dailySeed(){let h=2166136261;const k='lsu-'+dayKey();for(let i=0;i<k.length;i++){h^=k.charCodeAt(i);h=Math.imul(h,16777619);}return(h|0)||7;}
 function hamonName(){return HAMON_NAME||(state.setup&&state.setup.names&&state.setup.names[0])||NET.name||CHARS[0].name;}
 function lbEntries(kind,daily){const a=lbGet()[kind]||[];return daily?a.filter(e=>e.daily&&e.d===dayKey()):a;}
+/* F9.3: online Hamon ng Araw scores (nickname + score only), on top of the Supabase
+   project F7 already connects to. Needs the daily_scores table from the Phase 3
+   schema draft (supabase/) to actually exist on that project; until then every call
+   below just fails quietly and the device-only leaderboard above is all anyone sees.
+   HAMON_ONLINE is OFF by default on purpose: the name submitted here is still the free-
+   text field F8.1 flags for replacement with a nickname picker, and that free text
+   would otherwise go straight into a public table. Flip it only once F8 ships, or the
+   privacy gap gets worse, not better. window.LSU_HAMON_ONLINE lets tests turn it on. */
+const HAMON_ONLINE=window.LSU_HAMON_ONLINE!==undefined?!!window.LSU_HAMON_ONLINE:false;
+const supaScoresOn=()=>HAMON_ONLINE&&!!(SUPA.url&&SUPA.key);
+async function fetchDailyTop(day,kind,limit){
+  if(!supaScoresOn())return null;
+  try{const sb=await supaLoad();const{data,error}=await sb.from('daily_scores').select('nickname_snapshot,score').eq('day',day).eq('game_key',kind).order('score',{ascending:false}).limit(limit||5);return error?null:data;}
+  catch(e){return null;}
+}
+async function syncDailyScore(day,kind,nm,score){
+  if(!supaScoresOn())return null;
+  try{const sb=await supaLoad();await sb.from('daily_scores').insert({day,game_key:kind,nickname_snapshot:nm,score});return await fetchDailyTop(day,kind,5);}
+  catch(e){return null;}
+}
+function withTimeout(p,ms){return Promise.race([p,new Promise(res=>setTimeout(()=>res(null),ms))]);}
+function onlineLbHTML(rows){if(!rows||!rows.length)return'';
+  return'<p class="lbh">Online ngayong araw <span>· lahat ng maglalaro</span></p><ol class="rank lb">'+rows.map((e,i)=>'<li><span class="pos">'+(i+1)+'</span><span class="dot" style="background:'+(['#FFC93C','#C9D1D9','#D9A06F'][i]||'#F6E7CC')+'"></span><span class="who">'+esc(e.nickname_snapshot)+'</span><span class="sc"></span><span class="pay">'+(e.score|0)+'</span></li>').join('')+'</ol>';
+}
 function lbHTML(kind,daily){const a=lbEntries(kind,daily).slice(0,5),def=MG[kind];
   return'<p class="lbh">'+esc(daily?'Talaan ngayong araw':'Pinakamataas sa '+def.title)+' <span>· sa device na ito</span></p>'+(a.length?'<ol class="rank lb">'+a.map((e,i)=>'<li><span class="pos">'+(i+1)+'</span><span class="dot" style="background:'+(['#FFC93C','#C9D1D9','#D9A06F'][i]||'#F6E7CC')+'"></span><span class="who">'+esc(e.n)+'</span><span class="sc">'+esc(e.d.slice(5).replace('-','/'))+'</span><span class="pay">'+(e.s|0)+'</span></li>').join('')+'</ol>':'<p class="note">Wala pang iskor. Ikaw ang mauuna!</p>');}
 async function hamonFlow(){
   const kind=dailyKind(),def=MG[kind];const today=lbEntries(kind,true);
+  const onlineRows=await withTimeout(fetchDailyTop(dayKey(),kind,5),3000);
   const c=openCard('<span class="chip">Hamon ng Araw · '+esc(prettyDay())+'</span><h2>'+esc(def.title)+'</h2><p>Iisang hamon para sa lahat ngayong araw: parehong laro, parehong mahihirap na bot. Ulitin hangga\'t gusto mo; itatala ang bawat iskor.</p>'+
-    '<div class="field"><label for="nmMe">Pangalan</label><input id="nmMe" maxlength="12" autocomplete="off" value="'+esc(hamonName())+'"></div>'+lbHTML(kind,true)+
+    '<div class="field"><label for="nmMe">Pangalan</label><input id="nmMe" maxlength="12" autocomplete="off" value="'+esc(hamonName())+'"></div>'+onlineLbHTML(onlineRows)+lbHTML(kind,true)+
     '<div class="row"><button type="button" class="btn" data-v="back">Balik</button><button type="button" class="btn" data-v="practice">Pagsasanay</button><button type="button" class="btn primary" data-v="go" data-primary>'+(today.length?'Subukan ulit':'Laro na')+'</button></div>');
   const v=await cardChoice(c);HAMON_NAME=cleanName(CARD_VALS.nmMe)||HAMON_NAME||'Ako';
   if(v==='go')hamonRun(kind,true);else if(v==='practice')practiceFlow();
@@ -2274,11 +2299,13 @@ async function hamonResult(res){
   const tok=gameToken,H=state.hamon||{daily:false},kind=state.plan[0],def=MG[kind],P=state.players,my=res.scores[0]|0;
   const prev=lbEntries(kind,H.daily),prevBest=prev.length?prev[0].s|0:null;
   stampGame(kind);lbAdd(kind,{n:P[0].name,s:my,d:dayKey(),daily:H.daily?1:0,t:Date.now()});
+  const onlineRows=H.daily?await withTimeout(syncDailyScore(dayKey(),kind,P[0].name,my),3000):null;
+  if(tok!==gameToken)return;
   const rec=prevBest===null||my>prevBest;if(rec&&my>0){Sfx.fanfare();buzz([40,60,40]);}
   const order=[0,1,2,3].sort((a,b)=>res.scores[b]-res.scores[a]||a-b);
   const rows=order.map(i=>({pos:res.rank[i]+1,color:P[i].color,name:P[i].name+(i===0?' (ikaw)':''),score:(res.scores[i]|0)+' '+def.unit,pay:''}));
   const msg=(rec&&my>0?'Bagong rekord'+(H.daily?' ngayong araw':'')+'!':(prevBest!==null?'Pinakamataas mo: '+prevBest+' '+def.unit+'.':''))+' Puwesto mo laban sa mga bot: '+(res.rank[0]+1)+'.';
-  const v=await ask({chip:H.daily?'Hamon ng Araw · '+prettyDay():'Pagsasanay',title:'Iskor mo: '+my+' '+def.unit,body:msg,html:rankRows(rows)+lbHTML(kind,H.daily),buttons:[{label:'Ulitin',value:'again',primary:true},{label:'Ibang laro',value:'other'},{label:'Menu',value:'menu'}]});
+  const v=await ask({chip:H.daily?'Hamon ng Araw · '+prettyDay():'Pagsasanay',title:'Iskor mo: '+my+' '+def.unit,body:msg,html:rankRows(rows)+onlineLbHTML(onlineRows)+lbHTML(kind,H.daily),buttons:[{label:'Ulitin',value:'again',primary:true},{label:'Ibang laro',value:'other'},{label:'Menu',value:'menu'}]});
   if(tok!==gameToken)return;
   if(v==='again')hamonRun(kind,H.daily);else if(v==='other')practiceFlow();else toTitle();
 }
@@ -2807,7 +2834,7 @@ function start(data){
   requestAnimationFrame(t=>{last=t;requestAnimationFrame(frame);});
 }
 if(DEBUG){const m=/[?&]speed=(\d+)/.exec(location.search);if(m)SPEED=clamp(+m[1],1,60);
-  window.__lsu={state,NET,MG,SP,N,korona,DBG,get scene(){return scene;},get screen(){return APP.screen;},setSpeed:v=>{SPEED=clamp(v|0,1,60);},startLocal:(s,cp)=>startLocal(s,cp),toTitle:()=>toTitle(),bot:{usesItem:botUsesItem,shop:botShop,rival:botRival,ginto:botGintoPick},b3:B3,toWorld:(x,y)=>toWorld(x,y),toScreen:(x,y)=>worldToScreen(x,y),spacePos:i=>spacePos(i),bench:n=>{const t=performance.now();for(let i=0;i<n;i++)draw();return(performance.now()-t)/n;}};}
+  window.__lsu={state,NET,MG,SP,N,korona,DBG,get scene(){return scene;},get screen(){return APP.screen;},setSpeed:v=>{SPEED=clamp(v|0,1,60);},startLocal:(s,cp)=>startLocal(s,cp),toTitle:()=>toTitle(),bot:{usesItem:botUsesItem,shop:botShop,rival:botRival,ginto:botGintoPick},hamon:{fetchTop:fetchDailyTop,sync:syncDailyScore,dayKey,dailyKind,on:HAMON_ONLINE},b3:B3,toWorld:(x,y)=>toWorld(x,y),toScreen:(x,y)=>worldToScreen(x,y),spacePos:i=>spacePos(i),bench:n=>{const t=performance.now();for(let i=0;i<n;i++)draw();return(performance.now()-t)/n;}};}
 try{window.claude&&window.claude.hot&&window.claude.hot.snapshot&&window.claude.hot.snapshot(()=>({checkpoint:NET.on?null:state.checkpoint}));}catch(e){}
 const boot=()=>{const h=window.claude&&window.claude.hot;if(h&&h.ready)h.ready(start);else start((h&&h.data)||{});};
 if(document.fonts&&document.fonts.load){Promise.race([Promise.all([document.fonts.load('20px "Bagel Fat One"'),document.fonts.load('900 12px "Nunito"')]),new Promise(r=>setTimeout(r,1200))]).then(boot,boot);}else boot();
