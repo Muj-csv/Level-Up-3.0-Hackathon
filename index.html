@@ -1293,7 +1293,7 @@ let supaLib=null;
 function supaLoad(){return supaLib||(supaLib=new Promise((res,rej)=>{const s=document.createElement('script');s.src='vendor/supabase-2.118.0.js';
   s.onload=()=>window.supabase?res(window.supabase.createClient(SUPA.url,SUPA.key)):rej(new Error('nolib'));s.onerror=()=>{supaLib=null;rej(new Error('nolib'));};document.head.appendChild(s);}));}
 function supaRoom(client){return{join(name){return new Promise((resolve,reject)=>{
-  const me='p'+Math.random().toString(36).slice(2,9),peers=new Map(),ch=client.channel(name,{config:{broadcast:{self:false},presence:{key:me}}});
+  const me=netPid(),peers=new Map(),ch=client.channel(name,{config:{broadcast:{self:false},presence:{key:me}}});
   let mine={},subs=[],left=false,joined=false,lastSend=0,timer=0,beat=0,lostT=0;
   const list=()=>[{peer:me,sameTab:true,presence:mine}].concat([...peers].map(([peer,v])=>({peer,sameTab:false,presence:v.presence})));
   const emit=()=>{const ps=list();subs.forEach(s=>{try{s.cb({peers:ps});}catch(e){console.error(e);}});};
@@ -1322,7 +1322,7 @@ async function netJoin(code){
   NET.unsub=rm.onPeers(ch=>onNetPeers(ch),e=>netTerminal(e));return rm;
 }
 function netPres(patch){if(NET.rm)NET.rm.presence(patch).catch(()=>{});}
-function netLeave(){try{NET.unsub&&NET.unsub();}catch(e){}const rm=NET.rm;Object.assign(NET,{on:false,host:false,rm:null,code:'',hostPeer:null,gid:'',log:{},logMax:0,inp:{},roster:[],rosterKey:'',started:'',onUpdate:null,unsub:null,gone:false});try{rm&&rm.leave().catch(()=>{});}catch(e){}}
+function netLeave(){try{NET.unsub&&NET.unsub();}catch(e){}const rm=NET.rm;Object.assign(NET,{on:false,host:false,rm:null,code:'',hostPeer:null,gid:'',log:{},logMax:0,inp:{},roster:[],rosterKey:'',started:'',onUpdate:null,unsub:null,gone:false,game:null,cp:null,rejoin:'',hostGone:false});try{rm&&rm.leave().catch(()=>{});}catch(e){}}
 function netPeer(peer){return NET.peers.find(q=>q.peer===peer);}
 function myPeer(){if(!NET.my&&NET.rm){try{const me=(NET.rm.peers()||[]).find(q=>q.sameTab);if(me)NET.my=me.peer;}catch(e){}}return NET.my;}
 function netHost(){return NET.peers.find(q=>!q.sameTab&&q.presence&&q.presence.app===APPID&&q.presence.role==='host');}
@@ -1342,7 +1342,28 @@ function hostRoster(){
   const key=JSON.stringify(roster);if(key!==NET.rosterKey){NET.rosterKey=key;NET.roster=roster;netPres({roster});}
 }
 /* the host keeps the whole game's log in its presence (a 5-round game logs about 60–120 small entries), so a device that drops out can always catch up */
-function netRecord(k,r){NET.log[k]=r;if(k>NET.logMax)NET.logMax=k;const ks=Object.keys(NET.log).map(Number).sort((a,b)=>b-a).slice(0,200);const out={};for(const x of ks)out['k'+x]=NET.log[x];netPres({log:out});}
+function netPubLog(){const ks=Object.keys(NET.log).map(Number).sort((a,b)=>b-a).slice(0,200);const out={};for(const x of ks)out['k'+x]=NET.log[x];netPres({log:out});}
+function netRecord(k,r){NET.log[k]=r;if(k>NET.logMax)NET.logMax=k;netSave();netPubLog();}
+/* F7.3 rejoin after a reload: each tab keeps its player id and online session in sessionStorage (it survives a reload, or the
+   browser putting the tab back after closing it in the background). A guest comes back from the host's latest turn checkpoint;
+   the host comes back from its own checkpoint and log, which only it has. Not inside Claude, whose room service picks the ids */
+const OL_KEY='lsu-online';
+function netPid(){let id='';try{id=sessionStorage.getItem('lsu-pid')||'';if(!id){id='p'+Math.random().toString(36).slice(2,10);sessionStorage.setItem('lsu-pid',id);}}catch(e){}return id||'p'+Math.random().toString(36).slice(2,10);}
+function netSave(){if(!NET.on||!NET.game||state.ended||inClaude())return;const o=Object.assign({code:NET.code,host:NET.host,name:NET.name,at:Date.now()},NET.game);
+  if(NET.host)Object.assign(o,{cp:NET.cp,log:NET.log});try{sessionStorage.setItem(OL_KEY,JSON.stringify(o));}catch(e){}}
+function netSaved(){try{const o=JSON.parse(sessionStorage.getItem(OL_KEY)||'null');return o&&o.gid&&o.code&&Date.now()-o.at<30*60000?o:null;}catch(e){return null;}}
+function netUnsave(){try{sessionStorage.removeItem(OL_KEY);}catch(e){}}
+function netCheckpoint(cp){if(NET.host){NET.cp=cp;netPres({cp});}netSave();}
+async function netResume(o){
+  showMsg('Bumabalik sa online na laro…','Room '+o.code+'.');
+  try{NET.host=!!o.host;NET.name=o.name;await netJoin(o.code);NET.host=!!o.host;NET.name=o.name;}catch(e){netLeave();return netFail();}
+  if(o.host){NET.roster=o.roster;NET.cfg=o.cfg;netPres({app:APPID,role:'host',name:o.name,st:'play',gid:o.gid,seed:o.seed,roster:o.roster,cfg:o.cfg,cp:o.cp||null,inp:null,mg:null});
+    startOnline(o,o.cp,o.log);netPubLog();return;}
+  /* a guest waits for the host's presence: onNetPeers then starts the game from the host's checkpoint (see startOnline) */
+  NET.rejoin=o.gid;netPres({app:APPID,role:'guest',name:o.name,gid:''});NET.hostSeenAt=Date.now();
+  setTimeout(()=>{if(NET.rejoin!==o.gid||APP.screen==='game')return;NET.rejoin='';netLeave();
+    const c=openCard('<h2>Hindi na makabalik</h2><p>Wala na ang larong ito sa room '+esc(o.code)+'.</p><div class="row"><button type="button" class="btn primary" data-v="ok" data-primary>Sige</button></div>');cardChoice(c).then(()=>toTitle());},20000);
+}
 function netInput(k,v){if(NET.host){netRecord(k,{v});return;}NET.inp['k'+k]=v;const ks=Object.keys(NET.inp).sort((a,b)=>+a.slice(1)-+b.slice(1));while(ks.length>12)delete NET.inp[ks.shift()];netPres({inp:Object.assign({},NET.inp)});}
 function netMg(obj,throttle){const t=Date.now();if(throttle&&t-NET.mgAt<110)return;NET.mgAt=t;netPres({mg:obj});}
 function netPeerMg(peer,mgi){const q=netPeer(peer);const pr=q&&q.presence;return pr&&pr.gid===NET.gid&&pr.mg&&pr.mg.i===mgi?pr.mg:null;}
@@ -1389,13 +1410,14 @@ function applyLog(p,r){if(r&&r.a&&p.ctrl!=='bot'){p.away=p.ctrl;p.ctrl='bot';toa
 async function seatSync(){
   if(!NET.on||!state.players.some(p=>p.away))return;
   const tok=gameToken,k=++decK;
-  if(NET.host)netRecord(k,{v:state.players.filter(p=>p.away&&netLive(p.peer)).map(p=>p.id)});
+  if(NET.host&&NET.log[k]===undefined)netRecord(k,{v:state.players.filter(p=>p.away&&netLive(p.peer)).map(p=>p.id)});
   const r=await netWaitLog(k,null);if(tok!==gameToken)await HALT;
   for(const id of (r&&r.v)||[]){const p=state.players[id];if(p&&p.away){p.ctrl=p.away;p.away=null;toast(p.name+' ay bumalik!','#C9F2B4',1400);}}
 }
 
 /* ================= board flow ================= */
-function checkpoint(){if(NET.on||isHamon()){state.checkpoint=null;return;}state.checkpoint={mode:'local',setup:state.setup,order:state.order.slice(),round:state.round,turn:state.turn,korona:korona.spots.slice(),gs,decK,mgSeq,plan:state.plan.slice(),players:state.players.map(p=>({pos:p.pos,piso:p.piso,korona:p.korona,item:p.item,ctrl:p.ctrl,stats:Object.assign({},p.stats),allies:p.allies.map(a=>({n:a.n,look:a.look}))}))};saveGame(state.checkpoint);}
+function checkpoint(){if(isHamon()){state.checkpoint=null;return;}const cp={mode:NET.on?'online':'local',setup:state.setup,order:state.order.slice(),round:state.round,turn:state.turn,korona:korona.spots.slice(),gs,decK,mgSeq,plan:state.plan.slice(),players:state.players.map(p=>({pos:p.pos,piso:p.piso,korona:p.korona,item:p.item,ctrl:p.ctrl,away:p.away?1:0,stats:Object.assign({},p.stats),allies:p.allies.map(a=>({n:a.n,look:a.look}))}))};
+  if(NET.on){state.checkpoint=null;netCheckpoint(cp);return;}state.checkpoint=cp;saveGame(cp);}
 async function hop(p,to,back){
   const from=p.pos;p.hopping=true;const A0=spacePos(from),B0=spacePos(to);const dx=B0.x-A0.x,dy=B0.y-A0.y;
   if(Math.abs(dy)>Math.abs(dx)*1.1){p.dir=dy<0?'back':'front';}else{p.dir='side';p.face=dx>=0?1:-1;}p.dirT=.8;
@@ -2057,7 +2079,7 @@ function saveCanvas(c,fn,msg){c.toBlob(b=>{if(!b){toast('Hindi ma-save','#FF8A7A
 function saveResultImage(P,head){saveCanvas(buildResultImage(P,head),'taympers-resulta.png','Na-save ang larawan');}
 
 async function finale(){
-  clearSave();const tok=gameToken;state.active=null;state.overview=true;state.round=maxR();state.ended=true;updateStatus('Tapos na');mapBtn.setAttribute('aria-pressed','true');
+  clearSave();netUnsave();const tok=gameToken;state.active=null;state.overview=true;state.round=maxR();state.ended=true;updateStatus('Tapos na');mapBtn.setAttribute('aria-pressed','true');
   await wait(700);
   if(isParty())await bonusAwards(tok);
   if(tok!==gameToken)return;
@@ -2111,7 +2133,7 @@ function beginGame(spec,seed,cp,cfg){
   state.order=[0,1,2,3];if(!isHamon())for(let i=3;i>0;i--){const j=Math.floor(G()*(i+1)),t=state.order[i];state.order[i]=state.order[j];state.order[j]=t;}
   state.players=makePlayers(spec);resetKorona();state.round=1;state.turn=0;state.overview=false;state.active=null;state.party=false;mapBtn.setAttribute('aria-pressed','false');
   let r0=1,t0=0;
-  if(cp&&cp.players&&cp.players.length===4){cp.players.forEach((q,i)=>{const p=state.players[i];p.pos=clamp(q.pos|0,0,N-1);p.piso=q.piso|0;p.korona=q.korona|0;p.item=q.item&&ITEMS[q.item]?q.item:null;if(q.ctrl==='bot')p.ctrl='bot';if(Array.isArray(q.allies))p.allies=q.allies.slice(0,2).map(a=>({n:cleanName(a.n)||'Kasama',look:clamp(a.look|0,0,3),x:0,y:0}));if(q.stats)p.stats={wins:q.stats.wins|0,steps:q.stats.steps|0,dice:q.stats.dice|0,dn:q.stats.dn|0};});
+  if(cp&&cp.players&&cp.players.length===4){cp.players.forEach((q,i)=>{const p=state.players[i];p.pos=clamp(q.pos|0,0,N-1);p.piso=q.piso|0;p.korona=q.korona|0;p.item=q.item&&ITEMS[q.item]?q.item:null;if(q.ctrl==='bot'){if(q.away&&p.ctrl!=='bot')p.away=p.ctrl;p.ctrl='bot';}if(Array.isArray(q.allies))p.allies=q.allies.slice(0,2).map(a=>({n:cleanName(a.n)||'Kasama',look:clamp(a.look|0,0,3),x:0,y:0}));if(q.stats)p.stats={wins:q.stats.wins|0,steps:q.stats.steps|0,dice:q.stats.dice|0,dn:q.stats.dn|0};});
     if(Array.isArray(cp.korona)&&cp.korona.length===2)korona.spots=cp.korona.map(v=>clamp(v|0,0,N-1));r0=clamp(cp.round|0,1,maxR());t0=clamp(cp.turn|0,0,4);gs=cp.gs|0;decK=cp.decK|0;mgSeq=cp.mgSeq|0;
     if(Array.isArray(cp.plan)&&cp.plan.length===maxR()&&cp.plan.every(k=>MG[k]))state.plan=cp.plan.slice();
     if(Array.isArray(cp.order)&&[...cp.order].sort().join()==='0,1,2,3')state.order=cp.order.map(Number);}
@@ -2126,20 +2148,22 @@ function startLocal(setup,cp){
   const spec=[0,1,2,3].map(i=>i<setup.n?{name:cleanName(setup.names[i])||CHARS[i].name,ctrl:'local'}:{name:CHARS[i].name,ctrl:'bot'});
   beginGame(spec,cp?cp.gs:Math.floor(R()*2147483647),cp,setup.cfg);
 }
-function startOnline(pr){
-  closeCard();NET.on=true;NET.gid=pr.gid;NET.started=pr.gid;NET.log={};NET.logMax=0;NET.inp={};NET.gone=false;NET.onUpdate=null;
-  if(!NET.host){netPres({gid:pr.gid,inp:{},mg:null});const h=netHost();if(h&&h.presence.log&&h.presence.gid===pr.gid)mergeLog(h.presence.log);NET.hostSeenAt=Date.now();}
-  const spec=pr.roster.slice(0,4).map((e,i)=>({name:cleanName(e.n)||CHARS[i].name,ctrl:!e.p?'bot':(e.p===NET.my?'local':'remote'),peer:e.p||null}));
+function startOnline(pr,cp,log){
+  closeCard();NET.on=true;NET.gid=pr.gid;NET.started=pr.gid;NET.log=Object.assign({},log||{});NET.logMax=Object.keys(NET.log).reduce((m,k)=>Math.max(m,+k),0);NET.inp={};NET.gone=false;NET.onUpdate=null;
+  NET.game={gid:pr.gid,seed:pr.seed,roster:pr.roster,cfg:pr.cfg};NET.cp=cp||null;
+  if(!NET.host){if(NET.rejoin===pr.gid&&pr.cp)cp=pr.cp;NET.rejoin='';
+    netPres({gid:pr.gid,inp:{},mg:null});const h=netHost();if(h&&h.presence.log&&h.presence.gid===pr.gid)mergeLog(h.presence.log);NET.hostSeenAt=Date.now();}
+  const spec=pr.roster.slice(0,4).map((e,i)=>({name:cleanName(e.n)||CHARS[i].name,ctrl:!e.p?'bot':(e.p===myPeer()?'local':'remote'),peer:e.p||null}));
   while(spec.length<4)spec.push({name:CHARS[spec.length].name,ctrl:'bot'});
   const cfg=normCfg(pr.cfg);if(cfg.mode==='hamon')cfg.mode='party';
-  state.setup=null;beginGame(spec,(pr.seed|0)||1,null,cfg);
+  state.setup=null;beginGame(spec,(pr.seed|0)||1,cp||null,cfg);netSave();
 }
 
 /* ================= screens & menus ================= */
 function setScreen(s){APP.screen=s;$('#scrTitle').hidden=s!=='title';$('#scrGallery').hidden=s!=='gallery';$('#hudTop').hidden=s!=='game';mapBtn.hidden=s!=='game';$('#menuBtn').hidden=s!=='game';$('#soundBtn').hidden=s==='game';$('#hudBottom').hidden=s==='gallery';closeMenu();
   if(s!=='game'){actionBtn.hidden=true;itemBtn.hidden=true;setHint('');clearTips();}measureHud();Music.play(s==='game'?'board':'title');}
 function demoPlayers(){state.players=makePlayers(CHARS.map(c=>({name:c.name,ctrl:'bot'})));state.players.forEach((p,i)=>{p.pos=[0,1,0,1][i];});state.active=null;}
-function toTitle(){gameToken++;scene=null;closeCard();clearRun();if(NET.rm)netLeave();state.party=false;state.ended=false;state.checkpoint=null;state.cfg=normCfg({});demoPlayers();resetKorona();setScreen('title');refreshResume();setTimeout(()=>{try{($('#mResume').hidden?$('#mLocal'):$('#mResume')).focus({preventScroll:true});}catch(e){}},50);}
+function toTitle(){gameToken++;scene=null;closeCard();clearRun();if(NET.rm)netLeave();netUnsave();state.party=false;state.ended=false;state.checkpoint=null;state.cfg=normCfg({});demoPlayers();resetKorona();setScreen('title');refreshResume();setTimeout(()=>{try{($('#mResume').hidden?$('#mLocal'):$('#mResume')).focus({preventScroll:true});}catch(e){}},50);}
 function showMsg(title,body){openCard('<h2>'+esc(title)+'</h2><p>'+esc(body)+'</p>');}
 function netHelp(){return'Kailangang bukas ang laro sa claude.ai, naka-sign in ka, at naka-share ang laro sa mga kalaro mo (hindi gumagana sa public link).';}
 
@@ -2776,8 +2800,10 @@ function start(data){
   try{if(window.claude&&window.claude.use)window.claude.use('downloads').then(d=>{DL=d||null;}).catch(()=>{});}catch(e){}
   const cp=data&&data.checkpoint;
   if(cp&&cp.mode==='local'&&cp.setup){startLocal(cp.setup,cp);}
-  else{toTitle();const a={x:870,y:780};cam.x=cam.tx=a.x;cam.y=cam.ty=a.y;cam.z=cam.tz=fitZoom(1150,1000)*1.15;
-    const hc=(location.hash||'').replace('#','').toUpperCase();if(/^[A-Z0-9]{4}$/.test(hc))setTimeout(()=>roomAvailable()?joinFlow(hc):onlineFlow(),400);}
+  else{const ol=inClaude()?null:netSaved();toTitle();const a={x:870,y:780};cam.x=cam.tx=a.x;cam.y=cam.ty=a.y;cam.z=cam.tz=fitZoom(1150,1000)*1.15;
+    const hc=(location.hash||'').replace('#','').toUpperCase();
+    if(ol&&roomAvailable())setTimeout(()=>netResume(ol),400);
+    else if(/^[A-Z0-9]{4}$/.test(hc))setTimeout(()=>roomAvailable()?joinFlow(hc):onlineFlow(),400);}
   requestAnimationFrame(t=>{last=t;requestAnimationFrame(frame);});
 }
 if(DEBUG){const m=/[?&]speed=(\d+)/.exec(location.search);if(m)SPEED=clamp(+m[1],1,60);
