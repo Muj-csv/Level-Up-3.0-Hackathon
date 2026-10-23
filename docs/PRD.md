@@ -63,15 +63,15 @@ code is moved to the others.
 | Role | Member | Owns |
 |---|---|---|
 | Team lead + frontend / game dev | Ian Patrick A. Flores | Schedule, scope calls, contest forms; all in-game code: pacing (F1), splash (F2), menu (F3), pre-game visuals (F4), putting islands and art into the game (F5, F6), nickname picker UI (F8), Vercel deploys |
-| Backend 1 — Online and multiplayer | _assign_ | Online rooms on our own backend (F7): room service, QR join, reconnect, testing on real phones and the venue network; later the multiplayer server (Build Plan Phase 4) |
-| Backend 2 — Data, content and quality | _assign_ | Content files (trivia, island facts, Subukan sa labas) and their expert review (F9); online Hamon ng Araw scores (F9); device and performance testing (F10); the automated tests in `tests/`; later Supabase and game-core (Build Plan Phases 1 and 3) |
-| Artist 1 — Characters and effects | _assign_ | The 4 players, 4 Kasama friends and crowd kids; korona; dice; effects (coins, korona buy, landing, confetti); character poses (F6) |
-| Artist 2 — World and UI | _assign_ | The islands (F5): landmarks, props, palettes, textures; splash, logo and menu art (F2, F3); pre-game visuals storyboard (F4); space icons; promo images and trailer for the finals |
+| Backend 1 — Online and multiplayer | Jace Matthew M. Catriz | Online rooms on our own backend (F7): room service, QR join, reconnect, testing on real phones and the venue network; later the multiplayer server (Build Plan Phase 4) |
+| Backend 2 — Data, content and quality | Joey T. Cuison | Content files (trivia, island facts, Subukan sa labas) and their expert review (F9); online Hamon ng Araw scores (F9); device and performance testing (F10); the automated tests in `tests/`; later Supabase and game-core (Build Plan Phases 1 and 3) |
+| Artist 1 — Characters and effects | Mary Princess Angel L. Dizon | The 4 players, 4 Kasama friends and crowd kids; korona; dice; effects (coins, korona buy, landing, confetti); character poses (F6) |
+| Artist 2 — World and UI | Mark Jemiel P. Guevarra | The islands (F5): landmarks, props, palettes, textures; splash, logo and menu art (F2, F3); pre-game visuals storyboard (F4); space icons; promo images and trailer for the finals |
 
 Shared:
 
-- **Cultural research for each island:** both artists, with Backend 2 for written content.
-- **Playtests:** everyone. Ian schedules them; Backend 2 writes the test plan and collects
+- **Cultural research for each island:** Mary and Mark, with Joey for written content.
+- **Playtests:** everyone. Ian schedules them; Joey writes the test plan and collects
   notes.
 
 How the team works:
@@ -125,7 +125,7 @@ has read what happened.
 - In playtest 1, at least 8 of 10 kids can say what happened on the last turn when asked.
 - The automated tests still pass (they use the debug speed-up, not the setting).
 
-### F2. Splash screen (P0) — Ian (code), Artist 2 (art)
+### F2. Splash screen (P0) — Ian (code), Mark (art)
 
 **Requirements**
 
@@ -141,7 +141,7 @@ has read what happened.
 **Acceptance:** cold load on the slowest demo device shows the splash within 1 s and the
 tap prompt within 8 s; no blank or white screen at any point.
 
-### F3. Main menu (P0) — Ian (code), Artist 2 (art)
+### F3. Main menu (P0) — Ian (code), Mark (art)
 
 **Today:** title, five buttons, a sound toggle; settings exist only inside a game.
 
@@ -162,7 +162,7 @@ tap prompt within 8 s; no blank or white screen at any point.
 **Acceptance:** in playtest, 9 of 10 kids start a game without help; the layout test in
 `tests/play.mjs` passes at all four screen sizes.
 
-### F4. Visuals before the game starts (P0) — Ian (code), Artist 2 (storyboard), Artist 1 (poses)
+### F4. Visuals before the game starts (P0) — Ian (code), Mark (storyboard), Mary (poses)
 
 **Today:** after setup, the game jumps straight to the board with a text announcement of
 the turn order.
@@ -183,13 +183,13 @@ the turn order.
 **Acceptance:** from pressing Maglaro to the first roll is at most 25 s with the intro
 and at most 5 s with it skipped; every step can be skipped.
 
-### F5. At least 5 islands, each a distinct Filipino place (P0) — Artist 2 (design), Ian (code), Backend 2 (content)
+### F5. At least 5 islands, each a distinct Filipino place (P0) — Mark (design), Ian (code), Joey (content)
 
 **Today:** 4 islands (Plaza, Palengke, Aplaya, Bukid), 37 spaces, 4 bridges. The code
 assumes 4 islands in several places (board path, bridges, trail ribbons), so a fifth
 island needs that generalised first.
 
-**Proposed islands** (Artist 2 confirms the final list by Nov 1):
+**Proposed islands** (Mark confirms the final list by Nov 1):
 
 | Island | Shows | Landmark | Props and details |
 |---|---|---|---|
@@ -208,7 +208,7 @@ island needs that generalised first.
   own ground texture and colour palette, and 3 or more themed props.
 - F5.3 Space types are spread so every island has at least one good space (Piso, Swerte,
   Kasama or Tanong) and korona can sit on every island.
-- F5.4 Each island adds 2 Tanong ni Lola questions about its place (written by Backend 2,
+- F5.4 Each island adds 2 Tanong ni Lola questions about its place (written by Joey,
   reviewed under F9).
 - F5.5 P2: one island-themed space per island (for example, at Kanto: "Sumakay ng jeep",
   pay 2 piso to ride to the next island). Only after F5.1–F5.4 are done and balanced in the
@@ -222,7 +222,7 @@ island needs that generalised first.
 simulation (30 games) shows no island where korona never appear; average game length
 stays within F5.1.
 
-### F6. Art upgrade: korona, characters, maps, graphics, effects (P0) — Artist 1, Artist 2, Ian
+### F6. Art upgrade: korona, characters, maps, graphics, effects (P0) — Mary, Mark, Ian
 
 **Today:** all art is drawn in code (Three.js shapes, canvas textures) in a toon style with
 dark outlines.
@@ -231,14 +231,14 @@ dark outlines.
 
 | Asset | Owner | P0 | P1 |
 |---|---|---|---|
-| Korona | Artist 1 | New design with gems and a clear silhouette; buy and fly animation | Korona variants for the bonus korona |
-| Player kids (Jun, Neneng, Totoy, Bunso) | Artist 1 | Turnarounds (front, side, back), outfits that read as distinct at small size, faces with 4 expressions | Unique idle and victory poses |
-| Kasama friends (Lito, Mayumi, Boyet, Dodong) and crowd kids | Artist 1 | Same style as the players, visibly smaller | — |
-| Dice block, coins, items (Dobleng dice, Kendi, Gintong dice, Agimat) | Artist 1 | Icons and 3D look | — |
-| Effects | Artist 1 | Coin burst, korona buy, landing dust, Swerte sparkle, Utang loss, confetti | Island ambience (birds, waves, smoke) |
-| Islands and bridges | Artist 2 | Per F5 | Water and cloud pass |
-| Space tiles | Artist 2 | 9 icons readable at 24 px; distinct by shape as well as colour | — |
-| UI | Artist 2 | Logo, splash, menu, buttons, cards, HUD icons in the existing paper-and-outline style | Animated logo |
+| Korona | Mary | New design with gems and a clear silhouette; buy and fly animation | Korona variants for the bonus korona |
+| Player kids (Jun, Neneng, Totoy, Bunso) | Mary | Turnarounds (front, side, back), outfits that read as distinct at small size, faces with 4 expressions | Unique idle and victory poses |
+| Kasama friends (Lito, Mayumi, Boyet, Dodong) and crowd kids | Mary | Same style as the players, visibly smaller | — |
+| Dice block, coins, items (Dobleng dice, Kendi, Gintong dice, Agimat) | Mary | Icons and 3D look | — |
+| Effects | Mary | Coin burst, korona buy, landing dust, Swerte sparkle, Utang loss, confetti | Island ambience (birds, waves, smoke) |
+| Islands and bridges | Mark | Per F5 | Water and cloud pass |
+| Space tiles | Mark | 9 icons readable at 24 px; distinct by shape as well as colour | — |
+| UI | Mark | Logo, splash, menu, buttons, cards, HUD icons in the existing paper-and-outline style | Animated logo |
 
 **Requirements**
 
@@ -250,7 +250,7 @@ dark outlines.
 **Acceptance:** a side-by-side of before and after for every row above, approved by the
 team; F10 targets still met.
 
-### F7. Online rooms on our own backend (P0 if online is demoed, else P1) — Backend 1
+### F7. Online rooms on our own backend (P0 if online is demoed, else P1) — Jace
 
 **Today:** online rooms only work inside the Claude artifact. On Vercel, "Maglaro online"
 says it is unavailable.
@@ -272,7 +272,7 @@ says it is unavailable.
 game with one forced disconnect and rejoin; `tests/online.mjs` passes with a stand-in for
 the new service.
 
-### F8. Nickname picker and privacy (P0) — Ian (UI), Backend 2 (word lists)
+### F8. Nickname picker and privacy (P0) — Ian (UI), Joey (word lists)
 
 **Today:** players type a name. The build plan's privacy rule says kids never type free
 text.
@@ -287,7 +287,7 @@ text.
 **Acceptance:** there is no text input for names anywhere; the word lists are reviewed by
 2 team members for words that could offend.
 
-### F9. Content and online daily scores (P1) — Backend 2
+### F9. Content and online daily scores (P1) — Joey
 
 - F9.1 Move trivia, real-street rules, Subukan sa labas and island facts into one content
   file per language (Filipino now, English P2), so writers do not edit game code.
@@ -299,7 +299,7 @@ text.
 **Acceptance:** content changes ship without touching `index.html` logic; review log
 complete for all content before the build freeze.
 
-### F10. Performance, offline and demo readiness (P0) — Backend 2 (testing), Ian (fixes)
+### F10. Performance, offline and demo readiness (P0) — Joey (testing), Ian (fixes)
 
 - F10.1 Name the demo devices by Nov 1, including the slowest one. Target: 30 fps or better
   on the slowest, 60 fps on a recent phone or iPad.

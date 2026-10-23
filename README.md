@@ -142,10 +142,10 @@ No outside images, 3D models, audio or game code are used.
 | Name | Role |
 |---|---|
 | Ian Patrick A. Flores | Team lead, frontend |
-| Mary Princess Angel L. Dizon | To be assigned |
-| Joey T. Cuison | To be assigned |
-| Mark Jemiel P. Guevarra | To be assigned |
-| Jace Matthew M. Catriz | To be assigned |
+| Mary Princess Angel L. Dizon | Artist: characters and effects |
+| Joey T. Cuison | Backend: content, data and quality |
+| Mark Jemiel P. Guevarra | Artist: world and UI |
+| Jace Matthew M. Catriz | Backend: online and multiplayer |
 
 The team is two backend developers, one frontend developer and two artists; roles and
 the work up to the finals are in [`docs/PRD.md`](docs/PRD.md). The longer-term plan is in
