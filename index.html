@@ -1128,7 +1128,7 @@ function toWorld(sx,sy){if(B3.on&&B3.unproj){const w=B3.unproj(sx,sy);if(w)retur
 const APP={screen:'title'};
 /* online rooms ride on the Claude artifact room service inside Claude, and on our Supabase project (F7) everywhere else.
    SUPA holds the public project URL and anon key only, never the service_role key; window.LSU_SUPA can override it (tests) */
-const SUPA=Object.assign({url:'',key:''},window.LSU_SUPA||{});
+const SUPA=Object.assign({url:'https://sxxqfhxhbliulzsulsew.supabase.co',key:'sb_publishable_azWNqrRU1hdovbxBLEi4wA_H3mHJzMr'},window.LSU_SUPA||{});
 const inClaude=()=>!!(window.claude&&window.claude.use);
 const roomAvailable=()=>inClaude()||!!(SUPA.url&&SUPA.key);
 const APPID='lsu1',SHARE_URL=inClaude()?'https://claude.ai/artifact/FQqtor9NZvLytPNJotsPuc':location.href.split(/[?#]/)[0];
