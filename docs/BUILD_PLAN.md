@@ -204,11 +204,14 @@ notes, not as errors.
 
 | Member | Role |
 |---|---|
-| Ian Patrick A. Flores | Project lead |
+| Ian Patrick A. Flores | Project lead, frontend / game dev |
 | Mary Princess Angel L. Dizon | To be assigned |
 | Joey T. Cuison | To be assigned |
 | Mark Jemiel P. Guevarra | To be assigned |
 | Jace Matthew M. Catriz | To be assigned |
+
+The team is two backend developers, one frontend developer and two artists. Roles up to
+the finals are in [`PRD.md`](PRD.md).
 
 ### Roles
 

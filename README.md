@@ -141,13 +141,14 @@ No outside images, 3D models, audio or game code are used.
 
 | Name | Role |
 |---|---|
-| Ian Patrick A. Flores | Team lead |
+| Ian Patrick A. Flores | Team lead, frontend |
 | Mary Princess Angel L. Dizon | To be assigned |
 | Joey T. Cuison | To be assigned |
 | Mark Jemiel P. Guevarra | To be assigned |
 | Jace Matthew M. Catriz | To be assigned |
 
-The plan for growing the game past the contest prototype is in
+The team is two backend developers, one frontend developer and two artists; roles and
+the work up to the finals are in [`docs/PRD.md`](docs/PRD.md). The longer-term plan is in
 [`docs/BUILD_PLAN.md`](docs/BUILD_PLAN.md).
 
 ## AI use
