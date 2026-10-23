@@ -1288,7 +1288,7 @@ async function netRoom(){try{if(inClaude())return await window.claude.use('room'
    So each device broadcasts its whole presence object, at most every SUPA_GAP ms (the latest state wins), plus a heartbeat;
    Supabase presence is only tracked once, to hear when a device's connection closes.
    ponytail: one busy 4-phone room uses about 64 messages/s in minigames; raise SUPA_GAP or move to a paid plan for more rooms */
-const SUPA_GAP=250,SUPA_BEAT=2000,SUPA_DROP=6000,SUPA_LOST=15000;
+const SUPA_GAP=250,SUPA_BEAT=2000,SUPA_DROP=6000,SUPA_LOST=90000;
 let supaLib=null;
 function supaLoad(){return supaLib||(supaLib=new Promise((res,rej)=>{const s=document.createElement('script');s.src='vendor/supabase-2.118.0.js';
   s.onload=()=>window.supabase?res(window.supabase.createClient(SUPA.url,SUPA.key)):rej(new Error('nolib'));s.onerror=()=>{supaLib=null;rej(new Error('nolib'));};document.head.appendChild(s);}));}
@@ -1303,7 +1303,7 @@ function supaRoom(client){return{join(name){return new Promise((resolve,reject)=
   ch.on('broadcast',{event:'bye'},({payload:m})=>{if(m&&peers.delete(m.id))emit();});
   ch.on('presence',{event:'join'},({key})=>{if(key!==me)send();});
   ch.on('presence',{event:'leave'},({key})=>{if(peers.delete(key))emit();});
-  /* supabase-js rejoins by itself after a network blip; the game is only told the room is gone if that takes longer than SUPA_LOST */
+  /* supabase-js rejoins by itself after a network blip; the game is only told the room is gone if that takes longer than SUPA_LOST (past the game's 60 s grace) */
   ch.subscribe((st,err)=>{
     if(st==='SUBSCRIBED'){clearTimeout(lostT);lostT=0;ch.track({at:Date.now()});
       if(!joined){joined=true;sendNow();beat=setInterval(()=>{if(Date.now()-lastSend>=SUPA_BEAT)sendNow();const t=Date.now();let gone=false;for(const [id,v] of peers)if(t-v.seen>SUPA_DROP){peers.delete(id);gone=true;}if(gone)emit();},500);resolve(api);}
@@ -1341,19 +1341,27 @@ function hostRoster(){
   const roster=[{n:NET.name,p:myPeer()}].concat(guests.map(q=>({n:cleanName(q.presence.name)||'Kalaro',p:q.peer})));
   const key=JSON.stringify(roster);if(key!==NET.rosterKey){NET.rosterKey=key;NET.roster=roster;netPres({roster});}
 }
-function netRecord(k,r){NET.log[k]=r;if(k>NET.logMax)NET.logMax=k;const ks=Object.keys(NET.log).map(Number).sort((a,b)=>b-a).slice(0,40);const out={};for(const x of ks)out['k'+x]=NET.log[x];netPres({log:out});}
+/* the host keeps the whole game's log in its presence (a 5-round game logs about 60–120 small entries), so a device that drops out can always catch up */
+function netRecord(k,r){NET.log[k]=r;if(k>NET.logMax)NET.logMax=k;const ks=Object.keys(NET.log).map(Number).sort((a,b)=>b-a).slice(0,200);const out={};for(const x of ks)out['k'+x]=NET.log[x];netPres({log:out});}
 function netInput(k,v){if(NET.host){netRecord(k,{v});return;}NET.inp['k'+k]=v;const ks=Object.keys(NET.inp).sort((a,b)=>+a.slice(1)-+b.slice(1));while(ks.length>12)delete NET.inp[ks.shift()];netPres({inp:Object.assign({},NET.inp)});}
 function netMg(obj,throttle){const t=Date.now();if(throttle&&t-NET.mgAt<110)return;NET.mgAt=t;netPres({mg:obj});}
 function netPeerMg(peer,mgi){const q=netPeer(peer);const pr=q&&q.presence;return pr&&pr.gid===NET.gid&&pr.mg&&pr.mg.i===mgi?pr.mg:null;}
+/* F7.3: a player who drops out gets NET_GRACE to come back before a bot plays for them (the seat is handed back by seatSync);
+   a player who is there but slow gets the decision's own timeout. Guests keep waiting for a host who drops out
+   (it may be their own connection that is down) and can leave from the menu. window.LSU_NET.grace shortens it for tests */
+const NET_GRACE=(window.LSU_NET&&+window.LSU_NET.grace)||60000;
+function netLive(peer){const q=peer&&netPeer(peer);return!!(q&&q.presence&&q.presence.gid===NET.gid);}
 function netWaitLog(k,p,autoV,timeoutMs){
-  const tok=gameToken;return new Promise(res=>{const t0=Date.now();let goneSince=null;
+  const tok=gameToken;return new Promise(res=>{let t0=Date.now(),goneSince=null;
     const tick=()=>{if(tok!==gameToken)return;
       if(NET.log[k]!==undefined){res(NET.log[k]);return;}
       if(NET.host){if(p&&p.ctrl==='remote'){const q=netPeer(p.peer);const pr=q&&q.presence;const v=pr&&pr.gid===NET.gid&&pr.inp?pr.inp['k'+k]:undefined;
           if(v!==undefined){netRecord(k,{v});res(NET.log[k]);return;}
-          if(!q){goneSince=goneSince||Date.now();}else goneSince=null;
-          if((goneSince&&Date.now()-goneSince>5000)||Date.now()-t0>(timeoutMs||45000)){netRecord(k,{v:typeof autoV==='function'?autoV():autoV,a:1});res(NET.log[k]);return;}}}
-      else{if(netHost())NET.hostSeenAt=Date.now();else if(Date.now()-NET.hostSeenAt>10000){lostConnection('Umalis ang gumawa ng room, kaya natapos ang online na laro.');return;}}
+          if(!q){goneSince=goneSince||Date.now();setHint('Naputol si '+p.name+'. Hinihintay… '+Math.max(0,Math.ceil((NET_GRACE-(Date.now()-goneSince))/1000)));}
+          else if(goneSince){goneSince=null;t0=Date.now();setHint('Hinihintay si '+p.name+'…');}
+          if(goneSince?Date.now()-goneSince>NET_GRACE:Date.now()-t0>(timeoutMs||45000)){netRecord(k,{v:typeof autoV==='function'?autoV():autoV,a:1});res(NET.log[k]);return;}}}
+      else{if(netHost()){NET.hostSeenAt=Date.now();if(NET.hostGone){NET.hostGone=false;toast('Bumalik ang host!','#C9F2B4',1400);}}
+        else if(!NET.hostGone&&Date.now()-NET.hostSeenAt>3000){NET.hostGone=true;toast('Naputol ang host. Hinihintay na bumalik…','#fff',2600);}}
       setTimeout(tick,120);};
     tick();});
 }
@@ -1375,7 +1383,16 @@ async function decide(p,ui,botFn,autoV,timeoutMs){
   const r=await netWaitLog(k,p,autoV,timeoutMs);if(tok!==gameToken)await HALT;setHint(prevHint===('Hinihintay si '+p.name+'…')?'':prevHint);
   return applyLog(p,r);
 }
-function applyLog(p,r){if(r&&r.a&&p.ctrl!=='bot'){p.ctrl='bot';toast(p.name+' ay bot na muna','#fff',1400);}return r?r.v:undefined;}
+function applyLog(p,r){if(r&&r.a&&p.ctrl!=='bot'){p.away=p.ctrl;p.ctrl='bot';toast(p.name+' ay bot na muna','#fff',1400);}return r?r.v:undefined;}
+/* a seat a bot took over goes back to its player at the start of the next turn or minigame, if the player is in the room again.
+   The host decides and records it in the log, so every device switches the seat at the same point of the game */
+async function seatSync(){
+  if(!NET.on||!state.players.some(p=>p.away))return;
+  const tok=gameToken,k=++decK;
+  if(NET.host)netRecord(k,{v:state.players.filter(p=>p.away&&netLive(p.peer)).map(p=>p.id)});
+  const r=await netWaitLog(k,null);if(tok!==gameToken)await HALT;
+  for(const id of (r&&r.v)||[]){const p=state.players[id];if(p&&p.away){p.ctrl=p.away;p.away=null;toast(p.name+' ay bumalik!','#C9F2B4',1400);}}
+}
 
 /* ================= board flow ================= */
 function checkpoint(){if(NET.on||isHamon()){state.checkpoint=null;return;}state.checkpoint={mode:'local',setup:state.setup,order:state.order.slice(),round:state.round,turn:state.turn,korona:korona.spots.slice(),gs,decK,mgSeq,plan:state.plan.slice(),players:state.players.map(p=>({pos:p.pos,piso:p.piso,korona:p.korona,item:p.item,ctrl:p.ctrl,stats:Object.assign({},p.stats),allies:p.allies.map(a=>({n:a.n,look:a.look}))}))};saveGame(state.checkpoint);}
@@ -1587,6 +1604,7 @@ async function jackEnPoy(p){
   if(!anyLocal)await say('Panalo si '+win.name+'!',win.color,1100);else await wait(700);
 }
 async function playTurn(p){
+  await seatSync();
   state.fast=false;state.active=p;state.overview=false;mapBtn.setAttribute('aria-pressed','false');updateStatus();
   await wait(300);
   if(p.ctrl==='local')tip('roll','Pindutin ang "Tamaan ang dice" para gumulong ng 1 hanggang 10. Ang mga espasyong may puting bilog ang maaabot mo.');
@@ -1956,6 +1974,7 @@ function mkPalosebo(pre,mgi){
 
 async function runMinigame(kind,opt){
   opt=opt||{};
+  await seatSync();
   const tok=gameToken,def=MG[kind]||MG.tumbang,mgi=++mgSeq,P=state.players;
   const pre=P.map(()=>def.preroll(state.cfg.diff));
   const mult=(isParty()&&state.round===maxR()&&maxR()>=3)?2:1;
