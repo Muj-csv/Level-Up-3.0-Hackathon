@@ -10,6 +10,7 @@ this repo are AI-written.
 
 | Date | Work done | Who | Evidence |
 |---|---|---|---|
+| Oct 23, 2026 | Set up the `main` branch and GitHub Pages files (`.nojekyll`, README link) | Claude, on the team's request | This commit |
 | Oct 22, 2026 | Play-test suite: screen sizes, every button, full Party and Torneo matches with score checks, bots per difficulty, save/resume, restarts, resizing, reduced motion, downloads, name input; scripted minigame players; two-device online match through a stand-in for the room service | Claude, on the team's request | `tests/`, `package.json` (this commit) |
 | Oct 22, 2026 | Polish: path arrows, items guide page, card buttons that stay in view, online lobby copy, gallery labels | Claude, on the team's request | Commit 1dd9e76 |
 | Oct 22, 2026 | Performance: sky painted once per screen size; static props, bridges and spaces cached as sprites. Board frame draw time 48 ms to 11 ms (headless phone-size test) | Claude, on the team's request | Commits d99bc1f, 439823a |

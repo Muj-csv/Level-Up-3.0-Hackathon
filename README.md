@@ -14,14 +14,17 @@ Tumbang Preso, Patintero, Sipa and Palosebo.
 
 The whole game is one file, `index.html`. There is no build step and nothing to install.
 
+- **Online:** https://muj-csv.github.io/Level-Up-3.0-Hackathon/ (GitHub Pages, built from
+  the `main` branch).
 - **Quickest:** open `index.html` in a phone or computer browser.
 - **Local server** (needed on some browsers for clipboard and sharing):
   ```bash
   python3 -m http.server 8000
   # then open http://localhost:8000
   ```
-- **GitHub Pages / itch.io:** upload `index.html` as-is (itch.io: zip it and mark it
-  "This file will be played in the browser").
+- **GitHub Pages:** every push to `main` republishes the site (Settings → Pages →
+  Deploy from a branch → `main` / root). `.nojekyll` makes Pages serve the files as-is.
+- **itch.io:** zip `index.html` and mark it "This file will be played in the browser".
 
 The game loads two things from the internet: Google Fonts (Bagel Fat One, Nunito) and the
 `qrcode-generator` library from jsDelivr. Without a connection it still runs with fallback
