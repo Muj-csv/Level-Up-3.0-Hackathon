@@ -22,8 +22,8 @@ canvas board, and players can pick 2D in the menu (see Controls and settings).
 The game is `index.html` plus two libraries in `vendor/` (Three.js and a QR code
 generator). There is no build step and nothing to install.
 
-- **Online:** https://muj-csv.github.io/Level-Up-3.0-Hackathon/ (GitHub Pages, built from
-  the `main` branch), or the team's Vercel address once it is set up (below).
+- **Online:** the live game on Vercel and a backup on GitHub Pages, both built from the
+  `main` branch. All project links are in [`docs/LINKS.md`](docs/LINKS.md).
 - **Quickest:** open `index.html` in a phone or computer browser.
 - **Local server** (needed on some browsers for clipboard and sharing):
   ```bash
