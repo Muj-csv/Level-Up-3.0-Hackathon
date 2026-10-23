@@ -82,8 +82,15 @@ const step = page => page.evaluate(() => {
   check(saved, 'the save at the start of a turn includes Kasama allies');
   await page.goto(srv.url + '?debug'); await page.waitForFunction(() => window.__lsu && window.__lsu.screen === 'title');
   await page.click('#mResume'); await page.waitForTimeout(1500);
-  const res = await page.evaluate(() => { const L = window.__lsu; return { allies: L.state.players[1].allies.map(a => a.n), meshes: L.b3.allies.size }; });
-  check(res.allies.join() === 'Lito' && res.meshes === 1, 'resumed game restores the ally and draws it in 3D', JSON.stringify(res));
+  // meshes should equal the total ally count across every player, not a hardcoded 1 --
+  // the step() loop above rolls real dice to force a save, so it can legitimately land
+  // player[1] on a second Kasama space and recruit another ally before saving.
+  const res = await page.evaluate(() => {
+    const L = window.__lsu;
+    const totalAllies = L.state.players.reduce((n, p) => n + p.allies.length, 0);
+    return { allies: L.state.players[1].allies.map(a => a.n), meshes: L.b3.allies.size, totalAllies };
+  });
+  check(res.allies.includes('Lito') && res.meshes === res.totalAllies, 'resumed game restores the ally(ies) and draws one 3D mesh per ally', JSON.stringify(res));
   await shot(page, 'board-ally');
   await page.context().close();
 }
