@@ -33,9 +33,11 @@ const step = page => page.evaluate(() => {
 // ---------- 1. title and board in 3D ----------
 {
   const page = await newPage('3d');
-  const t = await page.evaluate(() => ({ ok: window.__lsu.b3.ok, on: window.__lsu.b3.on, cv3: !document.getElementById('stage3d').hidden, kids: document.getElementById('kidsCv').hidden }));
-  check(t.ok && t.on && t.cv3, '3D title: Three.js loads and the 3D canvas is shown', JSON.stringify(t));
-  check(t.kids, '3D title: the 2D title kids are hidden (the 3D kids stand on the board instead)');
+  // the menu's kids are the rigged 3D kids (kids/hero.js), built after Three.js loads
+  await page.waitForFunction(() => window.__lsu.hero.title, null, { timeout: 30000 }).catch(() => {});
+  const t = await page.evaluate(() => ({ ok: window.__lsu.b3.ok, hero: !!window.__lsu.hero.ctl && window.__lsu.hero.title, heroCv: !document.getElementById('heroCv').hidden, world: !document.getElementById('mapView').hidden && document.getElementById('mapImg').complete, cv3: !document.getElementById('stage3d').hidden, kids2d: getComputedStyle(document.getElementById('kidsCv')).visibility }));
+  check(t.ok && t.hero && t.heroCv && t.kids2d === 'hidden', '3D title: the new 3D kids stand above the logo (the 2D kids are hidden)', JSON.stringify(t));
+  check(t.world && !t.cv3, '3D title: the world picture of the four islands is the backdrop (no old cloud board behind the menu)');
   await shot(page, 'title');
 
   // the cloud board (fast in software WebGL); the island maps have their own run below
