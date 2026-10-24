@@ -249,5 +249,46 @@
       { "id": "aplaya", "name": "Aplaya", "triviaIds": ["aplaya-bangka", "aplaya-patuyo"] },
       { "id": "palayan", "name": "Palayan", "triviaIds": ["palayan-kalabaw", "palayan-bayanihan"] }
     ]
+  },
+  "nicknames": {
+    "note": "F8.1 word lists for the nickname picker (adjective + noun in Filipino, e.g. 'Masipag na Kalabaw'), replacing the free-text name field. Joey's half of F8 (Ian owns the picker UI). Each adjective's `label` is the pre-joined form with the correct Tagalog linker already applied ('na' after a consonant, fused '-ng' after a vowel) so the UI can just do `label + ' ' + noun.t` with no grammar logic of its own. PENDING: the PRD's F8 acceptance requires sign-off from 2 team members that nothing here could offend or carry an unintended double meaning in Filipino — `reviewed_by` needs 2 names before this ships. See docs/NICKNAME_WORDLIST_REVIEW.md for the review packet.",
+    "reviewed_by": [],
+    "reviewed_at": null,
+    "adjectives": [
+      { "id": "masipag", "t": "Masipag", "label": "Masipag na" },
+      { "id": "matapang", "t": "Matapang", "label": "Matapang na" },
+      { "id": "mabait", "t": "Mabait", "label": "Mabait na" },
+      { "id": "masaya", "t": "Masaya", "label": "Masayang" },
+      { "id": "matalino", "t": "Matalino", "label": "Matalinong" },
+      { "id": "matatag", "t": "Matatag", "label": "Matatag na" },
+      { "id": "mabilis", "t": "Mabilis", "label": "Mabilis na" },
+      { "id": "matiyaga", "t": "Matiyaga", "label": "Matiyagang" },
+      { "id": "masigla", "t": "Masigla", "label": "Masiglang" },
+      { "id": "magiliw", "t": "Magiliw", "label": "Magiliw na" },
+      { "id": "mausisa", "t": "Mausisa", "label": "Mausisang" },
+      { "id": "matulungin", "t": "Matulungin", "label": "Matulungin na" },
+      { "id": "maalalahanin", "t": "Maalalahanin", "label": "Maalalahanin na" },
+      { "id": "mapagmahal", "t": "Mapagmahal", "label": "Mapagmahal na" },
+      { "id": "matapat", "t": "Matapat", "label": "Matapat na" },
+      { "id": "malakas", "t": "Malakas", "label": "Malakas na" }
+    ],
+    "nouns": [
+      { "id": "kalabaw", "t": "Kalabaw" },
+      { "id": "tamaraw", "t": "Tamaraw" },
+      { "id": "agila", "t": "Agila" },
+      { "id": "maya", "t": "Maya" },
+      { "id": "pawikan", "t": "Pawikan" },
+      { "id": "tarsier", "t": "Tarsier" },
+      { "id": "tutubi", "t": "Tutubi" },
+      { "id": "alitaptap", "t": "Alitaptap" },
+      { "id": "paruparo", "t": "Paruparo" },
+      { "id": "palaka", "t": "Palaka" },
+      { "id": "alimango", "t": "Alimango" },
+      { "id": "pusa", "t": "Pusa" },
+      { "id": "aso", "t": "Aso" },
+      { "id": "kuting", "t": "Kuting" },
+      { "id": "ibon", "t": "Ibon" },
+      { "id": "bubuyog", "t": "Bubuyog" }
+    ]
   }
 }
