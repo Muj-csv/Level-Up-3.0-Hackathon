@@ -11,9 +11,15 @@
 <meta name="theme-color" content="#9DD6DF">
 <meta name="claude:viewport-fit-sides" content="cover">
 <style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=Nunito:wght@700;800;900&display=swap">
+<style>
+/* F10.3: fonts self-hosted from vendor/fonts/ (see vendor/README.md) so the first load
+   and every reload after it work with no internet. Latin subset only: covers Filipino
+   and English text, including accented letters (Latin-1 Supplement). */
+@font-face{font-family:'Bagel Fat One';font-style:normal;font-weight:400;font-display:swap;src:url(vendor/fonts/bagel-fat-one-latin-400.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;}
+@font-face{font-family:'Nunito';font-style:normal;font-weight:700;font-display:swap;src:url(vendor/fonts/nunito-latin-700-900.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;}
+@font-face{font-family:'Nunito';font-style:normal;font-weight:800;font-display:swap;src:url(vendor/fonts/nunito-latin-700-900.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;}
+@font-face{font-family:'Nunito';font-style:normal;font-weight:900;font-display:swap;src:url(vendor/fonts/nunito-latin-700-900.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;}
+</style>
 <style>
 /* Layout: one full-bleed canvas world (sky, floating islands, minigame arenas); DOM "stickers" float on top: title menu, players across the top, actions along the bottom, cards in the middle. Deliberately one daytime look. */
 :root{
@@ -1196,9 +1202,12 @@ function toWorld(sx,sy){if(B3.on&&B3.unproj){const w=B3.unproj(sx,sy);if(w)retur
 
 /* ================= state ================= */
 const APP={screen:'title'};
-/* online rooms ride on the Claude artifact room service; anywhere else the link points at the page itself */
-const roomAvailable=()=>!!(window.claude&&window.claude.use);
-const APPID='lsu1',SHARE_URL=roomAvailable()?'https://claude.ai/artifact/FQqtor9NZvLytPNJotsPuc':location.href.split(/[?#]/)[0];
+/* online rooms ride on the Claude artifact room service inside Claude, and on our Supabase project (F7) everywhere else.
+   SUPA holds the public project URL and anon key only, never the service_role key; window.LSU_SUPA can override it (tests) */
+const SUPA=Object.assign({url:'https://sxxqfhxhbliulzsulsew.supabase.co',key:'sb_publishable_azWNqrRU1hdovbxBLEi4wA_H3mHJzMr'},window.LSU_SUPA||{});
+const inClaude=()=>!!(window.claude&&window.claude.use);
+const roomAvailable=()=>inClaude()||!!(SUPA.url&&SUPA.key);
+const APPID='lsu1',SHARE_URL=inClaude()?'https://claude.ai/artifact/FQqtor9NZvLytPNJotsPuc':location.href.split(/[?#]/)[0];
 const KCOST=10;
 const ITEMS={
   doble:{name:'Dobleng dice',tag:'x2',cost:5,desc:'Dalawang dice: 2 hanggang 20 hakbang.'},
@@ -1354,14 +1363,47 @@ function cancelLocalUI(){closeCard();actionResolver=null;actionBtn.hidden=true;i
 const NET={cfg:null,on:false,host:false,rm:null,code:'',my:null,hostPeer:null,hostSeenAt:0,gid:'',log:{},logMax:0,inp:{},peers:[],seen:new Map(),roster:[],rosterKey:'',name:'',started:'',onUpdate:null,unsub:null,gone:false,mgAt:0};
 function cleanName(s){return String(s||'').replace(/[^\p{L}\p{N} ._'-]/gu,'').replace(/\s+/g,' ').trim().slice(0,12);}
 function makeCode(){const A='ABCDEFGHJKMNPQRSTUVWXYZ23456789';let s='';for(let i=0;i<4;i++)s+=A[Math.floor(R()*A.length)];return s;}
-async function netRoom(){try{if(!window.claude||!window.claude.use)return null;return await window.claude.use('room');}catch(e){return null;}}
+async function netRoom(){try{if(inClaude())return await window.claude.use('room');if(SUPA.url&&SUPA.key)return supaRoom(await supaLoad());return null;}catch(e){return null;}}
+/* Supabase room: the same join(name) -> {peers, onPeers, presence, leave} shape as the Claude room (see tests/mock-room.js).
+   Free plan (Oct 2026): 100 messages/s and 20 presence messages/s per project; a broadcast counts once sent plus once per listener.
+   So each device broadcasts its whole presence object, at most every SUPA_GAP ms (the latest state wins), plus a heartbeat;
+   Supabase presence is only tracked once, to hear when a device's connection closes.
+   ponytail: one busy 4-phone room uses about 64 messages/s in minigames; raise SUPA_GAP or move to a paid plan for more rooms */
+const SUPA_GAP=250,SUPA_BEAT=2000,SUPA_DROP=6000,SUPA_LOST=90000;
+let supaLib=null;
+function supaLoad(){return supaLib||(supaLib=new Promise((res,rej)=>{const s=document.createElement('script');s.src='vendor/supabase-2.118.0.js';
+  s.onload=()=>window.supabase?res(window.supabase.createClient(SUPA.url,SUPA.key)):rej(new Error('nolib'));s.onerror=()=>{supaLib=null;rej(new Error('nolib'));};document.head.appendChild(s);}));}
+function supaRoom(client){return{join(name){return new Promise((resolve,reject)=>{
+  const me=netPid(),peers=new Map(),ch=client.channel(name,{config:{broadcast:{self:false},presence:{key:me}}});
+  let mine={},subs=[],left=false,joined=false,lastSend=0,timer=0,beat=0,lostT=0;
+  const list=()=>[{peer:me,sameTab:true,presence:mine}].concat([...peers].map(([peer,v])=>({peer,sameTab:false,presence:v.presence})));
+  const emit=()=>{const ps=list();subs.forEach(s=>{try{s.cb({peers:ps});}catch(e){console.error(e);}});};
+  const sendNow=()=>{clearTimeout(timer);timer=0;if(left||!joined)return;lastSend=Date.now();ch.send({type:'broadcast',event:'p',payload:{id:me,presence:mine}});};
+  const send=()=>{if(timer)return;const w=lastSend+SUPA_GAP-Date.now();if(w<=0)sendNow();else timer=setTimeout(sendNow,w);};
+  ch.on('broadcast',{event:'p'},({payload:m})=>{if(!m||m.id===me)return;const had=peers.has(m.id);peers.set(m.id,{presence:m.presence||{},seen:Date.now()});if(!had)send();emit();});
+  ch.on('broadcast',{event:'bye'},({payload:m})=>{if(m&&peers.delete(m.id))emit();});
+  ch.on('presence',{event:'join'},({key})=>{if(key!==me)send();});
+  ch.on('presence',{event:'leave'},({key})=>{if(peers.delete(key))emit();});
+  /* supabase-js rejoins by itself after a network blip; the game is only told the room is gone if that takes longer than SUPA_LOST (past the game's 60 s grace) */
+  ch.subscribe((st,err)=>{
+    if(st==='SUBSCRIBED'){clearTimeout(lostT);lostT=0;ch.track({at:Date.now()});
+      if(!joined){joined=true;sendNow();beat=setInterval(()=>{if(Date.now()-lastSend>=SUPA_BEAT)sendNow();const t=Date.now();let gone=false;for(const [id,v] of peers)if(t-v.seen>SUPA_DROP){peers.delete(id);gone=true;}if(gone)emit();},500);resolve(api);}
+      else sendNow();}
+    else if(st==='CHANNEL_ERROR'||st==='TIMED_OUT'||st==='CLOSED'){if(left)return;if(!joined){reject(err||new Error(st));return;}
+      if(!lostT)lostT=setTimeout(()=>{subs.forEach(s=>{try{s.err&&s.err(err||new Error(st));}catch(e){}});},SUPA_LOST);}});
+  const api={peers:list,
+    onPeers(cb,err){const s={cb,err};subs.push(s);setTimeout(emit,0);return()=>{subs=subs.filter(x=>x!==s);};},
+    presence(patch){mine=Object.assign({},mine,patch);send();setTimeout(emit,0);return Promise.resolve();},
+    leave(){if(left)return Promise.resolve();left=true;clearInterval(beat);clearTimeout(timer);clearTimeout(lostT);
+      try{ch.send({type:'broadcast',event:'bye',payload:{id:me}});}catch(e){}return client.removeChannel(ch).then(()=>{},()=>{});}};
+});}};}
 async function netJoin(code){
   const room=await netRoom();if(!room)throw new Error('noroom');
   const rm=await room.join('lsu-'+code.toLowerCase());NET.rm=rm;NET.code=code;NET.seen=new Map();NET.peers=rm.peers()||[];
   NET.unsub=rm.onPeers(ch=>onNetPeers(ch),e=>netTerminal(e));return rm;
 }
 function netPres(patch){if(NET.rm)NET.rm.presence(patch).catch(()=>{});}
-function netLeave(){try{NET.unsub&&NET.unsub();}catch(e){}const rm=NET.rm;Object.assign(NET,{on:false,host:false,rm:null,code:'',hostPeer:null,gid:'',log:{},logMax:0,inp:{},roster:[],rosterKey:'',started:'',onUpdate:null,unsub:null,gone:false});try{rm&&rm.leave().catch(()=>{});}catch(e){}}
+function netLeave(){try{NET.unsub&&NET.unsub();}catch(e){}const rm=NET.rm;Object.assign(NET,{on:false,host:false,rm:null,code:'',hostPeer:null,gid:'',log:{},logMax:0,inp:{},roster:[],rosterKey:'',started:'',onUpdate:null,unsub:null,gone:false,game:null,cp:null,rejoin:'',hostGone:false});try{rm&&rm.leave().catch(()=>{});}catch(e){}}
 function netPeer(peer){return NET.peers.find(q=>q.peer===peer);}
 function myPeer(){if(!NET.my&&NET.rm){try{const me=(NET.rm.peers()||[]).find(q=>q.sameTab);if(me)NET.my=me.peer;}catch(e){}}return NET.my;}
 function netHost(){return NET.peers.find(q=>!q.sameTab&&q.presence&&q.presence.app===APPID&&q.presence.role==='host');}
@@ -1380,19 +1422,48 @@ function hostRoster(){
   const roster=[{n:NET.name,p:myPeer()}].concat(guests.map(q=>({n:cleanName(q.presence.name)||'Kalaro',p:q.peer})));
   const key=JSON.stringify(roster);if(key!==NET.rosterKey){NET.rosterKey=key;NET.roster=roster;netPres({roster});}
 }
-function netRecord(k,r){NET.log[k]=r;if(k>NET.logMax)NET.logMax=k;const ks=Object.keys(NET.log).map(Number).sort((a,b)=>b-a).slice(0,40);const out={};for(const x of ks)out['k'+x]=NET.log[x];netPres({log:out});}
+/* the host keeps the whole game's log in its presence (a 5-round game logs about 60–120 small entries), so a device that drops out can always catch up */
+function netPubLog(){const ks=Object.keys(NET.log).map(Number).sort((a,b)=>b-a).slice(0,200);const out={};for(const x of ks)out['k'+x]=NET.log[x];netPres({log:out});}
+function netRecord(k,r){NET.log[k]=r;if(k>NET.logMax)NET.logMax=k;netSave();netPubLog();}
+/* F7.3 rejoin after a reload: each tab keeps its player id and online session in sessionStorage (it survives a reload, or the
+   browser putting the tab back after closing it in the background). A guest comes back from the host's latest turn checkpoint;
+   the host comes back from its own checkpoint and log, which only it has. Not inside Claude, whose room service picks the ids */
+const OL_KEY='lsu-online';
+function netPid(){let id='';try{id=sessionStorage.getItem('lsu-pid')||'';if(!id){id='p'+Math.random().toString(36).slice(2,10);sessionStorage.setItem('lsu-pid',id);}}catch(e){}return id||'p'+Math.random().toString(36).slice(2,10);}
+function netSave(){if(!NET.on||!NET.game||state.ended||inClaude())return;const o=Object.assign({code:NET.code,host:NET.host,name:NET.name,at:Date.now()},NET.game);
+  if(NET.host)Object.assign(o,{cp:NET.cp,log:NET.log});try{sessionStorage.setItem(OL_KEY,JSON.stringify(o));}catch(e){}}
+function netSaved(){try{const o=JSON.parse(sessionStorage.getItem(OL_KEY)||'null');return o&&o.gid&&o.code&&Date.now()-o.at<30*60000?o:null;}catch(e){return null;}}
+function netUnsave(){try{sessionStorage.removeItem(OL_KEY);}catch(e){}}
+function netCheckpoint(cp){if(NET.host){NET.cp=cp;netPres({cp});}netSave();}
+async function netResume(o){
+  showMsg('Bumabalik sa online na laro…','Room '+o.code+'.');
+  try{NET.host=!!o.host;NET.name=o.name;await netJoin(o.code);NET.host=!!o.host;NET.name=o.name;}catch(e){netLeave();return netFail();}
+  if(o.host){NET.roster=o.roster;NET.cfg=o.cfg;netPres({app:APPID,role:'host',name:o.name,st:'play',gid:o.gid,seed:o.seed,roster:o.roster,cfg:o.cfg,cp:o.cp||null,inp:null,mg:null});
+    startOnline(o,o.cp,o.log);netPubLog();return;}
+  /* a guest waits for the host's presence: onNetPeers then starts the game from the host's checkpoint (see startOnline) */
+  NET.rejoin=o.gid;netPres({app:APPID,role:'guest',name:o.name,gid:''});NET.hostSeenAt=Date.now();
+  setTimeout(()=>{if(NET.rejoin!==o.gid||APP.screen==='game')return;NET.rejoin='';netLeave();
+    const c=openCard('<h2>Hindi na makabalik</h2><p>Wala na ang larong ito sa room '+esc(o.code)+'.</p><div class="row"><button type="button" class="btn primary" data-v="ok" data-primary>Sige</button></div>');cardChoice(c).then(()=>toTitle());},20000);
+}
 function netInput(k,v){if(NET.host){netRecord(k,{v});return;}NET.inp['k'+k]=v;const ks=Object.keys(NET.inp).sort((a,b)=>+a.slice(1)-+b.slice(1));while(ks.length>12)delete NET.inp[ks.shift()];netPres({inp:Object.assign({},NET.inp)});}
 function netMg(obj,throttle){const t=Date.now();if(throttle&&t-NET.mgAt<110)return;NET.mgAt=t;netPres({mg:obj});}
 function netPeerMg(peer,mgi){const q=netPeer(peer);const pr=q&&q.presence;return pr&&pr.gid===NET.gid&&pr.mg&&pr.mg.i===mgi?pr.mg:null;}
+/* F7.3: a player who drops out gets NET_GRACE to come back before a bot plays for them (the seat is handed back by seatSync);
+   a player who is there but slow gets the decision's own timeout. Guests keep waiting for a host who drops out
+   (it may be their own connection that is down) and can leave from the menu. window.LSU_NET.grace shortens it for tests */
+const NET_GRACE=(window.LSU_NET&&+window.LSU_NET.grace)||60000;
+function netLive(peer){const q=peer&&netPeer(peer);return!!(q&&q.presence&&q.presence.gid===NET.gid);}
 function netWaitLog(k,p,autoV,timeoutMs){
-  const tok=gameToken;return new Promise(res=>{const t0=Date.now();let goneSince=null;
+  const tok=gameToken;return new Promise(res=>{let t0=Date.now(),goneSince=null;
     const tick=()=>{if(tok!==gameToken)return;
       if(NET.log[k]!==undefined){res(NET.log[k]);return;}
       if(NET.host){if(p&&p.ctrl==='remote'){const q=netPeer(p.peer);const pr=q&&q.presence;const v=pr&&pr.gid===NET.gid&&pr.inp?pr.inp['k'+k]:undefined;
           if(v!==undefined){netRecord(k,{v});res(NET.log[k]);return;}
-          if(!q){goneSince=goneSince||Date.now();}else goneSince=null;
-          if((goneSince&&Date.now()-goneSince>5000)||Date.now()-t0>(timeoutMs||45000)){netRecord(k,{v:typeof autoV==='function'?autoV():autoV,a:1});res(NET.log[k]);return;}}}
-      else{if(netHost())NET.hostSeenAt=Date.now();else if(Date.now()-NET.hostSeenAt>10000){lostConnection('Umalis ang gumawa ng room, kaya natapos ang online na laro.');return;}}
+          if(!q){goneSince=goneSince||Date.now();setHint('Naputol si '+p.name+'. Hinihintay… '+Math.max(0,Math.ceil((NET_GRACE-(Date.now()-goneSince))/1000)));}
+          else if(goneSince){goneSince=null;t0=Date.now();setHint('Hinihintay si '+p.name+'…');}
+          if(goneSince?Date.now()-goneSince>NET_GRACE:Date.now()-t0>(timeoutMs||45000)){netRecord(k,{v:typeof autoV==='function'?autoV():autoV,a:1});res(NET.log[k]);return;}}}
+      else{if(netHost()){NET.hostSeenAt=Date.now();if(NET.hostGone){NET.hostGone=false;toast('Bumalik ang host!','#C9F2B4',1400);}}
+        else if(!NET.hostGone&&Date.now()-NET.hostSeenAt>3000){NET.hostGone=true;toast('Naputol ang host. Hinihintay na bumalik…','#fff',2600);}}
       setTimeout(tick,120);};
     tick();});
 }
@@ -1414,10 +1485,20 @@ async function decide(p,ui,botFn,autoV,timeoutMs){
   const r=await netWaitLog(k,p,autoV,timeoutMs);if(tok!==gameToken)await HALT;setHint(prevHint===('Hinihintay si '+p.name+'…')?'':prevHint);
   return applyLog(p,r);
 }
-function applyLog(p,r){if(r&&r.a&&p.ctrl!=='bot'){p.ctrl='bot';toast(p.name+' ay bot na muna','#fff',1400);}return r?r.v:undefined;}
+function applyLog(p,r){if(r&&r.a&&p.ctrl!=='bot'){p.away=p.ctrl;p.ctrl='bot';toast(p.name+' ay bot na muna','#fff',1400);}return r?r.v:undefined;}
+/* a seat a bot took over goes back to its player at the start of the next turn or minigame, if the player is in the room again.
+   The host decides and records it in the log, so every device switches the seat at the same point of the game */
+async function seatSync(){
+  if(!NET.on||!state.players.some(p=>p.away))return;
+  const tok=gameToken,k=++decK;
+  if(NET.host&&NET.log[k]===undefined)netRecord(k,{v:state.players.filter(p=>p.away&&netLive(p.peer)).map(p=>p.id)});
+  const r=await netWaitLog(k,null);if(tok!==gameToken)await HALT;
+  for(const id of (r&&r.v)||[]){const p=state.players[id];if(p&&p.away){p.ctrl=p.away;p.away=null;toast(p.name+' ay bumalik!','#C9F2B4',1400);}}
+}
 
 /* ================= board flow ================= */
-function checkpoint(){if(NET.on||isHamon()){state.checkpoint=null;return;}state.checkpoint={mode:'local',setup:state.setup,order:state.order.slice(),round:state.round,turn:state.turn,korona:korona.spots.slice(),gs,decK,mgSeq,plan:state.plan.slice(),players:state.players.map(p=>({pos:p.pos,trail:p.trail.slice(),piso:p.piso,korona:p.korona,item:p.item,ctrl:p.ctrl,stats:Object.assign({},p.stats),allies:p.allies.map(a=>({n:a.n,look:a.look}))}))};saveGame(state.checkpoint);}
+function checkpoint(){if(isHamon()){state.checkpoint=null;return;}const cp={mode:NET.on?'online':'local',setup:state.setup,order:state.order.slice(),round:state.round,turn:state.turn,korona:korona.spots.slice(),gs,decK,mgSeq,plan:state.plan.slice(),players:state.players.map(p=>({pos:p.pos,trail:p.trail.slice(),piso:p.piso,korona:p.korona,item:p.item,ctrl:p.ctrl,away:p.away?1:0,stats:Object.assign({},p.stats),allies:p.allies.map(a=>({n:a.n,look:a.look}))}))};
+  if(NET.on){state.checkpoint=null;netCheckpoint(cp);return;}state.checkpoint=cp;saveGame(cp);}
 async function hop(p,to,back){
   const from=p.pos;p.hopping=true;const A0=spacePos(from),B0=spacePos(to);const dx=B0.x-A0.x,dy=B0.y-A0.y;
   if(Math.abs(dy)>Math.abs(dx)*1.1){p.dir=dy<0?'back':'front';}else{p.dir='side';p.face=dx>=0?1:-1;}p.dirT=.8;
@@ -1681,6 +1762,7 @@ async function jackEnPoy(p){
   if(!anyLocal)await say('Panalo si '+win.name+'!',win.color,1100);else await wait(700);
 }
 async function playTurn(p){
+  await seatSync();
   state.fast=false;state.active=p;state.overview=false;mapBtn.setAttribute('aria-pressed','false');updateStatus();
   await wait(300);
   if(p.ctrl==='local')tip('roll','Pindutin ang "Tamaan ang dice" para gumulong ng 1 hanggang 10. Ang mga espasyong may puting bilog ang maaabot mo.');
@@ -2050,6 +2132,7 @@ function mkPalosebo(pre,mgi){
 
 async function runMinigame(kind,opt){
   opt=opt||{};
+  await seatSync();
   const tok=gameToken,def=MG[kind]||MG.tumbang,mgi=++mgSeq,P=state.players;
   const pre=P.map(()=>def.preroll(state.cfg.diff));
   const mult=(isParty()&&state.round===maxR()&&maxR()>=3)?2:1;
@@ -2132,7 +2215,7 @@ function saveCanvas(c,fn,msg){c.toBlob(b=>{if(!b){toast('Hindi ma-save','#FF8A7A
 function saveResultImage(P,head){saveCanvas(buildResultImage(P,head),'taympers-resulta.png','Na-save ang larawan');}
 
 async function finale(){
-  clearSave();const tok=gameToken;state.active=null;state.overview=true;state.round=maxR();state.ended=true;updateStatus('Tapos na');mapBtn.setAttribute('aria-pressed','true');
+  clearSave();netUnsave();const tok=gameToken;state.active=null;state.overview=true;state.round=maxR();state.ended=true;updateStatus('Tapos na');mapBtn.setAttribute('aria-pressed','true');
   await wait(700);
   if(isParty())await bonusAwards(tok);
   if(tok!==gameToken)return;
@@ -2190,7 +2273,7 @@ function beginGame(spec,seed,cp,cfg){
   state.order=[0,1,2,3];if(!isHamon())for(let i=3;i>0;i--){const j=Math.floor(G()*(i+1)),t=state.order[i];state.order[i]=state.order[j];state.order[j]=t;}
   setBoard(isParty()?state.cfg.map:'ulap');state.players=makePlayers(spec);state.players.forEach(p=>{p.pos=BOARD.start;});resetKorona();state.round=1;state.turn=0;state.overview=false;state.active=null;state.party=false;mapBtn.setAttribute('aria-pressed','false');
   let r0=1,t0=0;
-  if(cp&&cp.players&&cp.players.length===4){cp.players.forEach((q,i)=>{const p=state.players[i];p.pos=clamp(q.pos|0,0,N-1);p.trail=Array.isArray(q.trail)?q.trail.map(v=>clamp(v|0,0,N-1)).slice(-16):[];p.piso=q.piso|0;p.korona=q.korona|0;p.item=q.item&&ITEMS[q.item]?q.item:null;if(q.ctrl==='bot')p.ctrl='bot';if(Array.isArray(q.allies))p.allies=q.allies.slice(0,2).map(a=>({n:cleanName(a.n)||'Kasama',look:clamp(a.look|0,0,3),x:0,y:0}));if(q.stats)p.stats={wins:q.stats.wins|0,steps:q.stats.steps|0,dice:q.stats.dice|0,dn:q.stats.dn|0};});
+  if(cp&&cp.players&&cp.players.length===4){cp.players.forEach((q,i)=>{const p=state.players[i];p.pos=clamp(q.pos|0,0,N-1);p.trail=Array.isArray(q.trail)?q.trail.map(v=>clamp(v|0,0,N-1)).slice(-16):[];p.piso=q.piso|0;p.korona=q.korona|0;p.item=q.item&&ITEMS[q.item]?q.item:null;if(q.ctrl==='bot'){if(q.away&&p.ctrl!=='bot')p.away=p.ctrl;p.ctrl='bot';}if(Array.isArray(q.allies))p.allies=q.allies.slice(0,2).map(a=>({n:cleanName(a.n)||'Kasama',look:clamp(a.look|0,0,3),x:0,y:0}));if(q.stats)p.stats={wins:q.stats.wins|0,steps:q.stats.steps|0,dice:q.stats.dice|0,dn:q.stats.dn|0};});
     if(Array.isArray(cp.korona)&&cp.korona.length===korona.spots.length)korona.spots=cp.korona.map(v=>clamp(v|0,0,N-1));r0=clamp(cp.round|0,1,maxR());t0=clamp(cp.turn|0,0,4);gs=cp.gs|0;decK=cp.decK|0;mgSeq=cp.mgSeq|0;
     if(Array.isArray(cp.plan)&&cp.plan.length===maxR()&&cp.plan.every(k=>MG[k]))state.plan=cp.plan.slice();
     if(Array.isArray(cp.order)&&[...cp.order].sort().join()==='0,1,2,3')state.order=cp.order.map(Number);}
@@ -2208,22 +2291,25 @@ function startLocal(setup,cp){
   const spec=[0,1,2,3].map(i=>i<setup.n?{name:cleanName(setup.names[i])||CHARS[i].name,ctrl:'local'}:{name:CHARS[i].name,ctrl:'bot'});
   beginGame(spec,cp?cp.gs:Math.floor(R()*2147483647),cp,setup.cfg);
 }
-function startOnline(pr){
-  closeCard();NET.on=true;NET.gid=pr.gid;NET.started=pr.gid;NET.log={};NET.logMax=0;NET.inp={};NET.gone=false;NET.onUpdate=null;
-  if(!NET.host){netPres({gid:pr.gid,inp:{},mg:null});const h=netHost();if(h&&h.presence.log&&h.presence.gid===pr.gid)mergeLog(h.presence.log);NET.hostSeenAt=Date.now();}
-  const spec=pr.roster.slice(0,4).map((e,i)=>({name:cleanName(e.n)||CHARS[i].name,ctrl:!e.p?'bot':(e.p===NET.my?'local':'remote'),peer:e.p||null}));
+function startOnline(pr,cp,log){
+  closeCard();NET.on=true;NET.gid=pr.gid;NET.started=pr.gid;NET.log=Object.assign({},log||{});NET.logMax=Object.keys(NET.log).reduce((m,k)=>Math.max(m,+k),0);NET.inp={};NET.gone=false;NET.onUpdate=null;
+  NET.game={gid:pr.gid,seed:pr.seed,roster:pr.roster,cfg:pr.cfg};NET.cp=cp||null;
+  if(!NET.host){if(NET.rejoin===pr.gid&&pr.cp)cp=pr.cp;NET.rejoin='';
+    netPres({gid:pr.gid,inp:{},mg:null});const h=netHost();if(h&&h.presence.log&&h.presence.gid===pr.gid)mergeLog(h.presence.log);NET.hostSeenAt=Date.now();}
+  const spec=pr.roster.slice(0,4).map((e,i)=>({name:cleanName(e.n)||CHARS[i].name,ctrl:!e.p?'bot':(e.p===myPeer()?'local':'remote'),peer:e.p||null}));
   while(spec.length<4)spec.push({name:CHARS[spec.length].name,ctrl:'bot'});
   const cfg=normCfg(pr.cfg);if(cfg.mode==='hamon')cfg.mode='party';
-  state.setup=null;beginGame(spec,(pr.seed|0)||1,null,cfg);
+  state.setup=null;beginGame(spec,(pr.seed|0)||1,cp||null,cfg);netSave();
 }
 
 /* ================= screens & menus ================= */
 function setScreen(s){APP.screen=s;$('#scrTitle').hidden=s!=='title';$('#scrGallery').hidden=s!=='gallery';$('#scrMaps').hidden=s!=='maps';$('#hudTop').hidden=s!=='game';mapBtn.hidden=s!=='game';$('#menuBtn').hidden=s!=='game';$('#soundBtn').hidden=s==='game';$('#hudBottom').hidden=s==='gallery'||s==='maps';closeMenu();
   if(s!=='game'){actionBtn.hidden=true;itemBtn.hidden=true;setHint('');clearTips();}measureHud();Music.play(s==='game'?'board':'title');}
 function demoPlayers(){state.players=makePlayers(CHARS.map(c=>({name:c.name,ctrl:'bot'})));state.players.forEach((p,i)=>{p.pos=[0,1,0,1][i];});state.active=null;}
-function toTitle(){gameToken++;loadBar(-1);scene=null;closeCard();clearRun();if(NET.rm)netLeave();state.party=false;state.ended=false;state.checkpoint=null;state.cfg=normCfg({});setBoard('ulap');demoPlayers();resetKorona();setScreen('title');refreshResume();setTimeout(()=>{try{($('#mResume').hidden?$('#mLocal'):$('#mResume')).focus({preventScroll:true});}catch(e){}},50);}
+function toTitle(){gameToken++;loadBar(-1);scene=null;closeCard();clearRun();if(NET.rm)netLeave();netUnsave();state.party=false;state.ended=false;state.checkpoint=null;state.cfg=normCfg({});setBoard('ulap');demoPlayers();resetKorona();setScreen('title');refreshResume();setTimeout(()=>{try{($('#mResume').hidden?$('#mLocal'):$('#mResume')).focus({preventScroll:true});}catch(e){}},50);}
 function showMsg(title,body){openCard('<h2>'+esc(title)+'</h2><p>'+esc(body)+'</p>');}
-function netHelp(){return'Kailangang bukas ang laro sa claude.ai, naka-sign in ka, at naka-share ang laro sa mga kalaro mo (hindi gumagana sa public link).';}
+function netHelp(){return inClaude()?'Kailangang bukas ang laro sa claude.ai, naka-sign in ka, at naka-share ang laro sa mga kalaro mo (hindi gumagana sa public link).'
+  :'Kailangan ng internet ang bawat phone. Kapag naputol ang koneksyon, hintayin lang o i-reload ang page: babalik ka sa laro.';}
 
 /* game settings rows (mode, length, bot skill), shared by the one-phone setup and the online lobby */
 function segRow(key,label,opts,val){return'<div class="setrow"><span class="setlbl">'+esc(label)+'</span><div class="seg sm" role="group" aria-label="'+esc(label)+'">'+opts.map(o=>'<button type="button" data-k="'+key+'" data-val="'+esc(o.v)+'" aria-pressed="'+(String(o.v)===String(val))+'">'+esc(o.l)+'</button>').join('')+'</div></div>';}
@@ -2988,8 +3074,10 @@ function start(data){
   try{if(window.claude&&window.claude.use)window.claude.use('downloads').then(d=>{DL=d||null;}).catch(()=>{});}catch(e){}
   const cp=data&&data.checkpoint;
   if(cp&&cp.mode==='local'&&cp.setup){startLocal(cp.setup,cp);}
-  else{toTitle();const a={x:870,y:780};cam.x=cam.tx=a.x;cam.y=cam.ty=a.y;cam.z=cam.tz=fitZoom(1150,1000)*1.15;
-    const hc=(location.hash||'').replace('#','').toUpperCase();if(/^[A-Z0-9]{4}$/.test(hc))setTimeout(()=>roomAvailable()?joinFlow(hc):onlineFlow(),400);}
+  else{const ol=inClaude()?null:netSaved();toTitle();const a={x:870,y:780};cam.x=cam.tx=a.x;cam.y=cam.ty=a.y;cam.z=cam.tz=fitZoom(1150,1000)*1.15;
+    const hc=(location.hash||'').replace('#','').toUpperCase();
+    if(ol&&roomAvailable())setTimeout(()=>netResume(ol),400);
+    else if(/^[A-Z0-9]{4}$/.test(hc))setTimeout(()=>roomAvailable()?joinFlow(hc):onlineFlow(),400);}
   requestAnimationFrame(t=>{last=t;requestAnimationFrame(frame);});
 }
 if(DEBUG){const m=/[?&]speed=(\d+)/.exec(location.search);if(m)SPEED=clamp(+m[1],1,60);
