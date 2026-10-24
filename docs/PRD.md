@@ -379,7 +379,7 @@ with a licence that allows use; no art taken from other games.
 
 ## 11. Current state (for reference)
 
-- Single file `index.html` plus `vendor/` (Three.js r149, QR library); deploys on Vercel
+- `index.html` plus `vendor/` (Three.js r184, QR library) and the island maps in `maps/`; deploys on Vercel
   and GitHub Pages.
 - 4 islands, 37 spaces, 9 space types, 4 items, 5 minigames, bots in 3 levels, Party,
   Torneo, Hamon ng Araw, Pagsasanay, local save and resume.

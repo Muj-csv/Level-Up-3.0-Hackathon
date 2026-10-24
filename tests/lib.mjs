@@ -22,7 +22,7 @@ export async function chromium() {
 // Each suite picks the renderer it tests: '3d' lets the game load its bundled Three.js (vendor/), '2d' blocks
 // it so the game falls back to the 2D canvas, as it does on a device without WebGL.
 export async function renderer(target, mode) {
-  await target.route('**/vendor/three-*.min.js', r => mode === '3d' ? r.continue() : r.abort());
+  await target.route('**/vendor/three-r184/*.js', r => mode === '3d' ? r.continue() : r.abort());
 }
 
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.mjs': 'text/javascript', '.json': 'application/json', '.png': 'image/png', '.md': 'text/plain; charset=utf-8' };
