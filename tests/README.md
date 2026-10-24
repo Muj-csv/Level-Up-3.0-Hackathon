@@ -15,6 +15,8 @@ npm test
 | `minigames.mjs` | Starts each street game from Pagsasanay and plays it with a scripted player that reacts within one frame, plus button-mashers and a runner that ignores the guards. Timing must beat mashing, and dodging must beat running straight. |
 | `3d.mjs` | The 3D build through software WebGL: title and the cloud board in 3D, reach rings, an island map picked on the map screen (loading card, island drawn in 3D, a ring on every reachable space on both paths of a fork, four korona), screen-to-board mapping, the Grapiko 3D/2D setting, save and resume with Kasama allies, every minigame's 3D arena played to its result, and the 2D fallback when Three.js cannot load. Screenshots go to `test-results/3d-*.png`. |
 | `online.mjs` | A host and a guest play a full online match through `mock-room.js`, must agree on every korona and piso, follow each other into a rematch, and the host must finish with a bot in the guest's seat after the guest leaves. |
+| `quality.mjs` | The graphics quality (Kalidad: Mababa / Katamtaman / Mataas) in the pause menu: saved next to the other settings without changing them or the 3D/2D choice, old and broken saved settings, each quality's pixel ratio and shadows on the title, board and a minigame, changing it mid-game, an island built again for a new quality, and no GPU memory piling up over repeated minigames. |
+| `perf.mjs` | Not part of `npm test` (it takes about 15 minutes per quality). Benchmarks the title, the four islands, every minigame and the 2D board at one screen size through the game's `?perf` readout: `npm run perf -- <label> low,mid,high`. Results in `test-results/perf-<label>.json`. Software WebGL draws on the CPU, so it compares settings with each other, not phone frame rates. |
 
 ## 2D and 3D
 
