@@ -61,7 +61,7 @@ for (const [label, w, h] of [['phone 360x740', 360, 740], ['phone landscape 740x
   await opens('#mHamon', () => /Hamon ng Araw/.test(document.querySelector('#card').textContent), 'Hamon ng Araw opens today\'s challenge');
   await page.click('#card [data-v="back"]');
   await opens('#mGuide', () => /Paano maglaro · 1\//.test(document.querySelector('#card').textContent), 'Paano maglaro opens the guide');
-  for (let i = 0; i < 6; i++) await page.click('#card [data-v="next"]');
+  for (let i = 0; i < 7; i++) await page.click('#card [data-v="next"]');
   await page.click('#card [data-v="next"]');
   check(await page.evaluate(() => document.querySelector('#modal').hidden), 'guide pages through to the end and closes');
   await opens('#mSprites', () => window.__lsu.screen === 'gallery', 'Mga karakter opens the character gallery');
@@ -75,6 +75,31 @@ for (const [label, w, h] of [['phone 360x740', 360, 740], ['phone landscape 740x
   const after = await page.getAttribute('#soundBtn', 'aria-pressed');
   const prefs = await page.evaluate(() => JSON.parse(localStorage.getItem('lsu-prefs')));
   check(before !== after && prefs.music === (after === 'true') && prefs.sfx === (after === 'true'), 'speaker button toggles and its state matches the saved settings', `${before} -> ${after}`);
+  await page.context().close();
+}
+
+// ---------- 2b. map screen: the world picture, picking an island, starting on it ----------
+for (const [label, w, h] of [['phone', 390, 844], ['desktop', 1440, 900]]) {
+  const page = await newPage({ viewport: { width: w, height: h }, isMobile: w < 900, hasTouch: w < 900 });
+  await page.click('#mLocal'); await page.click('#card [data-v="go"]');
+  await page.waitForFunction(() => window.__lsu.screen === 'maps');
+  const m = await page.evaluate(() => { const b = [...document.querySelectorAll('#mapBtns [role="radio"]')], p = document.querySelector('#mapPanel').getBoundingClientRect();
+    return { n: b.length, on: b.filter(x => x.getAttribute('aria-checked') === 'true').map(x => x.dataset.k), fits: p.top >= 0 && p.bottom <= innerHeight + 1 && p.left >= 0 && p.right <= innerWidth + 1, small: b.filter(x => x.getBoundingClientRect().height < 44).length }; });
+  check(m.n === 4 && m.on.join() === 'plaza', `${label} map screen: four islands to pick, Plaza first`, JSON.stringify(m));
+  check(m.fits && m.small === 0, `${label} map screen: the panel fits and every island button is at least 44 px tall`);
+  await page.waitForFunction(() => { const i = document.querySelector('#mapImg'); return i.complete && i.naturalWidth > 0; }, null, { timeout: 10000 }).catch(() => {});
+  check(await page.evaluate(() => document.querySelector('#mapImg').naturalWidth > 0), `${label} map screen: the world picture loads`);
+  await page.keyboard.press('ArrowRight');
+  check(await page.evaluate(() => document.querySelector('#mapTitle').textContent === 'Palengke' && document.activeElement.dataset.k === 'palengke'), `${label} map screen: arrow keys move the pick and the focus`);
+  await page.waitForTimeout(1600);
+  const z = await page.evaluate(() => ({ close: document.querySelector('.mapclose[data-k="palengke"]').classList.contains('on'), t: getComputedStyle(document.querySelector('#mapWorld')).transform }));
+  check(z.close && z.t !== 'none', `${label} map screen: the view zooms to the island and shows its close-up`);
+  await page.click('#mapBack');
+  check(await page.evaluate(() => window.__lsu.screen === 'title' && /Maglaro/.test(document.querySelector('#card h2').textContent)), `${label} map screen: Balik goes back to the game setup`);
+  await page.click('#card [data-v="go"]'); await page.waitForFunction(() => window.__lsu.screen === 'maps');
+  await page.click('#mapBtns [data-k="palayan"]'); await page.click('#mapGo'); await page.waitForTimeout(1200);
+  const g = await page.evaluate(() => { const L = window.__lsu; return { screen: L.screen, board: L.board.id, N: L.N, at: L.state.players.map(p => L.SP[p.pos].type) }; });
+  check(g.screen === 'game' && g.board === 'palayan' && g.N === 104 && g.at.every(t => t === 'start'), `${label} map screen: Laro na! starts on the picked island, everyone on Simula`, JSON.stringify(g));
   await page.context().close();
 }
 
@@ -172,7 +197,7 @@ for (const [label, w, h] of [['phone 360x740', 360, 740], ['phone landscape 740x
   const page = await newPage({}, '?debug&speed=4');
   await lsu(page, () => window.__lsu.startLocal({ n: 1, names: ['Ian'], cfg: { mode: 'party', rounds: 3, diff: 1 } }));
   for (let i = 0; i < 2000 && (await page.evaluate(() => window.__lsu.state.round)) < 2; i++) {
-    await page.evaluate(() => { if (!document.querySelector('#modal').hidden) { const b = document.querySelector('#card [data-primary]'); if (b) b.click(); } else { const a = document.querySelector('#actionBtn'); if (!a.hidden) a.click(); } });
+    await page.evaluate(() => { if (!document.querySelector('#modal').hidden) { const b = document.querySelector('#card [data-primary]') || document.querySelector('#card .row button'); if (b) b.click(); } else { const a = document.querySelector('#actionBtn'); if (!a.hidden) a.click(); } });
     await page.waitForTimeout(80);
   }
   const savedRound = await page.evaluate(() => (JSON.parse(localStorage.getItem('lsu-save')) || {}).cp?.round);
@@ -211,7 +236,7 @@ for (const [label, w, h] of [['phone 360x740', 360, 740], ['phone landscape 740x
   const t0 = Date.now(); let fin = null;
   while (!fin && Date.now() - t0 < 300000) {
     if (k < sizes.length && Date.now() - t0 > 4000 * (k + 1)) { await page.setViewportSize({ width: sizes[k][0], height: sizes[k][1] }); k++; }
-    fin = await page.evaluate(() => { const L = window.__lsu, f = L.DBG.filter(e => e.type === 'final').pop(); if (f) return f; if (!document.querySelector('#modal').hidden) { const b = document.querySelector('#card [data-primary]'); if (b) b.click(); } else { const a = document.querySelector('#actionBtn'); if (!a.hidden) a.click(); } return null; });
+    fin = await page.evaluate(() => { const L = window.__lsu, f = L.DBG.filter(e => e.type === 'final').pop(); if (f) return f; if (!document.querySelector('#modal').hidden) { const b = document.querySelector('#card [data-primary]') || document.querySelector('#card .row button'); if (b) b.click(); } else { const a = document.querySelector('#actionBtn'); if (!a.hidden) a.click(); } return null; });
     await page.waitForTimeout(80);
   }
   check(!!fin && k === sizes.length, 'a game survives five resizes/rotations with reduced motion on and finishes');
@@ -225,7 +250,7 @@ for (const [label, w, h] of [['phone 360x740', 360, 740], ['phone landscape 740x
   const page = await newPage();
   await page.click('#mLocal');
   await page.fill('#nm0', '<img src=x onerror=alert(1)>');
-  await page.click('#card [data-v="go"]');
+  await page.click('#card [data-v="go"]'); await page.click('#mapGo');
   await page.waitForTimeout(1500);
   const hud = await page.evaluate(() => ({ imgs: document.querySelectorAll('#players img').length, name: document.querySelector('#players .pcard .nmt').textContent }));
   check(hud.imgs === 0, 'a name with HTML in it shows as text, not markup', JSON.stringify(hud.name));
