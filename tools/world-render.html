@@ -1,0 +1,58 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Taympers world picture renderer</title><style>html,body{margin:0;background:#000}</style></head><body>
+<script type="module">
+// Offline renderer for the map-select pictures in maps/world/ (not part of the game). Run: node tools/world-render.mjs
+import * as THREE from '../vendor/three-r184/three.module.min.js';
+import { build as plaza } from '../maps/islands/plaza.js';
+import { build as palengke } from '../maps/islands/palengke.js';
+import { build as aplaya } from '../maps/islands/aplaya.js';
+import { build as palayan } from '../maps/islands/palayan.js';
+import { addLife } from '../maps/life.js';
+import { polish } from '../maps/polish.js';
+import { addLiving } from '../maps/living.js';
+const P = new URLSearchParams(location.search), W = +(P.get('w') || 2048), H = +(P.get('h') || 1280), CW = +(P.get('cw') || 1440), CH = +(P.get('ch') || 900);
+const ren = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); ren.setPixelRatio(1); ren.setSize(W, H); ren.shadowMap.enabled = true; ren.shadowMap.type = THREE.PCFShadowMap; document.body.appendChild(ren.domElement);
+const scene = new THREE.Scene(), stage = { _scene: scene, _renderer: ren, _invalidate() {} };
+scene.add(new THREE.HemisphereLight(0xffffff, 0xd8d2c4, 1.0));
+const key = new THREE.DirectionalLight(0xffffff, 2.2); key.position.set(4, 7, 5).multiplyScalar(30); key.castShadow = true; key.shadow.mapSize.set(4096, 4096); key.shadow.bias = -0.0004;
+const sc = key.shadow.camera; sc.left = sc.bottom = -150; sc.right = sc.top = 150; sc.near = 1; sc.far = 600; scene.add(key);
+const fill = new THREE.DirectionalLight(0xfff4e6, 0.5); fill.position.set(-5, 3, -4); scene.add(fill);
+const OPTS = { plaza: { banner: { x: 0, z: 27.6, text: 'PLAZA', color: '#E2452E' }, walkers: 7, centerZ: -5 }, palengke: { banner: { x: 0, z: 29.4, text: 'PALENGKE', color: '#2E6FD8' }, walkers: 9, centerZ: 2 }, aplaya: { banner: { x: -4.5, z: 30.6, text: 'APLAYA', color: '#13A39A' }, walkers: 7, boat: [[6.5, .1, 1.5], [7.5, .1, -3], [9.5, .1, -7.2]] }, palayan: { banner: { x: .4, z: 28.4, text: 'PALAYAN', color: '#3BAA4A' }, walkers: 6, hats: true, ducks: [[1.5, .07, -3], [-1.2, .07, 3], [1, .07, 9], [-1, .07, 15], [.5, .07, 20]] } };
+const LV = { plaza: { seed: 11, vendorLines: ['Taho!'], vehicles: ['tricycle'] }, palengke: { seed: 12, vendorLines: ['Bili na!'], vendors: 4, vehicles: ['tricycle', 'jeep'], cats: 3 }, aplaya: { seed: 13, vendorLines: ['Buko!'], dogs: 3 }, palayan: { seed: 14, hat: true, vendorLines: ['Gulay!'], vendors: 2, vehicles: ['kalabaw_cart', 'kuliglig'], chickens: 8 } };
+const ISL = [[plaza, 'plaza', -58, 46], [palengke, 'palengke', 58, 46], [aplaya, 'aplaya', 58, -50], [palayan, 'palayan', -58, -50]];
+const world = new THREE.Group(), built = [];
+for (const [fn, name, x, z] of ISL) { const b = await fn(THREE); b.root.position.set(x, 0, z); world.add(b.root); built.push({ ...b, name, x, z }); }
+const wood = new THREE.MeshStandardMaterial({ color: '#A8683A', roughness: .75 }), rope = new THREE.MeshStandardMaterial({ color: '#D8C08A', roughness: .8 }), post = new THREE.MeshStandardMaterial({ color: '#8B5A35', roughness: .8 });
+function edge(b, dir) { let t = 0; while (t < 80 && b.inIsland(dir.x * t, b.IZ + dir.z * t, .97)) t += .25; return new THREE.Vector3(b.x + dir.x * t, 0, b.z + b.IZ + dir.z * t); }
+function bridge(a, c) { const g = new THREE.Group(); const d = c.clone().sub(a), L = d.length(), yaw = Math.atan2(d.x, d.z), side = new THREE.Vector3(d.z, 0, -d.x).normalize(), n = Math.ceil(L / .55), sag = Math.min(3, L * .06);
+  const pt = t => a.clone().lerp(c, t).setY(-Math.sin(Math.PI * t) * sag);
+  const planks = new THREE.InstancedMesh(new THREE.BoxGeometry(2.4, .08, .42), wood, n), m = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler();
+  for (let i = 0; i < n; i++) { const t = (i + .5) / n, p = pt(t), p2 = pt(Math.min(1, t + .01)), pitch = Math.atan2(p2.y - p.y, .01 * L); e.set(-pitch, yaw, 0, 'YXZ'); q.setFromEuler(e); m.compose(p, q, new THREE.Vector3(1, 1, 1)); planks.setMatrixAt(i, m); }
+  planks.castShadow = planks.receiveShadow = true; g.add(planks);
+  for (const s of [-1, 1]) { const pts = []; for (let i = 0; i <= 40; i++) pts.push(pt(i / 40).add(side.clone().multiplyScalar(s * 1.2)).add(new THREE.Vector3(0, 1.0, 0))); g.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 60, .04, 5), rope));
+    for (const p of [a, c]) { const ps = new THREE.Mesh(new THREE.CylinderGeometry(.12, .14, 1.8, 8), post); ps.position.copy(p).add(side.clone().multiplyScalar(s * 1.25)).add(new THREE.Vector3(0, .9, 0)); g.add(ps); } }
+  world.add(g); }
+for (let i = 0; i < 4; i++) { const A = built[i], Bn = built[(i + 1) % 4], d = new THREE.Vector3(Bn.x - A.x, 0, (Bn.z + Bn.IZ) - (A.z + A.IZ)).normalize(); bridge(edge(A, d), edge(Bn, d.clone().negate())); }
+world.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+scene.add(world);
+built.forEach((b, i) => { const before = new Set(scene.children); polish(THREE, stage, b.root, { normals: false, skyRadius: 900, grade: { sky: '#4FAEE6', horizon: '#DDEFF4', sun: '#FFEFCC', fog: '#DDEFF4', exposure: 1.04, rim: '#FFF0D2', rimK: .18, tint: '#C9B98F', path: ['#E4D6BA', '#D8CDBB', '#EFE6D2', '#DCCBA6'][i], env: .4 } });
+  if (i > 0) scene.children.filter(c => !before.has(c)).forEach(c => scene.remove(c)); });
+scene.fog = null;
+built.forEach((b, i) => { try { const l = addLife(THREE, stage, b.root, { name: b.name, ui: false, korona: 0, seed: 91 + i, ...OPTS[b.name] }); l && l.setKorona && l.setKorona(0); } catch (e) { console.warn(e); } });
+for (const b of built) { try { await addLiving(THREE, stage, b.root, { name: b.name, ui: false, post: false, leafCards: 5000, grassLayers: 10, ...LV[b.name] }); } catch (e) { console.warn(e); } }
+await new Promise(r => setTimeout(r, 1500));
+// camera: from the south, looking down at the four islands
+const cam = new THREE.PerspectiveCamera(32, W / H, 1, 3000);
+const box = new THREE.Box3().setFromObject(world), ctr = box.getCenter(new THREE.Vector3());
+const el = 58 * Math.PI / 180, dist = +(P.get('d') || 330);
+cam.position.set(ctr.x, dist * Math.sin(el), ctr.z + dist * Math.cos(el)); cam.lookAt(ctr.x, 0, ctr.z + 4); cam.updateMatrixWorld();
+const shot = () => ren.domElement.toDataURL('image/jpeg', .82);
+const out = { W, H, CW, CH, islands: {} };
+ren.render(scene, cam); out.world = shot();
+for (const b of built) { const bb = new THREE.Box3().setFromObject(b.root.getObjectByName('board_spaces') ? b.root : b.root); let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+  for (const cx of [bb.min.x, bb.max.x]) for (const cy of [0, 4]) for (const cz of [bb.min.z, bb.max.z]) { const v = new THREE.Vector3(cx, cy, cz).project(cam); const sx = (v.x + 1) / 2 * W, sy = (1 - v.y) / 2 * H; x0 = Math.min(x0, sx); x1 = Math.max(x1, sx); y0 = Math.min(y0, sy); y1 = Math.max(y1, sy); }
+  let w = (x1 - x0) * 1.04, h = (y1 - y0) * 1.04, cx = (x0 + x1) / 2, cy = (y0 + y1) / 2; const A = CW / CH; if (w / h > A) h = w / A; else w = h * A;
+  const r = { x: cx - w / 2, y: cy - h / 2, w, h };
+  cam.setViewOffset(W, H, r.x, r.y, r.w, r.h); ren.setSize(CW, CH); ren.render(scene, cam); const img = shot(); cam.clearViewOffset(); ren.setSize(W, H);
+  out.islands[b.name] = { x: +(r.x / W).toFixed(4), y: +(r.y / H).toFixed(4), w: +(r.w / W).toFixed(4), h: +(r.h / H).toFixed(4), img }; }
+window.__out = out; window.__done = true;
+</script></body></html>
