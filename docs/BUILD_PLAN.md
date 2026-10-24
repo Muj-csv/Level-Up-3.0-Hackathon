@@ -13,7 +13,7 @@ submission (Oct 25) and are the plan for the finals and beyond.
 | Area | Status |
 |---|---|
 | Game design spec (board, spaces, items, korona, minigames, modes) | Built in the prototype |
-| 3D board and minigames | Built in the prototype (Three.js r149, 2D fallback) |
+| 3D board and minigames | Built (Three.js r184, 2D fallback); four island maps since Oct 24 |
 | Learning layer (Tanong ni Lola, real-street rules, Subukan sa labas, Pasaporte) | Built in the prototype |
 | Online rooms | Work only inside the Claude artifact; a room service the team controls is needed |
 | Nickname picker (privacy rule) | Not built: the prototype still lets players type a name |

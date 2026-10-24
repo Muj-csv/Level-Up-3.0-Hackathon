@@ -17,6 +17,8 @@ async function newPage(mode = '3d', query = '?debug', opts = {}) {
   allErrs.push(watchErrors(page, mode));
   await page.goto(srv.url + query);
   await page.waitForFunction(() => window.__lsu && window.__lsu.screen === 'title', null, { timeout: 20000 });
+  // Three.js is an ES module loaded after the page starts; wait for it in the 3D runs
+  if (mode === '3d') await page.waitForFunction(() => window.__lsu.b3.ok, null, { timeout: 20000 });
   await page.waitForTimeout(800);
   return page;
 }
@@ -36,7 +38,8 @@ const step = page => page.evaluate(() => {
   check(t.kids, '3D title: the 2D title kids are hidden (the 3D kids stand on the board instead)');
   await shot(page, 'title');
 
-  await page.click('#mLocal'); await page.click('#card [data-v="go"]');
+  // the cloud board (fast in software WebGL); the island maps have their own run below
+  await page.evaluate(() => window.__lsu.startLocal({ n: 1, names: ['Ian'], cfg: { mode: 'party', rounds: 3, diff: 1, map: 'ulap' } }));
   // wait for the human's roll: the roll button shows and the reachable spaces get rings
   let reach = null;
   for (let i = 0; i < 400 && !reach; i++) {
@@ -76,14 +79,14 @@ const step = page => page.evaluate(() => {
   await page.evaluate(() => { window.__lsu.state.players[1].allies.push({ n: 'Lito', look: 0, x: 0, y: 0 }); });
   let saved = false;
   for (let i = 0; i < 300 && !saved; i++) {
-    saved = await page.evaluate(() => /"allies":\[\{"n":"Lito"/.test(localStorage.getItem('lsu-save') || ''));
+    saved = await page.evaluate(() => /"allies":\[[^\]]*"n":"Lito"/.test(localStorage.getItem('lsu-save') || ''));
     if (!saved) { await step(page); await page.waitForTimeout(150); }
   }
   check(saved, 'the save at the start of a turn includes Kasama allies');
   await page.goto(srv.url + '?debug'); await page.waitForFunction(() => window.__lsu && window.__lsu.screen === 'title');
   await page.click('#mResume'); await page.waitForTimeout(1500);
   const res = await page.evaluate(() => { const L = window.__lsu; return { allies: L.state.players[1].allies.map(a => a.n), meshes: L.b3.allies.size }; });
-  check(res.allies.join() === 'Lito' && res.meshes === 1, 'resumed game restores the ally and draws it in 3D', JSON.stringify(res));
+  check(res.allies.includes('Lito') && res.meshes === res.allies.length, 'resumed game restores the ally and draws it in 3D', JSON.stringify(res));
   await shot(page, 'board-ally');
   await page.context().close();
 }
@@ -112,12 +115,42 @@ for (const kind of Object.keys(MASH)) {
   await page.context().close();
 }
 
+// ---------- 2b. an island map: pick it on the map screen, the island loads, then the board plays on it ----------
+{
+  const page = await newPage('3d', '?debug', { viewport: { width: 640, height: 400 }, isMobile: false, hasTouch: false });
+  await page.click('#mLocal'); await page.click('#card [data-v="go"]');
+  await page.waitForFunction(() => window.__lsu.screen === 'maps');
+  await page.keyboard.press('ArrowRight');
+  check(await page.evaluate(() => document.querySelector('#mapBtns [aria-checked="true"]').dataset.k === 'palengke'), 'map screen: the arrow keys pick the next island');
+  await page.keyboard.press('ArrowLeft'); await page.click('#mapGo');
+  const shown = await page.evaluate(() => !document.querySelector('#loadIsl').hidden);
+  const t0 = Date.now();
+  const ok = await page.waitForFunction(() => { const L = window.__lsu; return L.b3.island && L.b3.island.id === 'plaza' && L.b3.on; }, null, { timeout: 180000, polling: 500 }).then(() => true, () => false);
+  check(shown && ok, 'island map: a loading card shows, then the Plaza island is drawn in 3D', ((Date.now() - t0) / 1000).toFixed(1) + ' s in software WebGL');
+  // software WebGL draws the island at about one frame a second, so the bots' turns run sped up until the human rolls
+  await page.evaluate(() => window.__lsu.setSpeed(20));
+  let reach = null;
+  for (let i = 0; i < 400 && !reach; i++) {
+    // on the human's turn, wait for the rings to be drawn (never press the roll button here)
+    const st = await page.evaluate(() => { const L = window.__lsu, rc = L.state.reach; if (!rc || document.querySelector('#actionBtn').hidden || !document.querySelector('#modal').hidden) return null;
+      L.setSpeed(1); const n = L.b3.reach.filter(m => m.visible).length; return n ? { all: rc.all.size, rings: n, korona: L.korona.spots.length, crowns: L.b3.crowns.filter(c => c.visible).length } : 'wait'; });
+    if (st === 'wait') { await page.waitForTimeout(500); continue; }
+    reach = st;
+    if (!reach) { if (await page.evaluate(() => !document.querySelector('#modal').hidden)) await step(page); await page.waitForTimeout(300); }
+  }
+  check(reach && reach.rings === reach.all, 'island map: every space the roll can reach has a ring (both paths at a fork)', JSON.stringify(reach));
+  check(reach && reach.korona === 4 && reach.crowns === 4, 'island map: four korona are on the board');
+  await page.screenshot({ path: path.join(OUT, '3d-island.png'), timeout: 180000 });
+  await page.context().close();
+}
+
 // ---------- 3. without Three.js (blocked CDN or no WebGL) the game falls back to 2D ----------
 {
   const page = await newPage('2d');
   const f = await page.evaluate(() => ({ ok: window.__lsu.b3.ok, cv3: document.getElementById('stage3d').hidden, kids: document.getElementById('kidsCv').hidden }));
   check(!f.ok && f.cv3 && !f.kids, 'no Three.js: the 2D board and title kids are used', JSON.stringify(f));
-  await page.click('#mLocal'); await page.click('#card [data-v="go"]'); await page.waitForTimeout(1500);
+  await page.click('#mLocal'); await page.click('#card [data-v="go"]'); await page.click('#mapGo'); await page.waitForTimeout(1500);
+  check(await page.evaluate(() => window.__lsu.screen === 'game' && window.__lsu.board.id === 'plaza' && document.querySelector('#loadIsl').hidden), 'no Three.js: a map game starts at once on the 2D board');
   await page.click('#menuBtn');
   check(!(await page.$('#menuCard button[data-k="g3d"]')), 'no Three.js: the menu does not offer a 3D setting');
   await page.context().close();

@@ -118,6 +118,24 @@ body{background:var(--sky);color:var(--ink);font-family:var(--body);overflow:hid
 @keyframes cardin{from{transform:translateY(16px) scale(.94);opacity:0}}
 .card h2{font-family:var(--display);font-weight:400;font-size:30px;line-height:1.02;margin:0 0 4px;text-wrap:balance}
 .card .aka{font-size:13px;font-weight:800;color:var(--muted);margin:0 0 8px}
+.loadcard{max-width:340px;text-align:center}
+#loadIsl.pic{background:var(--bgpic) center/cover no-repeat,#1361B6}
+.mapscr{z-index:5;padding:0;pointer-events:auto;background:#1361B6}
+.mapview{position:absolute;inset:0;overflow:hidden;cursor:pointer}
+.mapworld{position:absolute;left:0;top:0;transform-origin:0 0;transition:transform .8s cubic-bezier(.65,0,.35,1);will-change:transform}
+.mapworld img{position:absolute;display:block;user-select:none;-webkit-user-drag:none}
+#mapImg{left:0;top:0;width:100%;height:100%;-webkit-mask-image:linear-gradient(transparent,#000 14%);mask-image:linear-gradient(transparent,#000 14%)}
+.mapworld .mapclose{opacity:0;transition:opacity .45s}
+.mapworld .mapclose.on{opacity:1}
+.mappanel{box-sizing:border-box;position:absolute;left:12px;right:12px;bottom:max(12px,env(safe-area-inset-bottom,0px));margin:0 auto;width:auto;max-width:520px;padding:12px 14px 14px;animation:none}
+.mappanel h2{margin:2px 0 8px}
+.mappanel .note{min-height:2.6em;margin:8px 0 10px}
+.mapbtns{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.mapbtns button{min-height:48px;font-family:var(--display);font-size:15px;color:var(--ink);background:#fff;border:3px solid var(--ink);border-radius:14px;box-shadow:0 3px 0 var(--ink);cursor:pointer;padding:4px 2px;border-bottom-width:6px}
+.mapbtns button[aria-checked="true"]{background:var(--mc);color:#fff;text-shadow:0 2px 0 var(--ink)}
+.mapbtns button:focus-visible{outline:3px solid var(--sun);outline-offset:2px}
+@media (min-width:640px) and (orientation:landscape){.mappanel{left:auto;right:max(12px,env(safe-area-inset-right,0px));top:8px;bottom:8px;margin:auto 0;height:max-content;width:min(340px,42vw);max-height:calc(100% - 16px);overflow:auto}.mapbtns{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-height:500px) and (orientation:landscape){.mappanel .chip{display:none}.mappanel h2{font-size:22px;margin:0 0 6px}.mappanel .note{min-height:0;margin:6px 0 8px;font-size:13px}}.lbar{height:16px;border:3px solid var(--ink);border-radius:999px;background:#fff;overflow:hidden;margin-top:12px}.lbar i{display:block;height:100%;width:0;background:#FFC93C;transition:width .3s}
 .card .chip{display:inline-block;font-weight:900;font-size:12px;background:var(--ink);color:var(--paper);border-radius:999px;padding:3px 10px;margin-bottom:6px}
 .card p{font-weight:700;font-size:15px;line-height:1.45;margin:6px 0}
 .card ul{margin:8px 0 6px;padding-left:20px;font-weight:700;font-size:15px;line-height:1.45}
@@ -259,6 +277,7 @@ body{background:var(--sky);color:var(--ink);font-family:var(--body);overflow:hid
 }
 @keyframes tipinL{from{transform:translateY(10px);opacity:0}}
 @media (prefers-reduced-motion: reduce){
+  .mapworld,.mapworld .mapclose{transition:none}
   .toast.show,.card,.bump,.tip.show{animation:none}
 }
 </style>
@@ -309,6 +328,16 @@ body{background:var(--sky);color:var(--ink);font-family:var(--body);overflow:hid
       </div>
     </div>
   </div>
+  <div class="screen mapscr" id="scrMaps" hidden>
+    <div class="mapview" id="mapView"><div class="mapworld" id="mapWorld"><img id="mapImg" alt="" decoding="async"></div></div>
+    <div class="card mappanel" id="mapPanel" role="group" aria-labelledby="mapTitle">
+      <span class="chip">Pumili ng mapa</span>
+      <h2 id="mapTitle">Plaza</h2>
+      <div class="mapbtns" id="mapBtns" role="radiogroup" aria-label="Mapa"></div>
+      <p class="note" id="mapBlurb"></p>
+      <div class="row"><button type="button" class="btn" id="mapBack">Balik</button><button type="button" class="btn primary" id="mapGo">Laro na!</button></div>
+    </div>
+  </div>
   <div class="screen bottomed" id="scrGallery" hidden>
     <div class="galpanel" id="galPanel">
       <div class="chips" id="animChips" role="group" aria-label="Animation"></div>
@@ -316,12 +345,13 @@ body{background:var(--sky);color:var(--ink);font-family:var(--body);overflow:hid
       <p class="galnote" id="galNote">Jun, Neneng, Totoy at Bunso: pumili ng galaw sa itaas. Ang sprite sheet ay PNG na 128×128 px bawat frame, isang hanay bawat galaw.</p>
     </div>
   </div>
+  <div class="modal" id="loadIsl" hidden><div class="card loadcard" role="status" aria-live="polite"><span class="chip" id="loadChip">Mapa</span><h2 id="loadT">Inihahanda ang isla…</h2><div class="lbar"><i id="loadF"></i></div></div></div>
   <div class="modal" id="modal" hidden><div class="card" id="card" role="dialog" aria-modal="true" aria-live="polite"></div></div>
   <div class="modal top" id="menu" hidden><div class="card" id="menuCard" role="dialog" aria-modal="true" aria-labelledby="menuTitle"></div></div>
   <div class="sr" id="sr" aria-live="polite"></div>
 </div>
 <script src="vendor/qrcode-1.4.4.js"></script>
-<script src="vendor/three-r149.min.js"></script>
+<script src="maps/boards.js"></script>
 <script>
 (function(){
 'use strict';
@@ -670,7 +700,7 @@ function buildPath(){
     out.push({x:lerp(a.x,b.x,u),y:lerp(a.y,b.y,u),isl:a.isl,br:a.br,t:a.t,pulse:0});}
   return out;
 }
-const SP=buildPath(), N=SP.length;
+let SP=buildPath(), N=SP.length;
 /* each island has its own flavour (plaza duels, market shops, lucky beach, tikbalang fields); about a third of the spaces are events */
 (function assignTypes(){
   const ISL_PAT=[['start','piso','jack','kasama','swerte','piso','utang'],['piso','sari','tanong','swerte','sari','utang'],['piso','jack','kasama','swerte','piso','utang'],['tanong','tikbalang','piso','sari','swerte','piso']];
@@ -679,12 +709,51 @@ const SP=buildPath(), N=SP.length;
   SP[0].type='start';
 })();
 /* korona sit on the islands' good spaces: Piso, and the Kasama and Tanong spaces that replaced some of them */
-const KORONA_CANDS=SP.map((s,i)=>i).filter(i=>i>3&&SP[i].isl!==undefined&&['piso','kasama','tanong'].includes(SP[i].type));
+let KORONA_CANDS=SP.map((s,i)=>i).filter(i=>i>3&&SP[i].isl!==undefined&&['piso','kasama','tanong'].includes(SP[i].type));
+SP.forEach((s,i)=>{s.id='C'+i;s.next=[(i+1)%N];s.prev=[(i-1+N)%N];s.h=0;});
+const CLASSIC={sp:SP,cands:KORONA_CANDS};
+
+/* ================= boards: the classic cloud loop, and the four island maps =================
+   Each map is its own board: an 80-space loop, a side path that forks off and rejoins it, a paid
+   shortcut ride, island event spaces and 10 places where korona can sit (maps/boards.js). */
+const UPM=33;   // game units per meter on the island maps
+const MAPS={
+  plaza:{name:'Plaza',color:'#E2452E',ground:'#8DC85A',pos:[-58,46],ride:'kalesa',rideName:'kalesa',blurb:'Kiosko, simbahan at munisipyo. May banda, kampana, bantayog at shortcut sa kalesa.'},
+  palengke:{name:'Palengke',color:'#2E6FD8',ground:'#C7D4B8',pos:[58,46],ride:'padyak',rideName:'padyak',blurb:'Basa at tuyong palengke. May tawaran, suki, timbangan at shortcut sa padyak.'},
+  aplaya:{name:'Aplaya',color:'#13A39A',ground:'#EAD8A6',pos:[58,-50],ride:'bangka',rideName:'bangka',blurb:'Lagoon, pantalan at talon. May alon, huli, buko at shortcut sa bangka.'},
+  palayan:{name:'Palayan',color:'#3BAA4A',ground:'#9CCB5C',pos:[-58,-50],ride:'kalabawCart',rideName:'kariton ng kalabaw',blurb:'Hagdan-hagdang palayan at talon. May tanim, ani, bayanihan at kariton ng kalabaw.'}};
+const MAP_KEYS=Object.keys(MAPS);
+const TYPE_ALIAS={simula:'start',sarisari:'sari',jackenpoy:'jack'};
+let BOARD={id:'ulap',map:null,start:0,korona:2};
+function buildMapBoard(id){const b=window.TAYMPERS_BOARDS&&window.TAYMPERS_BOARDS[id],m=MAPS[id];if(!b||!m||!Array.isArray(b.nodes))return null;
+  const idx={};b.nodes.forEach((n,i)=>{idx[n.id]=i;});
+  const sp=b.nodes.map(n=>({id:n.id,type:TYPE_ALIAS[n.type]||n.type,x:n.x*UPM,y:n.z*UPM,h:(n.y||0)*UPM,next:n.next.map(k=>idx[k]).filter(j=>j!=null),prev:[],pulse:0,tidal:!!n.tidal,flood:!!n.floodable}));
+  sp.forEach((s,i)=>s.next.forEach(j=>sp[j].prev.push(i)));
+  sp.forEach(s=>s.prev.sort((a,c)=>(sp[a].id[0]==='M'?0:1)-(sp[c].id[0]==='M'?0:1)));
+  const r=b[m.ride];if(r&&idx[r.from]!=null&&idx[r.to]!=null)sp[idx[r.from]].ride={to:idx[r.to],cost:r.cost|0};
+  let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;sp.forEach(q=>{x0=Math.min(x0,q.x);x1=Math.max(x1,q.x);y0=Math.min(y0,q.y);y1=Math.max(y1,q.y);});
+  return{sp,start:idx[b.start]||0,cands:(b.koronaSpots||[]).map(k=>idx[k]).filter(i=>i!=null),bounds:{x0,y0,x1,y1}};}
+function boardSizeOf(id){const b=window.TAYMPERS_BOARDS&&window.TAYMPERS_BOARDS[id];return MAPS[id]&&b?b.nodes.length:CLASSIC.sp.length;}
+function setBoard(id){
+  const mb=MAPS[id]?buildMapBoard(id):null;
+  if(mb){SP=mb.sp;N=SP.length;KORONA_CANDS=mb.cands;BOARD={id,map:MAPS[id],start:mb.start,korona:4,bounds:mb.bounds};}
+  else{SP=CLASSIC.sp;N=SP.length;KORONA_CANDS=CLASSIC.cands;BOARD={id:'ulap',map:null,start:0,korona:2};}
+  SP.forEach(q=>{q.pulse=0;});distCache.clear();try{if(B3.onBoard)B3.onBoard();}catch(e){}return BOARD.id===id;}
+/* distances along the board: steps forward, taking either branch at a fork */
+const distCache=new Map();
+function distFrom(a){let d=distCache.get(a);if(d)return d;d=new Int16Array(N).fill(-1);d[a]=0;const q=[a];for(let h=0;h<q.length;h++){const u=q[h];for(const v of SP[u].next)if(d[v]<0){d[v]=d[u]+1;q.push(v);}}distCache.set(a,d);return d;}
+function stepsTo(a,b){if(a!==b){const d=distFrom(a)[b];return d<0?999:d;}let best=999;for(const n of SP[a].next){const d=distFrom(n)[b];if(d>=0&&d+1<best)best=d+1;}return best;}
+function reachSets(a,min,max){let fr=new Set([a]);const all=new Set(),far=new Set();for(let k=1;k<=max;k++){const nf=new Set();fr.forEach(u=>SP[u].next.forEach(v=>nf.add(v)));fr=nf;if(k>=min)fr.forEach(v=>all.add(v));if(k===max)fr.forEach(v=>far.add(v));}return{all,far};}
+function walkMain(a,n){let i=a;for(let k=0;k<n;k++)i=SP[i].next[0];return i;}
+function boardBox(){if(BOARD.map){const b=BOARD.bounds;return{cx:(b.x0+b.x1)/2,cy:(b.y0+b.y1)/2,w:b.x1-b.x0+360,h:b.y1-b.y0+360};}return{cx:870,cy:800,w:1600,h:1460};}
 const SPACE={
   start:{c:'#2E86DE',d:'#1B5FA6'},piso:{c:'#2E86DE',d:'#1B5FA6'},utang:{c:'#E04A3A',d:'#A32E21'},swerte:{c:'#F4B820',d:'#B58407'},
   tikbalang:{c:'#6B4FA0',d:'#47326F'},sari:{c:'#1FA39A',d:'#13706A'},jack:{c:'#F07F2A',d:'#B3561A'},tanong:{c:'#D9579A',d:'#9C326A'},kasama:{c:'#4FA83A',d:'#2F7320'}
 };
-function spacePos(i){const s=SP[i];let b;if(s.isl!==undefined)b=islandBob(s.isl);else b=lerp(islandBob(s.br),islandBob((s.br+1)%4),s.t)+Math.sin(Math.PI*s.t)*7;return{x:s.x,y:s.y+b};}
+/* island event spaces: cream tiles with a dark letter (the 3D maps draw their own tile art) */
+const EVENT_TYPES=['banda','kampana','munisipyo','rizal','kalesa','tawad','timbangan','suki','basa','padyak','ulan','alon','huli','taog','bangka','buko','araw','tanim','ani','kalabaw','balang','bayanihan'];
+EVENT_TYPES.forEach(t=>{SPACE[t]={c:'#FFF4DC',d:'#C9A86A',ink:true};});
+function spacePos(i){const s=SP[i];if(BOARD.map)return{x:s.x,y:s.y};let b;if(s.isl!==undefined)b=islandBob(s.isl);else b=lerp(islandBob(s.br),islandBob((s.br+1)%4),s.t)+Math.sin(Math.PI*s.t)*7;return{x:s.x,y:s.y+b};}
 
 /* ================= props ================= */
 const PROPS=[
@@ -982,12 +1051,12 @@ function spaceArt(g,type){const st=SPACE[type];
 }
 /* small chevrons between spaces on each island show which way everyone walks */
 function drawPathArrows(g){const ch=sprite('chev',-8,-7,8,7,c=>{c.beginPath();c.moveTo(-3.5,-4.5);c.lineTo(2.5,0);c.lineTo(-3.5,4.5);c.lineCap='round';c.lineJoin='round';c.lineWidth=5;c.strokeStyle='rgba(110,74,36,.45)';c.stroke();c.lineWidth=2.6;c.strokeStyle='rgba(255,250,235,.95)';c.stroke();});
-  for(let i=0;i<N;i++){const s=SP[i],t=SP[(i+1)%N];if(s.isl===undefined||t.isl!==s.isl)continue;const a=spacePos(i),b=spacePos((i+1)%N);g.save();g.translate((a.x+b.x)/2,(a.y+b.y)/2);g.rotate(Math.atan2(b.y-a.y,b.x-a.x));g.scale(1.25,1.25);blit(g,ch,0,0);g.restore();}}
+  if(BOARD.map)return;for(let i=0;i<N;i++){const s=SP[i],t=SP[(i+1)%N];if(s.isl===undefined||t.isl!==s.isl)continue;const a=spacePos(i),b=spacePos((i+1)%N);g.save();g.translate((a.x+b.x)/2,(a.y+b.y)/2);g.rotate(Math.atan2(b.y-a.y,b.x-a.x));g.scale(1.25,1.25);blit(g,ch,0,0);g.restore();}}
 function drawSpace(g,i){
   const s=SP[i],p=spacePos(i);const k=1+s.pulse*.35;
   g.save();g.translate(p.x,p.y);g.scale(k,k);blit(g,sprite('space_'+s.type,-24,-17,24,21,c=>spaceArt(c,s.type)),0,0);g.restore();
   /* during a human's roll: the spaces the roll can reach get a ring, the far end of the range a stronger one */
-  const rc=state.reach;if(rc){const k=(i-rc.from+N)%N;if(k>=rc.min&&k<=rc.max){const far=k===rc.max;ell(g,p.x,p.y+2,29,20);g.strokeStyle=INK;g.lineWidth=far?6:4.5;g.globalAlpha=.35;g.stroke();g.globalAlpha=1;g.strokeStyle=far?'#FFE07A':'#FFFFFF';g.lineWidth=far?3.5:2.5;g.setLineDash([6,4]);g.lineDashOffset=-now*12;g.stroke();g.setLineDash([]);}}
+  const rc=state.reach;if(rc){if(rc.all.has(i)){const far=rc.far.has(i);ell(g,p.x,p.y+2,29,20);g.strokeStyle=INK;g.lineWidth=far?6:4.5;g.globalAlpha=.35;g.stroke();g.globalAlpha=1;g.strokeStyle=far?'#FFE07A':'#FFFFFF';g.lineWidth=far?3.5:2.5;g.setLineDash([6,4]);g.lineDashOffset=-now*12;g.stroke();g.setLineDash([]);}}
 }
 function drawCrown(g,x,y,s){g.save();g.translate(x,y);g.scale(s,s);g.beginPath();g.moveTo(-15,6);g.lineTo(-16,-12);g.lineTo(-7,-3);g.lineTo(0,-17);g.lineTo(7,-3);g.lineTo(16,-12);g.lineTo(15,6);g.closePath();
   const gg=g.createLinearGradient(-16,-17,16,8);gg.addColorStop(0,'#FFF0A8');gg.addColorStop(.4,'#FFC93C');gg.addColorStop(1,'#D98F00');g.fillStyle=gg;g.fill();g.strokeStyle=INK;g.lineWidth=2.4;g.stroke();
@@ -1053,6 +1122,7 @@ function drawLagoonGlints(g,isl,b){const cx=isl.x+isl.rx*.12,cy=isl.y+b;g.stroke
 /* bridges */
 /* ================= spaces, korona, dice ================= */
 function drawSpaceIcon(g,type){
+  if(SPACE[type]&&SPACE[type].ink){g.fillStyle=INK;g.font='900 11px '+BODY;g.textAlign='center';g.textBaseline='middle';g.fillText((SPACE_SHORT[type]||type).slice(0,2).toUpperCase(),0,1);return;}
   g.fillStyle='#fff';g.strokeStyle='#fff';g.lineCap='round';g.lineJoin='round';
   switch(type){
     case'piso':rr(g,-7,-1.8,14,3.6,1.5);g.fill();rr(g,-1.8,-6.5,3.6,13,1.5);g.fill();break;
@@ -1067,7 +1137,7 @@ function drawSpaceIcon(g,type){
   }
 }
 const korona={spots:[0,0],fly:null,flyK:-1};
-function drawReachTag(g,k,x,y){const rc=state.reach,d=(korona.spots[k]-rc.from+N)%N||N,ok=d<=rc.max,t=d+' hakbang';g.font='900 13px '+BODY;const tw=g.measureText(t).width+16;rr(g,x-tw/2,y-11,tw,22,11);fs(g,ok?'#BDE7A6':PAPER,INK,2);g.fillStyle=INK;g.textAlign='center';g.textBaseline='middle';g.fillText(t,x,y+.5);}
+function drawReachTag(g,k,x,y){const rc=state.reach,d=stepsTo(rc.from,korona.spots[k]),ok=d<=rc.max,t=d+' hakbang';g.font='900 13px '+BODY;const tw=g.measureText(t).width+16;rr(g,x-tw/2,y-11,tw,22,11);fs(g,ok?'#BDE7A6':PAPER,INK,2);g.fillStyle=INK;g.textAlign='center';g.textBaseline='middle';g.fillText(t,x,y+.5);}
 function koronaPos(k){if(korona.fly&&korona.flyK===k)return korona.fly;const p=spacePos(korona.spots[k]);return{x:p.x,y:p.y};}
 function drawKoronaMarker(g,k){
   const p=koronaPos(k),fl=!!korona.fly&&korona.flyK===k,bob=RM?0:Math.sin(now*2.6)*3;
@@ -1119,9 +1189,9 @@ function updCam(dt){
   if(APP.screen==='title'){const a=now*.07;cam.tx=870+Math.cos(a)*260;cam.ty=780+Math.sin(a)*190;cam.tz=fitZoom(1150,1000)*1.15;}
   else if(APP.screen==='gallery'){cam.tx=870;cam.ty=780;cam.tz=.5;}
   else if(scene){cam.tx=0;cam.ty=scene.focusY||0;cam.tz=fitZoom(scene.view.w,scene.view.h);}
-  else if(state.overview){cam.tx=870;cam.ty=800;cam.tz=fitZoom(1600,1460);}
+  else if(state.overview){const bb=boardBox();cam.tx=bb.cx;cam.ty=bb.cy;cam.tz=fitZoom(bb.w,bb.h);}
   /* while a human decides a roll, frame every space the roll can reach */
-  else if(state.reach&&!korona.fly){const rc=state.reach;let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;for(let k=0;k<=rc.max;k++){const q=spacePos((rc.from+k)%N);x0=Math.min(x0,q.x);x1=Math.max(x1,q.x);y0=Math.min(y0,q.y);y1=Math.max(y1,q.y);}
+  else if(state.reach&&!korona.fly){const rc=state.reach;let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;for(const i of [rc.from,...rc.all]){const q=spacePos(i);x0=Math.min(x0,q.x);x1=Math.max(x1,q.x);y0=Math.min(y0,q.y);y1=Math.max(y1,q.y);}
     cam.tx=(x0+x1)/2;cam.ty=(y0+y1)/2-24;cam.tz=Math.min(boardZoom(),fitZoom(x1-x0+260,y1-y0+270));}
   else{let t;if(korona.fly)t=B3.on&&korona.fly.gx!=null?{x:korona.fly.gx,y:korona.fly.gy}:korona.fly;else if(state.focus)t=state.focus;else if(state.active)t={x:state.active.x,y:state.active.y-30};else t={x:870,y:800};cam.tx=t.x;cam.ty=t.y;cam.tz=boardZoom();}
   const k=1-Math.exp(-dt*4.5);cam.x+=(cam.tx-cam.x)*k;cam.y+=(cam.ty-cam.y)*k;cam.z+=(cam.tz-cam.z)*(1-Math.exp(-dt*3.5));cam.shake=Math.max(0,cam.shake-dt*2.2);
@@ -1151,12 +1221,13 @@ const ITEM_ICON={
   ginto:'<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2" width="12" height="12" rx="3" fill="#FFC93C" stroke="#3B2316" stroke-width="1.5"/><path d="M8 4.6l1 2.2 2.3.2-1.7 1.6.5 2.3L8 9.7l-2.1 1.2.5-2.3L4.7 7l2.3-.2z" fill="#FFF6E6"/></svg>',
   agimat:'<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 1.5h6" stroke="#3B2316" stroke-width="1.3"/><path d="M8 2.5L13.5 8 8 14.5 2.5 8z" fill="#2FA35A" stroke="#3B2316" stroke-width="1.5" stroke-linejoin="round"/><circle cx="8" cy="8.2" r="2" fill="#FFF6E6" stroke="#3B2316" stroke-width="1"/></svg>'
 };
-const SPACE_SHORT={start:'Simula',piso:'+3 piso',utang:'−3 piso',swerte:'Swerte',tikbalang:'Tikbalang',sari:'Tindahan',jack:'Jack en Poy',kasama:'Kasama',tanong:'Tanong'};
+const SPACE_SHORT={start:'Simula',piso:'+3 piso',utang:'−3 piso',swerte:'Swerte',tikbalang:'Tikbalang',sari:'Tindahan',jack:'Jack en Poy',kasama:'Kasama',tanong:'Tanong',
+  banda:'Banda',kampana:'Kampana',munisipyo:'Munisipyo',rizal:'Rizal',kalesa:'Kalesa',tawad:'Tawad',timbangan:'Timbangan',suki:'Suki',basa:'Basa',padyak:'Padyak',ulan:'Ulan',alon:'Alon',huli:'Huli',taog:'Taog',bangka:'Bangka',buko:'Buko',araw:'Araw',tanim:'Tanim',ani:'Ani',kalabaw:'Kalabaw',balang:'Balang',bayanihan:'Bayanihan'};
 const state={players:[],order:[0,1,2,3],round:1,turn:0,active:null,overview:false,focus:null,checkpoint:null,party:false,setup:null,cfg:{mode:'party',rounds:5,diff:1},plan:[],ended:false};
 /* game settings: party = board + minigames; torneo = minigames only, each win is a korona; hamon = solo challenge */
 const MODES={party:'Party',torneo:'Torneo',hamon:'Hamon'};
 const DIFFS=['Madali','Sakto','Mahirap'];
-function normCfg(c){c=c||{};const mode=MODES[c.mode]?c.mode:'party';const rs=mode==='torneo'?[3,5]:[3,5,8];return{mode,rounds:mode==='hamon'?1:(rs.includes(+c.rounds)?+c.rounds:5),diff:[0,1,2].includes(+c.diff)?+c.diff:1,mg:typeof c.mg==='string'?c.mg:null,daily:!!c.daily};}
+function normCfg(c){c=c||{};const mode=MODES[c.mode]?c.mode:'party';const rs=mode==='torneo'?[3,5]:[3,5,8];return{map:MAPS[c.map]||c.map==='ulap'?c.map:'plaza',mode,rounds:mode==='hamon'?1:(rs.includes(+c.rounds)?+c.rounds:5),diff:[0,1,2].includes(+c.diff)?+c.diff:1,mg:typeof c.mg==='string'?c.mg:null,daily:!!c.daily};}
 const maxR=()=>state.cfg.rounds;
 const isParty=()=>state.cfg.mode==='party',isTorneo=()=>state.cfg.mode==='torneo',isHamon=()=>state.cfg.mode==='hamon';
 let scene=null,gameToken=0,hitstop=0,decK=0,mgSeq=0;
@@ -1167,7 +1238,7 @@ function dbg(type,o){if(DEBUG)DBG.push(Object.assign({type,round:state.round},o|
 let gs=1;
 function G(){gs|=0;gs=gs+0x6D2B79F5|0;let t=Math.imul(gs^gs>>>15,1|gs);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;}
 const gpick=a=>a[Math.floor(G()*a.length)];
-function makePlayers(spec){return spec.map((s,i)=>Object.assign({},CHARS[i],{id:i,name:s.name||CHARS[i].name,ctrl:s.ctrl||'bot',peer:s.peer||null,pos:0,piso:10,korona:0,item:null,allies:[],stats:{wins:0,steps:0,dice:0,dn:0},shown:10,shownK:0,pend:0,acc:0,x:0,y:0,offX:0,offY:0,lift:0,sx:1,sy:1,face:1,dir:'front',dirT:0,mood:'idle',moodT:0,blink:0,blinkT:R()*3,hopping:false}));}
+function makePlayers(spec){return spec.map((s,i)=>Object.assign({},CHARS[i],{id:i,name:s.name||CHARS[i].name,ctrl:s.ctrl||'bot',peer:s.peer||null,pos:0,trail:[],piso:10,korona:0,item:null,allies:[],stats:{wins:0,steps:0,dice:0,dn:0},shown:10,shownK:0,pend:0,acc:0,x:0,y:0,offX:0,offY:0,lift:0,sx:1,sy:1,face:1,dir:'front',dirT:0,mood:'idle',moodT:0,blink:0,blinkT:R()*3,hopping:false}));}
 const locals=()=>state.players.filter(p=>p.ctrl==='local');
 const solo=()=>locals().length===1;
 const isYou=p=>p&&p.ctrl==='local'&&solo();
@@ -1220,7 +1291,7 @@ function updateStatus(turnText2){
   $('#roundPill').innerHTML=isHamon()?'<b>Hamon</b>':((isTorneo()?'Laro ':'Ikot ')+'<b>'+Math.min(state.round,maxR())+'/'+maxR()+'</b>');
   $('#koronaPill').hidden=!isParty();
   $('#turnPill').textContent=turnText2||(state.active?(isYou(state.active)?'Ikaw na':'Si '+state.active.name):'Laro');
-  $('#koronaWhere').textContent=[...new Set(korona.spots.map(i=>{const s=SP[i];return s.isl!==undefined?ISL[s.isl].short:'Tulay';}))].join(' · ');
+  $('#koronaWhere').textContent=BOARD.map?BOARD.map.name+' · '+korona.spots.length+' korona':[...new Set(korona.spots.map(i=>{const s=SP[i];return s.isl!==undefined?ISL[s.isl].short:'Tulay';}))].join(' · ');
 }
 let toastT=0;
 function toast(text,color,ms){const el=$('#toast');el.textContent=text;el.style.color=color||'#fff';el.classList.remove('show');void el.offsetWidth;el.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('show'),ms||1300);}
@@ -1237,7 +1308,11 @@ function nextTip(){const el=$('#tip');const text=tipQ.shift();if(!text){tipOn=fa
 function clearTips(){tipQ.length=0;clearTimeout(tipT);tipOn=false;const el=$('#tip');if(el)el.hidden=true;}
 function resetTips(){TIPS_SEEN.clear();try{localStorage.removeItem('lsu-tips');}catch(e){}}
 $('#tip').addEventListener('click',()=>{clearTimeout(tipT);nextTip();});
-const SPACE_TIP={kasama:'Kasama: may sasama sa barkada mo. Sa bawat gulong, magdadagdag ang bawat kasama ng 1 o 2 hakbang. Hanggang 2 kasama.',tanong:'Tanong ni Lola: sagutin ang tanong tungkol sa larong Pilipino. +5 piso kapag tama.',piso:'Piso: dagdag na 3 piso.',utang:'Utang: babayaran mo ang 3 piso. Sasalagin ito ng agimat.',swerte:'Swerte: bonus na piso o libreng item.',tikbalang:'Tikbalang: ililigaw ka nito, atras ng 3 espasyo. Sasalagin ito ng agimat.',sari:'Sari-sari store: bumili ng isang item. Itira ang 10 piso para sa korona!',jack:'Jack en Poy: ikaw ang pipili ng kalaban. Ang panalo ay kukuha ng hanggang 5 piso.'};
+const SPACE_TIP={banda:'Banda: sumabay sa parada, abante ng 3.',kampana:'Kampana: tumunog ang kampana ng simbahan, +5 piso.',munisipyo:'Munisipyo: libreng item (Kendi o Agimat), o +3 piso kung may item ka na.',rizal:'Bantayog ni Rizal: sagutin ang Tanong ni Lola, +5 piso kapag tama.',
+  tawad:'Tawad: nakatawad ka, +3 piso.',timbangan:'Timbangan ng Bayan: tapat ang timbang, +2 piso.',suki:'Suki: may libreng item mula sa tindera, o +3 piso.',basa:'Basa ang sahig: nadulas ka, atras ng 2. Sasalagin ito ng agimat.',
+  alon:'Alon: tinangay ka ng alon, abante ng 2.',huli:'Huli: nakahuli ka ng isda, +4 piso.',taog:'Taog: tumaas ang tubig, atras ng 2. Sasalagin ito ng agimat.',buko:'Buko: presko! Libreng item, o +3 piso.',araw:'Tirik ang araw: bumili ng tubig, −2 piso. Sasalagin ito ng agimat.',
+  tanim:'Tanim: nagtanim ka, +2 piso.',ani:'Anihan: +5 piso.',balang:'Balang: sinalakay ang tanim, −4 piso. Sasalagin ito ng agimat.',bayanihan:'Bayanihan: tulong-tulong, +2 piso sa lahat ng manlalaro.',
+  kalesa:'Kalesa: magbayad para sumakay papunta sa malayong bahagi ng plaza.',padyak:'Padyak: magbayad para sumakay papunta sa kabilang dulo ng palengke.',bangka:'Bangka: magbayad para tumawid sa lagoon.',kalabaw:'Kariton ng kalabaw: magbayad para sumakay sa kabilang bukid.',kasama:'Kasama: may sasama sa barkada mo. Sa bawat gulong, magdadagdag ang bawat kasama ng 1 o 2 hakbang. Hanggang 2 kasama.',tanong:'Tanong ni Lola: sagutin ang tanong tungkol sa larong Pilipino. +5 piso kapag tama.',piso:'Piso: dagdag na 3 piso.',utang:'Utang: babayaran mo ang 3 piso. Sasalagin ito ng agimat.',swerte:'Swerte: bonus na piso o libreng item.',tikbalang:'Tikbalang: ililigaw ka nito, atras ng 3 espasyo. Sasalagin ito ng agimat.',sari:'Sari-sari store: bumili ng isang item. Itira ang 10 piso para sa korona!',jack:'Jack en Poy: ikaw ang pipili ng kalaban. Ang panalo ay kukuha ng hanggang 5 piso.'};
 
 /* coins that fly from the board into the HUD */
 const flyers=[];
@@ -1422,31 +1497,32 @@ async function seatSync(){
 }
 
 /* ================= board flow ================= */
-function checkpoint(){if(isHamon()){state.checkpoint=null;return;}const cp={mode:NET.on?'online':'local',setup:state.setup,order:state.order.slice(),round:state.round,turn:state.turn,korona:korona.spots.slice(),gs,decK,mgSeq,plan:state.plan.slice(),players:state.players.map(p=>({pos:p.pos,piso:p.piso,korona:p.korona,item:p.item,ctrl:p.ctrl,away:p.away?1:0,stats:Object.assign({},p.stats),allies:p.allies.map(a=>({n:a.n,look:a.look}))}))};
+function checkpoint(){if(isHamon()){state.checkpoint=null;return;}const cp={mode:NET.on?'online':'local',setup:state.setup,order:state.order.slice(),round:state.round,turn:state.turn,korona:korona.spots.slice(),gs,decK,mgSeq,plan:state.plan.slice(),players:state.players.map(p=>({pos:p.pos,trail:p.trail.slice(),piso:p.piso,korona:p.korona,item:p.item,ctrl:p.ctrl,away:p.away?1:0,stats:Object.assign({},p.stats),allies:p.allies.map(a=>({n:a.n,look:a.look}))}))};
   if(NET.on){state.checkpoint=null;netCheckpoint(cp);return;}state.checkpoint=cp;saveGame(cp);}
 async function hop(p,to,back){
   const from=p.pos;p.hopping=true;const A0=spacePos(from),B0=spacePos(to);const dx=B0.x-A0.x,dy=B0.y-A0.y;
   if(Math.abs(dy)>Math.abs(dx)*1.1){p.dir=dy<0?'back':'front';}else{p.dir='side';p.face=dx>=0?1:-1;}p.dirT=.8;
   Sfx.hop(back);const ox=p.offX,oy=p.offY;const prev=p.mood;p.mood=prev==='dizzy'?'dizzy':'hop';
   await tween(RM?.16:.27,(e,u)=>{const A=spacePos(from),B=spacePos(to);p.x=lerp(A.x+ox,B.x,e);p.y=lerp(A.y+oy,B.y,e);p.lift=Math.sin(Math.PI*u)*28;p.sy=u<.15?.84:1.1;p.sx=u<.15?1.12:.93;},Ez.inOut);
+  if(back){if(p.trail.length&&p.trail[p.trail.length-1]===to)p.trail.pop();}else{p.trail.push(from);if(p.trail.length>16)p.trail.shift();}
   p.pos=to;p.offX=0;p.offY=0;p.lift=0;p.hopping=false;if(p.mood==='hop')p.mood='idle';SP[to].pulse=.6;
   const B=spacePos(to);burst(B.x,B.y,5,'dust',{spd:60,life:.45,size:5,g:-20});
   tween(.16,e=>{p.sy=lerp(.78,1,e);p.sx=lerp(1.18,1,e);},Ez.out);
 }
 /* how far the nearest korona is, and the chance a roll passes it (reach preview and bot choices) */
-function koronaDist(p){let best=N;for(const i of korona.spots){const d=(i-p.pos+N)%N||N;if(d<best)best=d;}return best;}
+function koronaDist(p){let best=N;for(const i of korona.spots){const d=stepsTo(p.pos,i);if(d<best)best=d;}return best;}
 function passChance(d,item){if(item==='ginto')return d<=10?1:0;if(item==='kendi')return clamp((14-d)/10,0,1);if(item==='doble'){let c=0;for(let a=1;a<=10;a++)for(let b=1;b<=10;b++)if(a+b>=d)c++;return c/100;}return clamp((11-d)/10,0,1);}
 function rollRange(item,n){n=n||0;const r=item==='doble'?[2,20]:(item==='kendi'?[4,13]:[1,10]);return[r[0]+n,r[1]+2*n];}
-function setReach(p,item){if(!p||p.ctrl!=='local'){state.reach=null;return;}const r=rollRange(item,p.allies.length);state.reach={from:p.pos,min:r[0],max:r[1]};
-  const ds=korona.spots.map(i=>(i-p.pos+N)%N||N).sort((a,b)=>a-b);announce('Korona: '+ds.join(' at ')+' hakbang ang layo. Abot ng roll: '+r[0]+' hanggang '+r[1]+'.');}
+function setReach(p,item){if(!p||p.ctrl!=='local'){state.reach=null;return;}const r=rollRange(item,p.allies.length);state.reach=Object.assign({from:p.pos,min:r[0],max:r[1]},reachSets(p.pos,r[0],r[1]));
+  const ds=korona.spots.map(i=>stepsTo(p.pos,i)).sort((a,b)=>a-b);announce('Korona: '+ds.join(' at ')+' hakbang ang layo. Abot ng roll: '+r[0]+' hanggang '+r[1]+'.');}
 function applyItemPreview(on){const p=dice.owner;if(!p||!p.item||ITEMS[p.item].passive)return;const it=p.item;dice.gold=on&&it==='ginto';dice.vals=on&&it==='doble'?[dice.vals[0],1]:[dice.vals[0]];dice.bonus=(it==='kendi'&&on)?3:0;if(state.reach)setReach(p,on?it:null);}
 /* bots by difficulty: Madali uses items at once; Sakto and Mahirap save them for a korona they can afford, and always use them in the last round */
 function botUsesItem(p){const it=p.item;if(!it||ITEMS[it].passive)return false;const diff=state.cfg.diff;
   if(diff===0||state.round>=maxR())return true;if(p.piso<KCOST)return false;
   const d=Math.max(1,Math.round(koronaDist(p)-1.5*p.allies.length));return passChance(d,it)-passChance(d,null)>=(diff===2?.15:.3)-1e-9;}
-const SPACE_VAL={start:2,piso:2,swerte:3,sari:1,jack:1.5,kasama:2.5,tanong:2,utang:-2,tikbalang:-3};
-function botGintoPick(p){const d=koronaDist(p)-p.allies.length;if(d<=10&&p.piso>=KCOST)return Math.max(1,d);let best=10,bv=-9;for(let n=10;n>=1;n--){const v=SPACE_VAL[SP[(p.pos+n)%N].type]||0;if(v>bv){bv=v;best=n;}}return best;}
-function numberPick(p){const na=p.allies.length,d=Math.max(1,koronaDist(p)-na);let h='';for(let n=1;n<=10;n++){const i=(p.pos+n)%N,k=korona.spots.includes(i);h+='<button type="button" class="btn" data-v="'+n+'"'+(n===Math.min(10,d)?' data-primary':'')+'><b>'+n+'</b><small>'+(n>=d?CROWN_SVG:'')+esc(k?'Korona':SPACE_SHORT[SP[i].type])+'</small></button>';}
+const SPACE_VAL={start:2,piso:2,swerte:3,sari:1,jack:1.5,kasama:2.5,tanong:2,utang:-2,tikbalang:-3,banda:2,kampana:3,munisipyo:2,rizal:2,tawad:2,timbangan:1.5,suki:2,basa:-1.5,ulan:0,alon:1.5,huli:2.5,taog:-1.5,buko:2,araw:-1.5,tanim:1.5,ani:3,balang:-2.5,bayanihan:1.5,kalesa:1,padyak:1,bangka:1,kalabaw:1};
+function botGintoPick(p){const d=koronaDist(p)-p.allies.length;if(d<=10&&p.piso>=KCOST)return Math.max(1,d);let best=10,bv=-9;for(let n=10;n>=1;n--){const v=SPACE_VAL[SP[walkMain(p.pos,n)].type]||0;if(v>bv){bv=v;best=n;}}return best;}
+function numberPick(p){const na=p.allies.length,d=Math.max(1,koronaDist(p)-na);let h='';for(let n=1;n<=10;n++){const i=walkMain(p.pos,n),k=korona.spots.includes(i);h+='<button type="button" class="btn" data-v="'+n+'"'+(n===Math.min(10,d)?' data-primary':'')+'><b>'+n+'</b><small>'+(n>=d?CROWN_SVG:'')+esc(k?'Korona':SPACE_SHORT[SP[i].type])+'</small></button>';}
   const c=openCard('<span class="chip">Gintong dice</span><h2>Ilang hakbang?</h2><p>Pumili ng bilang. Nakasulat kung saan ka titigil'+(d<=10?'. Kapag may maliit na korona, madadaanan mo ang korona.':'.')+(na?' Dagdag pa ng '+na+' hanggang '+2*na+' ang '+(na>1?'mga kasama':'kasama')+' mo.':'')+'</p><div class="numgrid">'+h+'</div>');return cardChoice(c).then(v=>+v);}
 async function rollDice(p){
   dice.on=true;dice.owner=p;dice.spin=true;dice.vals=[1];dice.bonus=0;dice.gold=false;dice.counter=null;
@@ -1471,9 +1547,21 @@ async function rollDice(p){
   if(dice.vals.length>1||dice.bonus)floatText('= '+total,p.x,p.y-140,'#fff',24);
   await wait(520);dice.on=false;dice.bonus=0;dice.gold=false;return total;
 }
+function backOf(p){return p.trail.length?p.trail[p.trail.length-1]:SP[p.pos].prev[0];}
+/* at a fork the player picks a path; bots take the one nearer a korona (Madali bots sometimes pick at random) */
+function forkLabel(j){const s=SP[j];return s.id&&s.id[0]==='B'?'Ibang daan':'Diretso';}
+async function chooseBranch(p,opts){
+  let best=opts[0],bd=1e9;for(const j of opts){const d=Math.min(...korona.spots.map(k=>stepsTo(j,k)));if(d<bd){bd=d;best=j;}}
+  if(state.cfg.diff===0&&G()<.5)best=opts[Math.floor(G()*opts.length)];
+  const keep=dice.counter;dice.counter=null;
+  const v=await decide(p,()=>ask({chip:'Sangandaan',title:isYou(p)?'Saan ka dadaan?':'Saan dadaan si '+p.name+'?',body:'Pumili ng daan. Nakasulat kung ilang hakbang ang pinakamalapit na korona sa bawat daan.',
+      buttons:opts.map((j,k)=>({label:forkLabel(j)+' · '+Math.min(...korona.spots.map(q=>stepsTo(j,q)+1))+' hakbang sa korona',value:String(k),primary:j===best}))}),
+    async()=>{await wait(350);return String(opts.indexOf(best));},String(opts.indexOf(best)),40000);
+  dice.counter=keep;const k=clamp(parseInt(v,10)||0,0,opts.length-1);dbg('fork',{p:p.id,to:opts[k]});return opts[k];}
+async function forwardStep(p){const nx=SP[p.pos].next;return nx.length<2?nx[0]:await chooseBranch(p,nx);}
 async function moveSteps(p,n){
   dice.counter={p,n};
-  for(let k=0;k<n;k++){const to=(p.pos+1)%N;await hop(p,to,false);p.stats.steps++;dice.counter.n=n-k-1;const kk=korona.spots.indexOf(to);if(kk>=0&&!korona.fly){const keep=dice.counter;dice.counter=null;await koronaStop(p,kk);dice.counter=keep;}
+  for(let k=0;k<n;k++){const to=await forwardStep(p);await hop(p,to,false);p.stats.steps++;dice.counter.n=n-k-1;const kk=korona.spots.indexOf(to);if(kk>=0&&!korona.fly){const keep=dice.counter;dice.counter=null;await koronaStop(p,kk);dice.counter=keep;}
     else if(k<n-1&&SP[to].type==='sari'&&!p.item&&p.piso>=ITEMS.kendi.cost){const keep=dice.counter;dice.counter=null;await shop(p,true);dice.counter=keep;}}
   dice.counter=null;
 }
@@ -1490,14 +1578,14 @@ async function koronaStop(p,kk){
   await moveKorona(kk);
 }
 async function moveKorona(kk){
-  const cur=korona.spots[kk],other=korona.spots[1-kk];
-  const opts=KORONA_CANDS.filter(i=>{const d=(i-cur+N)%N,o=Math.min((i-other+N)%N,(other-i+N)%N);return d>=5&&d<=N-4&&o>=5&&!state.players.some(q=>q.pos===i);});
-  const to=gpick(opts.length?opts:KORONA_CANDS.filter(i=>i!==other&&i!==cur));
+  const cur=korona.spots[kk],others=korona.spots.filter((_,j)=>j!==kk),gap=(a,b)=>Math.min(stepsTo(a,b),stepsTo(b,a));
+  const opts=KORONA_CANDS.filter(i=>i!==cur&&!others.includes(i)&&gap(i,cur)>=5&&others.every(o=>gap(i,o)>=5)&&!state.players.some(q=>q.pos===i));
+  const to=gpick(opts.length?opts:KORONA_CANDS.filter(i=>i!==cur&&!others.includes(i)));
   const a=spacePos(cur),b0=spacePos(to);korona.fly={x:a.x,y:a.y-50};korona.flyK=kk;
   await say('Lilipat ang korona…','#FFE07A',900);
   await tween(1.25,e=>{const b=spacePos(to);korona.fly.x=lerp(a.x,b.x,e);korona.fly.y=lerp(a.y-50,b.y-50,e)-Math.sin(Math.PI*e)*140;korona.fly.gx=korona.fly.x;korona.fly.gy=lerp(a.y,b.y,e);korona.fly.h=Math.sin(Math.PI*e)*140;},Ez.inOut);
   korona.spots[kk]=to;korona.fly=null;korona.flyK=-1;SP[to].pulse=1;burst(b0.x,b0.y-40,12,'star',{spd:150,color:'#FFC93C',size:6});updateStatus();
-  await say('Nasa '+islandNameOf(to)+' na!','#FFE07A',1000);
+  await say(BOARD.map?'Lumipat na ang korona!':'Nasa '+islandNameOf(to)+' na!','#FFE07A',1000);
 }
 async function gain(p,n,label){p.piso+=n;coinFly(p,n);Sfx.coin();if(p.ctrl==='local'){buzz(12);announce(p.name+': dagdag na '+n+' piso, '+p.piso+' na lahat.');}setMood(p,'happy',1);burst(p.x,p.y-30,Math.min(10,3+n),'coin',{up:true,spd:220,life:.7,size:5,g:520});floatText((label||'')+'+'+n,p.x,p.y-70,'#FFE07A',22);await wait(700);}
 async function lose(p,n,label){const m=Math.min(n,p.piso);p.piso-=m;Sfx.bad();if(p.ctrl==='local'){buzz(40);announce(p.name+': bawas na '+m+' piso, '+p.piso+' na lang.');}setMood(p,'sad',1.3);burst(p.x,p.y-30,8,'spark',{spd:140,color:'#E04A3A',size:5});floatText((label||'')+'−'+m,p.x,p.y-70,'#FF8A7A',22);cam.shake=.15;await wait(800);}
@@ -1508,12 +1596,54 @@ async function land(p){
     case'start':case'piso':await gain(p,3);break;
     case'utang':await say('Utang!','#FF8A7A',900);if(!await agimatSaves(p))await lose(p,3);break;
     case'swerte':{await say('Swerte!','#FFE07A',900);const r=G();if(r<.4)await gain(p,5);else if(r<.75)await gain(p,8);else{const free=gpick(['kendi','agimat']);if(!p.item){p.item=free;itemTip(p);floatText('Libreng '+ITEMS[free].name.toLowerCase()+'!',p.x,p.y-70,'#fff',20);Sfx.sparkle();setMood(p,'happy',1);await wait(900);}else await gain(p,5);}break;}
-    case'tikbalang':{await say('Tikbalang! Atras ng 3','#C9B5F2',1300);if(await agimatSaves(p))break;setMood(p,'dizzy',3);for(let k=0;k<3;k++)await hop(p,(p.pos-1+N)%N,true);p.mood='idle';p.moodT=0;break;}
+    case'tikbalang':{await say('Tikbalang! Atras ng 3','#C9B5F2',1300);if(await agimatSaves(p))break;setMood(p,'dizzy',3);for(let k=0;k<3;k++)await hop(p,backOf(p),true);p.mood='idle';p.moodT=0;break;}
     case'sari':await shop(p);break;
     case'jack':await jackEnPoy(p);break;
-    case'tanong':await tanong(p);break;
+    case'tanong':case'rizal':await tanong(p);break;
     case'kasama':await kasama(p);break;
+    default:if(s.ride)await ride(p);else if(EVENT_TYPES.includes(s.type))await islandEvent(p,s.type);
   }
+}
+/* island event spaces of the maps */
+async function freeItem(p){const free=gpick(['kendi','agimat']);if(!p.item){p.item=free;itemTip(p);floatText('Libreng '+ITEMS[free].name.toLowerCase()+'!',p.x,p.y-70,'#fff',20);Sfx.sparkle();setMood(p,'happy',1);await wait(900);}else await gain(p,3);}
+async function stepsAhead(p,n){for(let k=0;k<n;k++){const to=SP[p.pos].next[0];await hop(p,to,false);const kk=korona.spots.indexOf(to);if(kk>=0&&!korona.fly)await koronaStop(p,kk);}}
+async function islandEvent(p,t){
+  const sayIt=(x,c)=>say(x,c||'#FFE07A',1000);
+  switch(t){
+    case'banda':await sayIt('Banda! Sumabay sa parada');await stepsAhead(p,3);break;
+    case'kampana':await sayIt('Kampana!');await gain(p,5);break;
+    case'munisipyo':await sayIt('Munisipyo');await freeItem(p);break;
+    case'tawad':await sayIt('Nakatawad!');await gain(p,3);break;
+    case'timbangan':await sayIt('Tapat na timbangan');await gain(p,2);break;
+    case'suki':await sayIt('Suki!');await freeItem(p);break;
+    case'basa':await sayIt('Basa ang sahig!','#BFE3F5');if(await agimatSaves(p))break;setMood(p,'dizzy',2);for(let k=0;k<2;k++)await hop(p,backOf(p),true);p.mood='idle';break;
+    case'ulan':if(BOARD.id==='palayan'){await sayIt('Ulan! Dinilig ang palay','#BFE3F5');await gain(p,3);}else{await sayIt('Ulan! Bumili ng payong','#BFE3F5');if(!await agimatSaves(p))await lose(p,2);}break;
+    case'alon':await sayIt('Alon!','#BFE3F5');await stepsAhead(p,2);break;
+    case'huli':await sayIt('May huling isda!');await gain(p,4);break;
+    case'taog':await sayIt('Taog! Tumaas ang tubig','#BFE3F5');if(await agimatSaves(p))break;for(let k=0;k<2;k++)await hop(p,backOf(p),true);break;
+    case'buko':await sayIt('Buko!');await freeItem(p);break;
+    case'araw':await sayIt('Tirik ang araw','#FFB27A');if(!await agimatSaves(p))await lose(p,2);break;
+    case'tanim':await sayIt('Tanim');await gain(p,2);break;
+    case'ani':await sayIt('Anihan!');await gain(p,5);break;
+    case'balang':await sayIt('Balang!','#FF8A7A');if(!await agimatSaves(p))await lose(p,4);break;
+    case'bayanihan':await sayIt('Bayanihan!');for(const q of state.players){q.piso+=2;coinFly(q,2);floatText('+2',q.x,q.y-70,'#FFE07A',20);}Sfx.coin();await wait(900);break;
+    default:await gain(p,2);
+  }
+}
+/* the map's paid shortcut (kalesa, padyak, bangka, kariton ng kalabaw) */
+async function ride(p){
+  const r=SP[p.pos].ride,name=BOARD.map?BOARD.map.rideName:'sakay';
+  await say(name.charAt(0).toUpperCase()+name.slice(1)+'!','#FFE07A',900);
+  if(p.piso<r.cost){await say('Kulang ang piso ('+r.cost+')','#fff',1000);return;}
+  const near=i=>Math.min(...korona.spots.map(k=>stepsTo(i,k)));
+  const botYes=p.piso-r.cost>=(state.cfg.diff===0?0:KCOST)||near(r.to)<near(p.pos)-4;
+  const v=await decide(p,()=>ask({chip:name+' · '+r.cost+' piso',title:isYou(p)?'Sumakay ng '+name+'?':'Sasakay ba si '+p.name+'?',body:'Dadalhin ka nito sa malayong bahagi ng mapa. Pinakamalapit na korona mula roon: '+near(r.to)+' hakbang (mula rito: '+near(p.pos)+').',
+      buttons:[{label:'Sumakay · '+r.cost+' piso',value:'y',primary:true},{label:'Huwag na',value:'n'}]}),async()=>{await wait(450);return botYes?'y':'n';},'n',40000);
+  if(v!=='y')return;
+  p.piso-=r.cost;Sfx.coin();floatText('−'+r.cost,p.x,p.y-70,'#FF8A7A',20);dbg('ride',{p:p.id,to:r.to});
+  const A=spacePos(p.pos),B=spacePos(r.to);p.hopping=true;p.dir='side';p.face=B.x>=A.x?1:-1;
+  await tween(RM?.4:1.3,(e,u)=>{p.x=lerp(A.x,B.x,e);p.y=lerp(A.y,B.y,e);p.lift=Math.sin(Math.PI*u)*70;},Ez.inOut);
+  p.pos=r.to;p.trail=[];p.lift=0;p.hopping=false;SP[r.to].pulse=1;burst(B.x,B.y,8,'dust',{spd:70,life:.5,size:6,g:-20});
 }
 function itemTip(p){if(p.ctrl!=='local')return;if(p.item==='agimat')tip('agimat','May agimat ka: kusa itong sasalag sa susunod na Utang, Tikbalang o talo sa Jack en Poy.');else tip('item','May item ka na. Sa susunod mong turn, pindutin ang "Gamitin" bago gumulong.');}
 async function agimatSaves(p){if(p.item!=='agimat')return false;p.item=null;dbg('agimat',{p:p.id});Sfx.shield();if(p.ctrl==='local')buzz([20,30,20]);setMood(p,'happy',1.2);
@@ -2130,24 +2260,31 @@ async function gameLoop(startRound,startTurn,token){
   }
   if(token===gameToken)await finale();
 }
-function resetKorona(){korona.spots=[KORONA_CANDS.find(i=>i>=6)||KORONA_CANDS[0],KORONA_CANDS.find(i=>i>=Math.floor(N*.55))||KORONA_CANDS[KORONA_CANDS.length-1]];korona.fly=null;korona.flyK=-1;}
+function resetKorona(){
+  if(BOARD.map){const c=KORONA_CANDS,K=Math.min(BOARD.korona,c.length);korona.spots=Array.from({length:K},(_,i)=>c[Math.floor((i+.5)*c.length/K)]);}
+  else korona.spots=[KORONA_CANDS.find(i=>i>=6)||KORONA_CANDS[0],KORONA_CANDS.find(i=>i>=Math.floor(N*.55))||KORONA_CANDS[KORONA_CANDS.length-1]];
+  korona.fly=null;korona.flyK=-1;}
+function loadBar(f,t){const el=$('#loadIsl');if(f<0){el.hidden=true;return;}if(el.hidden&&BOARD.map){el.classList.add('pic');el.style.setProperty('--bgpic','url(maps/world/'+BOARD.id+'.jpg)');}el.hidden=false;if(BOARD.map)$('#loadChip').textContent=BOARD.map.name;if(t)$('#loadT').textContent=t;$('#loadF').style.width=Math.round(clamp(f,0,1)*100)+'%';}
 function clearRun(){tweens.length=0;parts.length=0;floats.length=0;flyers.length=0;hitstop=0;dice.on=false;dice.gold=false;dice.counter=null;state.reach=null;state.fast=false;wipe.r=-1;actionResolver=null;actionBtn.hidden=true;itemBtn.hidden=true;setHint('');clearTips();}
 function beginGame(spec,seed,cp,cfg){
   gameToken++;const tok=gameToken;scene=null;closeCard();clearRun();
   state.cfg=normCfg(cfg);gs=seed|0;decK=0;mgSeq=0;state.ended=false;
   state.plan=isHamon()?[MG[state.cfg.mg]?state.cfg.mg:'tumbang']:mgPlan(seed|0,maxR());
   state.order=[0,1,2,3];if(!isHamon())for(let i=3;i>0;i--){const j=Math.floor(G()*(i+1)),t=state.order[i];state.order[i]=state.order[j];state.order[j]=t;}
-  state.players=makePlayers(spec);resetKorona();state.round=1;state.turn=0;state.overview=false;state.active=null;state.party=false;mapBtn.setAttribute('aria-pressed','false');
+  setBoard(isParty()?state.cfg.map:'ulap');state.players=makePlayers(spec);state.players.forEach(p=>{p.pos=BOARD.start;});resetKorona();state.round=1;state.turn=0;state.overview=false;state.active=null;state.party=false;mapBtn.setAttribute('aria-pressed','false');
   let r0=1,t0=0;
-  if(cp&&cp.players&&cp.players.length===4){cp.players.forEach((q,i)=>{const p=state.players[i];p.pos=clamp(q.pos|0,0,N-1);p.piso=q.piso|0;p.korona=q.korona|0;p.item=q.item&&ITEMS[q.item]?q.item:null;if(q.ctrl==='bot'){if(q.away&&p.ctrl!=='bot')p.away=p.ctrl;p.ctrl='bot';}if(Array.isArray(q.allies))p.allies=q.allies.slice(0,2).map(a=>({n:cleanName(a.n)||'Kasama',look:clamp(a.look|0,0,3),x:0,y:0}));if(q.stats)p.stats={wins:q.stats.wins|0,steps:q.stats.steps|0,dice:q.stats.dice|0,dn:q.stats.dn|0};});
-    if(Array.isArray(cp.korona)&&cp.korona.length===2)korona.spots=cp.korona.map(v=>clamp(v|0,0,N-1));r0=clamp(cp.round|0,1,maxR());t0=clamp(cp.turn|0,0,4);gs=cp.gs|0;decK=cp.decK|0;mgSeq=cp.mgSeq|0;
+  if(cp&&cp.players&&cp.players.length===4){cp.players.forEach((q,i)=>{const p=state.players[i];p.pos=clamp(q.pos|0,0,N-1);p.trail=Array.isArray(q.trail)?q.trail.map(v=>clamp(v|0,0,N-1)).slice(-16):[];p.piso=q.piso|0;p.korona=q.korona|0;p.item=q.item&&ITEMS[q.item]?q.item:null;if(q.ctrl==='bot'){if(q.away&&p.ctrl!=='bot')p.away=p.ctrl;p.ctrl='bot';}if(Array.isArray(q.allies))p.allies=q.allies.slice(0,2).map(a=>({n:cleanName(a.n)||'Kasama',look:clamp(a.look|0,0,3),x:0,y:0}));if(q.stats)p.stats={wins:q.stats.wins|0,steps:q.stats.steps|0,dice:q.stats.dice|0,dn:q.stats.dn|0};});
+    if(Array.isArray(cp.korona)&&cp.korona.length===korona.spots.length)korona.spots=cp.korona.map(v=>clamp(v|0,0,N-1));r0=clamp(cp.round|0,1,maxR());t0=clamp(cp.turn|0,0,4);gs=cp.gs|0;decK=cp.decK|0;mgSeq=cp.mgSeq|0;
     if(Array.isArray(cp.plan)&&cp.plan.length===maxR()&&cp.plan.every(k=>MG[k]))state.plan=cp.plan.slice();
     if(Array.isArray(cp.order)&&[...cp.order].sort().join()==='0,1,2,3')state.order=cp.order.map(Number);}
   setScreen('game');state.active=state.players[state.order[t0<4?t0:0]];updPlayers(0);buildHUD();
   const a=state.active;cam.x=cam.tx=a.x;cam.y=cam.ty=a.y-30;cam.z=cam.tz=boardZoom();
   if(isHamon()){(async()=>{const res=await runMinigame(state.plan[0],{hamon:true});if(tok===gameToken)await hamonResult(res);})();return;}
-  if(t0===4){(async()=>{state.round=r0;await runMinigame(state.plan[r0-1]);if(tok===gameToken)await gameLoop(r0+1,0,tok);})();}
-  else gameLoop(r0,t0,tok);
+  const go=()=>{if(tok!==gameToken)return;loadBar(-1);if(t0===4){(async()=>{state.round=r0;await runMinigame(state.plan[r0-1]);if(tok===gameToken)await gameLoop(r0+1,0,tok);})();}else gameLoop(r0,t0,tok);};
+  /* a local game waits for its 3D island (a loading card shows); an online game starts at once and switches to 3D when the island is ready */
+  if(BOARD.map&&B3.ok&&PREFS.g3d&&!(B3.island&&B3.island.id===BOARD.id)&&!B3.failed[BOARD.id]){const pr=B3.loadIsland(BOARD.id,(f,t)=>{if(tok===gameToken&&!NET.on)loadBar(f,t);});
+    if(!NET.on){loadBar(0,'Inihahanda ang '+BOARD.map.name+'…');pr.then(go,()=>{B3.failed[BOARD.id]=1;go();});return;}}
+  go();
 }
 function startLocal(setup,cp){
   if(NET.rm)netLeave();state.setup=setup;
@@ -2166,24 +2303,25 @@ function startOnline(pr,cp,log){
 }
 
 /* ================= screens & menus ================= */
-function setScreen(s){APP.screen=s;$('#scrTitle').hidden=s!=='title';$('#scrGallery').hidden=s!=='gallery';$('#hudTop').hidden=s!=='game';mapBtn.hidden=s!=='game';$('#menuBtn').hidden=s!=='game';$('#soundBtn').hidden=s==='game';$('#hudBottom').hidden=s==='gallery';closeMenu();
+function setScreen(s){APP.screen=s;$('#scrTitle').hidden=s!=='title';$('#scrGallery').hidden=s!=='gallery';$('#scrMaps').hidden=s!=='maps';$('#hudTop').hidden=s!=='game';mapBtn.hidden=s!=='game';$('#menuBtn').hidden=s!=='game';$('#soundBtn').hidden=s==='game';$('#hudBottom').hidden=s==='gallery'||s==='maps';closeMenu();
   if(s!=='game'){actionBtn.hidden=true;itemBtn.hidden=true;setHint('');clearTips();}measureHud();Music.play(s==='game'?'board':'title');}
 function demoPlayers(){state.players=makePlayers(CHARS.map(c=>({name:c.name,ctrl:'bot'})));state.players.forEach((p,i)=>{p.pos=[0,1,0,1][i];});state.active=null;}
-function toTitle(){gameToken++;scene=null;closeCard();clearRun();if(NET.rm)netLeave();netUnsave();state.party=false;state.ended=false;state.checkpoint=null;state.cfg=normCfg({});demoPlayers();resetKorona();setScreen('title');refreshResume();setTimeout(()=>{try{($('#mResume').hidden?$('#mLocal'):$('#mResume')).focus({preventScroll:true});}catch(e){}},50);}
+function toTitle(){gameToken++;loadBar(-1);scene=null;closeCard();clearRun();if(NET.rm)netLeave();netUnsave();state.party=false;state.ended=false;state.checkpoint=null;state.cfg=normCfg({});setBoard('ulap');demoPlayers();resetKorona();setScreen('title');refreshResume();setTimeout(()=>{try{($('#mResume').hidden?$('#mLocal'):$('#mResume')).focus({preventScroll:true});}catch(e){}},50);}
 function showMsg(title,body){openCard('<h2>'+esc(title)+'</h2><p>'+esc(body)+'</p>');}
 function netHelp(){return inClaude()?'Kailangang bukas ang laro sa claude.ai, naka-sign in ka, at naka-share ang laro sa mga kalaro mo (hindi gumagana sa public link).'
   :'Kailangan ng internet ang bawat phone. Kapag naputol ang koneksyon, hintayin lang o i-reload ang page: babalik ka sa laro.';}
 
 /* game settings rows (mode, length, bot skill), shared by the one-phone setup and the online lobby */
 function segRow(key,label,opts,val){return'<div class="setrow"><span class="setlbl">'+esc(label)+'</span><div class="seg sm" role="group" aria-label="'+esc(label)+'">'+opts.map(o=>'<button type="button" data-k="'+key+'" data-val="'+esc(o.v)+'" aria-pressed="'+(String(o.v)===String(val))+'">'+esc(o.l)+'</button>').join('')+'</div></div>';}
-function cfgSummary(c){c=normCfg(c);return MODES[c.mode]+' · '+c.rounds+(c.mode==='torneo'?' laro':' ikot')+' · Bot: '+DIFFS[c.diff];}
-function renderSettings(box,cfg,after){
+function cfgSummary(c){c=normCfg(c);return(c.mode==='party'&&MAPS[c.map]?MAPS[c.map].name+' · ':'')+MODES[c.mode]+' · '+c.rounds+(c.mode==='torneo'?' laro':' ikot')+' · Bot: '+DIFFS[c.diff];}
+function renderSettings(box,cfg,after,withMap){
   if(cfg.mode==='torneo'&&cfg.rounds>5)cfg.rounds=5;
-  box.innerHTML=segRow('mode','Laro',[{v:'party',l:'Party'},{v:'torneo',l:'Torneo'}],cfg.mode)+segRow('rounds',cfg.mode==='torneo'?'Ilang laro':'Ilang ikot',(cfg.mode==='torneo'?[3,5]:[3,5,8]).map(v=>({v,l:String(v)})),cfg.rounds)+segRow('diff','Galing ng bot',DIFFS.map((l,i)=>({v:i,l})),cfg.diff)+
+  box.innerHTML=segRow('mode','Laro',[{v:'party',l:'Party'},{v:'torneo',l:'Torneo'}],cfg.mode)+(cfg.mode==='party'&&withMap?segRow('map','Mapa',MAP_KEYS.map(k=>({v:k,l:MAPS[k].name})),cfg.map):'')+segRow('rounds',cfg.mode==='torneo'?'Ilang laro':'Ilang ikot',(cfg.mode==='torneo'?[3,5]:[3,5,8]).map(v=>({v,l:String(v)})),cfg.rounds)+segRow('diff','Galing ng bot',DIFFS.map((l,i)=>({v:i,l})),cfg.diff)+
     '<p class="note">'+esc(cfg.mode==='torneo'?'Torneo: laro lang, walang dice. Bawat panalo ay isang korona, kaya galing ang batayan.':'Party: board at dice, may larong kalye pagkatapos ng bawat ikot.')+'</p>';
-  box.querySelectorAll('button[data-k]').forEach(b=>b.addEventListener('click',()=>{const k=b.dataset.k,val=b.dataset.val;cfg[k]=k==='mode'?val:+val;Sfx.init();Sfx.tick(3);renderSettings(box,cfg,after);const f=box.querySelector('button[data-k="'+k+'"][data-val="'+val+'"]');if(f)f.focus({preventScroll:true});after&&after();}));
+  box.querySelectorAll('button[data-k]').forEach(b=>b.addEventListener('click',()=>{const k=b.dataset.k,val=b.dataset.val;cfg[k]=k==='mode'||k==='map'?val:+val;Sfx.init();Sfx.tick(3);renderSettings(box,cfg,after,withMap);const f=box.querySelector('button[data-k="'+k+'"][data-val="'+val+'"]');if(f)f.focus({preventScroll:true});after&&after();}));
 }
 async function localFlow(){
+  try{if(!localFlow.pre){localFlow.pre=new Image();localFlow.pre.src='maps/world/world.jpg';}}catch(e){}   // the map screen comes next
   const prev=state.setup&&state.setup.n?state.setup:{};let n=prev.n||1;const names=prev.names?prev.names.slice():CHARS.map(c=>c.name);const cfg=normCfg(prev.cfg);if(cfg.mode==='hamon')cfg.mode='party';
   const render=c=>{const box=c.querySelector('#nmBox');box.innerHTML=CHARS.map((ch,i)=>i<n?'<div class="field"><span class="dot" style="background:'+ch.color+'"></span><input id="nm'+i+'" maxlength="12" autocomplete="off" aria-label="Pangalan ng manlalaro '+(i+1)+'" value="'+esc(names[i]||ch.name)+'"></div>':'<div class="field"><span class="dot" style="background:'+ch.color+'"></span><span class="bot">'+esc(ch.name)+' · bot</span></div>').join('');
     c.querySelectorAll('#nSeg button').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.n===n)));};
@@ -2192,8 +2330,49 @@ async function localFlow(){
   c.querySelectorAll('#nSeg button').forEach(b=>b.addEventListener('click',()=>{c.querySelectorAll('input[id^="nm"]').forEach(inp=>{names[+inp.id.slice(2)]=inp.value;});n=+b.dataset.n;render(c);Sfx.init();Sfx.tick(3);}));
   const v=await cardChoice(c);if(v!=='go')return;
   for(let i=0;i<4;i++)if(CARD_VALS['nm'+i]!=null)names[i]=CARD_VALS['nm'+i];
+  if(cfg.mode==='party'){state.setup={n,names:names.slice(),cfg:normCfg(cfg)};const m=await mapPick(cfg.map);if(!m){toTitle();return localFlow();}cfg.map=m;}
   startLocal({n,names,cfg:normCfg(cfg)});
 }
+/* ================= map select: the world picture of all four islands zooms to the one being picked =================
+   maps/world/world.jpg is a still render of the four islands; <id>.jpg is the sharp close-up of each island's box in it */
+const WORLD={W:2048,H:1280,islands:{plaza:{x:.0217,y:.4831,w:.5038,h:.5038},palengke:{x:.5212,y:.5563,w:.4058,h:.4058},aplaya:{x:.4975,y:.0942,w:.3875,h:.3875},palayan:{x:.1217,y:.124,w:.3723,h:.3723}}};
+function mapPick(cur){return new Promise(res=>{
+  setScreen('maps');const scr=$('#scrMaps'),view=$('#mapView'),wd=$('#mapWorld'),img=$('#mapImg'),btns=$('#mapBtns'),go=$('#mapGo'),back=$('#mapBack'),panel=$('#mapPanel');
+  let sel=MAPS[cur]?cur:'plaza',timers=[],done=false;
+  wd.style.width=WORLD.W+'px';wd.style.height=WORLD.H+'px';if(!img.getAttribute('src'))img.src='maps/world/world.jpg';
+  const close={};for(const k of MAP_KEYS){let el=wd.querySelector('img[data-k="'+k+'"]');if(!el){const r=WORLD.islands[k];el=document.createElement('img');el.className='mapclose';el.dataset.k=k;el.alt='';el.decoding='async';
+    el.style.cssText='left:'+r.x*WORLD.W+'px;top:'+r.y*WORLD.H+'px;width:'+r.w*WORLD.W+'px;height:'+r.h*WORLD.H+'px';wd.appendChild(el);}close[k]=el;el.classList.remove('on');}
+  btns.innerHTML=MAP_KEYS.map(k=>'<button type="button" role="radio" data-k="'+k+'" style="--mc:'+MAPS[k].color+'">'+esc(MAPS[k].name)+'</button>').join('');
+  /* fit a box of the world picture into the part of the screen the panel leaves free */
+  const area=()=>{const pr=panel.getBoundingClientRect(),side=matchMedia('(min-width:640px) and (orientation:landscape)').matches;return side?{x:0,y:0,w:Math.max(200,pr.left-12),h:innerHeight}:{x:0,y:0,w:innerWidth,h:Math.max(160,pr.top-8)};};
+  const place=(k,instant)=>{const a=area(),r=k?WORLD.islands[k]:{x:0,y:0,w:1,h:1},R={x:r.x*WORLD.W,y:r.y*WORLD.H,w:r.w*WORLD.W,h:r.h*WORLD.H};
+    const sc=Math.min(a.w/R.w,a.h/R.h)*(k?1:1.04),tx=a.x+(a.w-R.w*sc)/2-R.x*sc,ty=a.y+(a.h-R.h*sc)/2-R.y*sc;
+    if(instant){wd.style.transition='none';wd.style.transform='translate('+tx+'px,'+ty+'px) scale('+sc+')';void wd.offsetWidth;wd.style.transition='';}else wd.style.transform='translate('+tx+'px,'+ty+'px) scale('+sc+')';};
+  const paint=()=>{const m=MAPS[sel];$('#mapTitle').textContent=m.name;$('#mapBlurb').textContent=m.blurb;btns.querySelectorAll('button').forEach(b=>{const on=b.dataset.k===sel;b.setAttribute('aria-checked',String(on));b.tabIndex=on?0:-1;});};
+  let shown=null;
+  const pick=(k,first)=>{if(done)return;const prev=shown;sel=k;shown=k;paint();timers.forEach(clearTimeout);timers=[];
+    MAP_KEYS.forEach(q=>close[q].classList.remove('on'));const ci=close[k];if(!ci.getAttribute('src'))ci.src='maps/world/'+k+'.jpg';
+    const settle=()=>{if(shown===k&&ci.complete&&ci.naturalWidth)ci.classList.add('on');else ci.onload=()=>{if(shown===k)ci.classList.add('on');};};
+    if(RM){place(k,true);settle();return;}
+    if(prev&&prev!==k){place(null);timers.push(setTimeout(()=>{place(k);timers.push(setTimeout(settle,820));},430));}
+    else{place(k);timers.push(setTimeout(settle,820));}
+    if(!first)Sfx.tick(3);};
+  const finish=v=>{if(done)return;done=true;timers.forEach(clearTimeout);removeEventListener('resize',onRs);document.removeEventListener('keydown',onKey);view.onclick=null;go.onclick=back.onclick=null;res(v);};
+  const onRs=()=>place(shown,true);addEventListener('resize',onRs);
+  const onKey=e=>{const i=MAP_KEYS.indexOf(sel);if(e.key==='ArrowRight'||e.key==='ArrowDown'){e.preventDefault();pick(MAP_KEYS[(i+1)%4]);btns.querySelector('[data-k="'+sel+'"]').focus();}
+    else if(e.key==='ArrowLeft'||e.key==='ArrowUp'){e.preventDefault();pick(MAP_KEYS[(i+3)%4]);btns.querySelector('[data-k="'+sel+'"]').focus();}
+    else if(e.key==='Escape'){e.preventDefault();finish(null);}};
+  document.addEventListener('keydown',onKey);   // arrows work wherever the focus is while the map screen is up
+  btns.querySelectorAll('button').forEach(b=>b.onclick=()=>{if(b.dataset.k!==shown)pick(b.dataset.k);});
+  /* tapping the picture picks the island nearest to the tap */
+  view.onclick=e=>{const m=new DOMMatrix(getComputedStyle(wd).transform).inverse(),p=m.transformPoint(new DOMPoint(e.clientX,e.clientY));let best=null,bd=1e18;
+    for(const k of MAP_KEYS){const r=WORLD.islands[k],cx=(r.x+r.w/2)*WORLD.W,cy=(r.y+r.h/2)*WORLD.H,d=(cx-p.x)**2+(cy-p.y)**2;if(d<bd){bd=d;best=k;}}if(best&&best!==shown)pick(best);};
+  go.onclick=()=>{Sfx.init();Sfx.tick(5);finish(sel);};back.onclick=()=>finish(null);
+  /* first the whole world, then fly to the island picked last time */
+  paint();place(null,true);if(RM)pick(sel,true);else timers.push(setTimeout(()=>pick(sel,true),650));
+  try{btns.querySelector('[data-k="'+sel+'"]').focus({preventScroll:true});}catch(e){}
+  for(const k of MAP_KEYS)setTimeout(()=>{if(!done&&!close[k].getAttribute('src'))close[k].src='maps/world/'+k+'.jpg';},2500);
+});}
 function drawQR(canvas,text){try{if(typeof qrcode!=='function')return false;const q=qrcode(0,'M');q.addData(text);q.make();const n=q.getModuleCount(),size=canvas.width,cell=Math.floor(size/(n+8)),off=Math.floor((size-cell*n)/2);const g=canvas.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,size,size);g.fillStyle=INK;for(let r=0;r<n;r++)for(let c2=0;c2<n;c2++)if(q.isDark(r,c2))g.fillRect(off+c2*cell,off+r*cell,cell,cell);return true;}catch(e){return false;}}
 function rosterHTML(roster){let h='<ol class="rank" id="lbRoster">';for(let i=0;i<4;i++){const e=roster[i];h+='<li><span class="pos">'+(i+1)+'</span><span class="dot" style="background:'+CHARS[i].color+'"></span><span class="who">'+esc(e?(cleanName(e.n)||CHARS[i].name):CHARS[i].name)+'</span><span class="sc">'+(e?(e.p===NET.my?'ikaw':(i===0?'host':'online')):'bot')+'</span><span class="pay"></span></li>';}return h+'</ol>';}
 async function askName(title,go){const c=openCard('<h2>'+esc(title)+'</h2><div class="field"><label for="nmMe">Pangalan</label><input id="nmMe" maxlength="12" autocomplete="off" value="'+esc(NET.name||'')+'" placeholder="Hal. Jun" data-focus></div><div class="row"><button type="button" class="btn" data-v="back">Balik</button><button type="button" class="btn primary" data-v="go" data-primary>'+esc(go)+'</button></div>');const v=await cardChoice(c);if(v!=='go')return null;return cleanName(CARD_VALS.nmMe)||'Ako';}
@@ -2206,7 +2385,7 @@ async function hostFlow(){
   setTimeout(hostRoster,300);
   const link=SHARE_URL+'#'+code;
   const c=openCard('<h2>Online room</h2><p class="note">Ipa-scan ang QR, o ipasok ng kalaro ang code sa Maglaro online → Sumali.</p><div class="codebig">'+code+'</div><canvas class="qr" id="lbQr" width="344" height="344" aria-label="QR code ng room"></canvas><div class="linkrow"><code id="lbLink">'+esc(link)+'</code><button type="button" class="btn small" id="lbCopy">Kopyahin</button></div>'+rosterHTML(NET.roster)+'<div id="setBox"></div><p class="note">'+esc(netHelp())+'</p><div class="row"><button type="button" class="btn" data-v="back">Kanselahin</button><button type="button" class="btn primary" data-v="start" data-primary>Simulan ang laro</button></div>');
-  NET.cfg=normCfg(NET.cfg);if(NET.cfg.mode==='hamon')NET.cfg.mode='party';renderSettings(c.querySelector('#setBox'),NET.cfg,()=>netPres({cfg:normCfg(NET.cfg)}));netPres({cfg:normCfg(NET.cfg)});
+  NET.cfg=normCfg(NET.cfg);if(NET.cfg.mode==='hamon')NET.cfg.mode='party';renderSettings(c.querySelector('#setBox'),NET.cfg,()=>netPres({cfg:normCfg(NET.cfg)}),true);netPres({cfg:normCfg(NET.cfg)});
   if(!drawQR(c.querySelector('#lbQr'),link))c.querySelector('#lbQr').hidden=true;
   c.querySelector('#lbCopy').addEventListener('click',e=>{const b=e.currentTarget;const done=()=>{b.textContent='Nakopya';setTimeout(()=>{if(b.isConnected)b.textContent='Kopyahin';},1500);};try{navigator.clipboard.writeText(link).then(done,()=>selectLink(c));}catch(err){selectLink(c);}});
   NET.onUpdate=()=>{const el=document.getElementById('lbRoster');if(el)el.outerHTML=rosterHTML(NET.roster);};
@@ -2324,6 +2503,7 @@ function guidePages(){
     {t:'Layunin',h:'<p>Maging <b>Bida ng Ulap</b>: ang may pinakamaraming <b>korona</b> sa dulo ng laro ang panalo. Kapag tabla, piso ang batayan.</p><p>Hanggang 4 na tao sa iisang phone o computer, o online gamit ang QR o code. Bot ang papalit sa kulang na manlalaro. Bunutan kung sino ang unang titira.</p>'},
     {t:'Sa iyong turn',h:'<ol class="steps"><li>Pindutin ang <b>Tamaan ang dice</b>. Lalabas ang 1 hanggang 10.</li><li>May puting bilog ang mga espasyong maaabot mo, at nakasulat sa korona kung ilang hakbang ito.</li><li>Kapag <b>dumaan</b> ka sa korona na may 10 piso, puwede mo itong bilhin. Lilipat ito sa ibang lugar pagkatapos.</li><li>May <b>kasama</b>? Bawat isa ay magdadagdag ng 1 o 2 hakbang sa gulong mo.</li><li>May item? Pindutin ang <b>Gamitin</b> bago gumulong.</li></ol>'},
     {t:'Mga espasyo',h:'<ul class="legend">'+sw(SPACE.piso.c,'Piso','+3 piso')+sw(SPACE.utang.c,'Utang','−3 piso')+sw(SPACE.swerte.c,'Swerte','bonus na piso o libreng item')+sw(SPACE.tikbalang.c,'Tikbalang','atras ng 3 espasyo')+sw(SPACE.sari.c,'Sari-sari','bumili ng item; puwede ring dumaan lang')+sw(SPACE.kasama.c,'Kasama','may sasama sa barkada mo, +1 o +2 sa bawat gulong')+sw(SPACE.tanong.c,'Tanong ni Lola','tanong tungkol sa larong Pilipino, +5 kapag tama')+sw(SPACE.jack.c,'Jack en Poy','hamunin ang sinuman: hanggang 5 piso')+sw('#FFC93C','Korona','10 piso, dumaan para bumili')+'</ul>'},
+    {t:'Mga mapa',h:'<p>Pumili ng isla bago maglaro: <b>Plaza, Palengke, Aplaya</b> o <b>Palayan</b>. May <b>4 na korona</b> sa bawat mapa.</p><ul><li><b>Sangandaan:</b> may daan na humihiwalay at bumabalik sa ikot. Ikaw ang pipili kung saan dadaan.</li><li><b>Sakay:</b> sa espasyo ng kalesa, padyak, bangka o kariton ng kalabaw, magbayad ng 6 piso para makarating sa malayong bahagi ng mapa.</li><li><b>Espasyo ng isla:</b> may sariling espasyo ang bawat mapa, gaya ng Banda at Kampana sa Plaza, Tawad at Basa sa Palengke, Alon at Huli sa Aplaya, Ani at Balang sa Palayan. Sasabihin ng tip kung ano ang ginagawa nito sa unang tapak mo rito.</li></ul>'},
     {t:'Mga item',h:'<p>Isang item lang ang madadala. Bilhin sa Sari-sari store, o makuha sa Swerte.</p><ul class="legend items">'+Object.keys(ITEMS).map(k=>'<li><span class="iic">'+ITEM_ICON[k]+'</span><span><b>'+esc(ITEMS[k].name)+' · '+ITEMS[k].cost+' piso</b><br>'+esc(ITEMS[k].desc)+'</span></li>').join('')+'</ul><p class="note">Itira ang 10 piso para sa korona bago bumili!</p>'},
     {t:'Mga laro',h:'<p>Pagkatapos ng bawat ikot, maglalaro ang lahat ng isang larong kalye: <b>Tumbang Preso, Patintero, Sipa, Palosebo</b> o <b>Luksong Tinik</b>.</p><p>Premyo: <b>+10</b> piso sa una, <b>+5</b> sa ikalawa, <b>+3</b> sa ikatlo.</p><p><b>Huling Hirit:</b> sa huling ikot, doble ang premyo at may tulong ang nasa huli.</p><p><b>Bonus na korona</b> sa dulo: <b>Hari ng Laro</b> (pinakamaraming panalo sa mga laro), <b>Mayaman</b> (pinakamaraming piso) at <b>Malas sa Dice</b> (pinakamababang average ng dice).</p>'},
     {t:'Mga paraan ng paglaro',h:'<ul><li><b>Party</b>: board, dice at laro, 3, 5 o 8 ikot.</li><li><b>Torneo</b>: laro lang, walang dice. Bawat panalo ay isang korona, kaya galing ang batayan.</li><li><b>Hamon ng Araw</b>: solo laban sa mahihirap na bot. Iisang hamon para sa lahat ngayong araw, may talaan ng iskor.</li><li><b>Online</b>: gumawa ng room at ipa-scan ang QR, o ibigay ang 4-letrang code.</li></ul>'},
@@ -2365,13 +2545,13 @@ async function confirmQuit(){
 $('#menuBtn').addEventListener('click',()=>openMenu());
 
 /* ================= saved game: a local game resumes from the start of its last turn ================= */
-const SAVE_KEY='lsu-save',SAVE_V=3;
+const SAVE_KEY='lsu-save',SAVE_V=4;
 function saveGame(cp){try{localStorage.setItem(SAVE_KEY,JSON.stringify({v:SAVE_V,n:N,at:Date.now(),cp}));}catch(e){}}
 function clearSave(){try{localStorage.removeItem(SAVE_KEY);}catch(e){}}
 function loadSave(){try{const o=JSON.parse(localStorage.getItem(SAVE_KEY)||'null'),cp=o&&o.cp;
-  if(!o||o.v!==SAVE_V||o.n!==N||!cp||cp.mode!=='local'||!cp.setup||!Array.isArray(cp.setup.names)||!Array.isArray(cp.players)||cp.players.length!==4)return null;return o;}catch(e){return null;}}
+  if(!o||o.v!==SAVE_V||o.n!==boardSizeOf(normCfg(cp&&cp.setup&&cp.setup.cfg).mode==='party'?normCfg(cp.setup.cfg).map:'ulap')||!cp||cp.mode!=='local'||!cp.setup||!Array.isArray(cp.setup.names)||!Array.isArray(cp.players)||cp.players.length!==4)return null;return o;}catch(e){return null;}}
 function refreshResume(){const o=loadSave(),b=$('#mResume');b.hidden=!o;if(!o)return;const cp=o.cp,c=normCfg(cp.setup.cfg),who=cp.setup.names.slice(0,cp.setup.n|0).map(cleanName).filter(Boolean);
-  $('#mResumeSub').textContent=MODES[c.mode]+' · '+(c.mode==='torneo'?'Laro ':'Ikot ')+clamp(cp.round|0,1,c.rounds)+'/'+c.rounds+(who.length?' · '+who.join(', '):'');}
+  $('#mResumeSub').textContent=(c.mode==='party'&&MAPS[c.map]?MAPS[c.map].name:MODES[c.mode])+' · '+(c.mode==='torneo'?'Laro ':'Ikot ')+clamp(cp.round|0,1,c.rounds)+'/'+c.rounds+(who.length?' · '+who.join(', '):'');}
 $('#mPass').addEventListener('click',()=>{Sfx.init();passportFlow();});
 $('#mResume').addEventListener('click',()=>{Sfx.init();const o=loadSave();if(o)startLocal(o.cp.setup,o.cp);else refreshResume();});
 
@@ -2409,29 +2589,39 @@ document.addEventListener('keydown',e=>{const top=topDialog();if(!top)return;
   else if(e.key==='Escape'){const b=top.querySelector(ESC_V.map(v=>'button[data-v="'+v+'"]').join(','));if(b){e.preventDefault();b.click();}}},true);
 
 /* ================= 3D board (Three.js): islands, kids, dice block, korona, tilted follow camera ================= */
-const B3={ok:false,on:false};
-const use3D=()=>B3.ok&&PREFS.g3d;
+const B3={ok:false,on:false,failed:{}};
+/* on a map the 3D view waits for its island; until then (or if it fails) the board is drawn in 2D */
+const use3D=()=>B3.ok&&PREFS.g3d&&(!BOARD.map||APP.screen!=='game'||!!scene||!!(B3.island&&B3.island.id===BOARD.id));
+const THREE_URL='./vendor/three-r184/three.module.min.js';
+function loadThree(){if(window.THREE)return Promise.resolve(window.THREE);if(!loadThree.p)loadThree.p=import(THREE_URL).then(m=>{window.THREE=m;return m;});return loadThree.p;}
+/* phones and tablets get lighter islands: fewer leaf cards and grass layers, no island shadows */
+const LOW3=!!(window.matchMedia&&matchMedia('(pointer:coarse)').matches)||Math.min(screen.width||999,screen.height||999)<700;
+/* how high the ground is under a board point (terraces on the maps) */
+function groundAt(x,y){if(!BOARD.map)return 0;let a=0,b=-1,da=1e18,db=1e18;for(let i=0;i<N;i++){const q=SP[i],d=(q.x-x)*(q.x-x)+(q.y-y)*(q.y-y);if(d<da){db=da;b=a;da=d;a=i;}else if(d<db){db=d;b=i;}}
+  if(b<0)return SP[a].h;const wa=1/(Math.sqrt(da)+1),wb=1/(Math.sqrt(db)+1);return(SP[a].h*wa+SP[b].h*wb)/(wa+wb);}
 const cv3=document.getElementById('stage3d');
 function init3D(){
   if(B3.ok||!window.THREE)return;
   try{
-  const T3=window.THREE,TAU3=Math.PI*2;
+  const T3=window.THREE,TAU3=Math.PI*2,PI3=Math.PI;
+  const CT=c=>{const t=new T3.CanvasTexture(c);t.colorSpace=T3.SRGBColorSpace;return t;};
   const ren=new T3.WebGLRenderer({canvas:cv3,antialias:true});
-  ren.setPixelRatio(Math.min(2,window.devicePixelRatio||1));ren.shadowMap.enabled=true;ren.shadowMap.type=T3.PCFSoftShadowMap;
+  ren.setPixelRatio(Math.min(2,window.devicePixelRatio||1));ren.shadowMap.enabled=true;ren.shadowMap.type=T3.PCFShadowMap;
   const S=new T3.Scene();
-  {const c=document.createElement('canvas');c.width=4;c.height=256;const g=c.getContext('2d');const gr=g.createLinearGradient(0,0,0,256);gr.addColorStop(0,'#7EC4DA');gr.addColorStop(.55,'#BCE4DC');gr.addColorStop(1,'#F7DDB0');g.fillStyle=gr;g.fillRect(0,0,4,256);S.background=new T3.CanvasTexture(c);}
-  S.fog=new T3.Fog(0xCFE7DE,1700,5200);
+  {const c=document.createElement('canvas');c.width=4;c.height=256;const g=c.getContext('2d');const gr=g.createLinearGradient(0,0,0,256);gr.addColorStop(0,'#7EC4DA');gr.addColorStop(.55,'#BCE4DC');gr.addColorStop(1,'#F7DDB0');g.fillStyle=gr;g.fillRect(0,0,4,256);S.background=CT(c);}
+  S.fog=new T3.Fog(0xCFE7DE,1700,5200);const ENV={classic:{bg:S.background,fog:S.fog,env:null,envI:1}};
   const camera=new T3.PerspectiveCamera(40,1,10,9000);
-  S.add(new T3.HemisphereLight(0xFFF6E0,0x86A2B4,.62));
-  const sun=new T3.DirectionalLight(0xFFF1D2,.95);sun.position.set(870-650,1500,800+650);sun.target.position.set(870,0,800);
+  const hemi=new T3.HemisphereLight(0xFFF6E0,0x86A2B4,.62*PI3);S.add(hemi);
+  const fill=new T3.DirectionalLight(0xFFF4E6,0);fill.position.set(-5,3,-4);S.add(fill);
+  const sun=new T3.DirectionalLight(0xFFF1D2,.95*PI3);sun.position.set(870-650,1500,800+650);sun.target.position.set(870,0,800);
   sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);const sc=sun.shadow.camera;sc.left=-1250;sc.right=1250;sc.top=1250;sc.bottom=-1250;sc.near=100;sc.far=4200;sun.shadow.bias=-.0012;
   S.add(sun,sun.target);
-  const gm=new T3.DataTexture(new Uint8Array([120,120,120,255,190,190,190,255,255,255,255,255]),3,1,T3.RGBAFormat);gm.needsUpdate=true;gm.minFilter=gm.magFilter=T3.NearestFilter;
+  const gm=new T3.DataTexture(new Uint8Array([48,48,48,255,134,134,134,255,255,255,255,255]),3,1,T3.RGBAFormat);gm.needsUpdate=true;gm.minFilter=gm.magFilter=T3.NearestFilter;
   const MC=new Map();
   const M=(c,o)=>{if(!o){const k=String(c);if(MC.has(k))return MC.get(k);const m=new T3.MeshToonMaterial({color:c,gradientMap:gm});MC.set(k,m);return m;}return new T3.MeshToonMaterial(Object.assign({color:c,gradientMap:gm},o));};
   const B=c=>new T3.MeshBasicMaterial({color:c});
   const OUT=new T3.MeshBasicMaterial({color:0x3B2316,side:T3.BackSide});
-  const tex=(name,rx,ry)=>{const t=new T3.CanvasTexture(TEX[name]);t.wrapS=t.wrapT=T3.RepeatWrapping;t.repeat.set(rx,ry==null?rx:ry);t.anisotropy=4;return t;};
+  const tex=(name,rx,ry)=>{const t=CT(TEX[name]);t.wrapS=t.wrapT=T3.RepeatWrapping;t.repeat.set(rx,ry==null?rx:ry);t.anisotropy=4;return t;};
   const mesh=(geo,mat,x,y,z)=>{const m=new T3.Mesh(geo,mat);m.position.set(x||0,y||0,z||0);return m;};
   const ol=(m,k)=>{const o=new T3.Mesh(m.geometry,OUT);o.scale.setScalar(1+k);o.userData.ol=1;m.add(o);return m;};
   const shadowAll=(o,recv)=>o.traverse(m=>{if(m.isMesh&&!m.userData.ol){m.castShadow=true;if(recv)m.receiveShadow=true;}});
@@ -2519,20 +2709,20 @@ function init3D(){
     const fr=['#F2B21B','#E2452E','#7CC35A','#F58A2E'];for(let k=0;k<9;k++)g.add(mesh(new T3.SphereGeometry(3.4,10,8),M(fr[k%4]),-22+k*5.5,16,(k%2)*6-3));
     for(const x of [-27,27])for(const z of [-12,12])g.add(mesh(new T3.CylinderGeometry(1.6,1.6,36,6),M('#8A5A32'),x,18,z));
     const st=document.createElement('canvas');st.width=70;st.height=8;const sg=st.getContext('2d');for(let k=0;k<7;k++){sg.fillStyle=k%2?'#FFF6E6':c;sg.fillRect(k*10,0,10,8);}
-    const aw=mesh(new T3.BoxGeometry(66,3,36),M('#ffffff',{map:new T3.CanvasTexture(st)}),0,37,0);aw.rotation.x=.12;ol(aw,.03);g.add(aw);return g;}
+    const aw=mesh(new T3.BoxGeometry(66,3,36),M('#ffffff',{map:CT(st)}),0,37,0);aw.rotation.x=.12;ol(aw,.03);g.add(aw);return g;}
   function store3(){const g=new T3.Group();const b=mesh(new T3.BoxGeometry(72,40,44),M('#E8D8BA'),0,20,0);ol(b,.03);g.add(b);
     g.add(mesh(new T3.BoxGeometry(56,20,1.5),M('#3A2414'),0,22,22.3));
     const cols=['#E2452E','#F2B21B','#2E6FD8','#2FA35A','#F28DB2'];for(let k=0;k<8;k++)g.add(mesh(new T3.BoxGeometry(4.6,9,1),M(cols[k%5]),-24+k*6.8,26,23.2));
     const sc2=document.createElement('canvas');sc2.width=256;sc2.height=52;const sg=sc2.getContext('2d');sg.fillStyle='#E2452E';sg.fillRect(0,0,256,52);sg.font='900 30px Nunito, sans-serif';sg.fillStyle='#fff';sg.textAlign='center';sg.textBaseline='middle';sg.fillText('SARI-SARI',128,28);
-    const sign=mesh(new T3.BoxGeometry(64,13,2),[M('#E2452E'),M('#E2452E'),M('#E2452E'),M('#E2452E'),M('#ffffff',{map:new T3.CanvasTexture(sc2)}),M('#E2452E')],0,47,23);ol(sign,.04);g.add(sign);
+    const sign=mesh(new T3.BoxGeometry(64,13,2),[M('#E2452E'),M('#E2452E'),M('#E2452E'),M('#E2452E'),M('#ffffff',{map:CT(sc2)}),M('#E2452E')],0,47,23);ol(sign,.04);g.add(sign);
     const roof=mesh(new T3.BoxGeometry(86,4,58),M('#ffffff',{map:tex('metal',1/12,1)}),0,43,0);roof.rotation.x=-.08;g.add(roof);
     g.add(mesh(new T3.BoxGeometry(60,5,8),woodM,0,10,26));return g;}
   function banca3(){const g=new T3.Group();const h=mesh(new T3.SphereGeometry(1,18,10),M('#F7F2E8'),0,3,0);h.scale.set(27,6,7);ol(h,.04);g.add(h);
     g.add(mesh(new T3.BoxGeometry(46,1.2,1.4),M('#2E6FD8'),0,4.6,6.6));for(const z of [-17,17]){const o=mesh(new T3.CylinderGeometry(1.6,1.6,44,6),M('#D2B37A'),0,2,z);o.rotation.z=Math.PI/2;g.add(o);}
     for(const x of [-10,10]){const c=mesh(new T3.CylinderGeometry(1,1,34,6),M('#D2B37A'),x,5,0);c.rotation.x=Math.PI/2;g.add(c);}return g;}
   function billboard(pr,w,h,ox,oy){const c=document.createElement('canvas');c.width=w*2;c.height=h*2;const g=c.getContext('2d');g.scale(2,2);g.translate(ox,oy);g.lineJoin='round';g.lineCap='round';drawProp(g,pr,0,0);
-    const sp=new T3.Sprite(new T3.SpriteMaterial({map:new T3.CanvasTexture(c),transparent:true}));sp.center.set(ox/w,1-oy/h);sp.scale.set(w,h,1);return sp;}
-  const blob=(()=>{const c=document.createElement('canvas');c.width=c.height=64;const g=c.getContext('2d');const gr=g.createRadialGradient(32,32,2,32,32,30);gr.addColorStop(0,'rgba(30,20,10,.38)');gr.addColorStop(1,'rgba(30,20,10,0)');g.fillStyle=gr;g.fillRect(0,0,64,64);return new T3.MeshBasicMaterial({map:new T3.CanvasTexture(c),transparent:true,depthWrite:false});})();
+    const sp=new T3.Sprite(new T3.SpriteMaterial({map:CT(c),transparent:true}));sp.center.set(ox/w,1-oy/h);sp.scale.set(w,h,1);return sp;}
+  const blob=(()=>{const c=document.createElement('canvas');c.width=c.height=64;const g=c.getContext('2d');const gr=g.createRadialGradient(32,32,2,32,32,30);gr.addColorStop(0,'rgba(30,20,10,.38)');gr.addColorStop(1,'rgba(30,20,10,0)');g.fillStyle=gr;g.fillRect(0,0,64,64);return new T3.MeshBasicMaterial({map:CT(c),transparent:true,depthWrite:false});})();
   const blobGeo=new T3.PlaneGeometry(1,1);blobGeo.rotateX(-Math.PI/2);
   B3.palms=[];
   for(const pr of PROPS){const p=propPos(pr);let o=null;
@@ -2546,11 +2736,13 @@ function init3D(){
   function topTex(type){if(spaceTop[type])return spaceTop[type];const st=SPACE[type],c=document.createElement('canvas');c.width=c.height=128;const g=c.getContext('2d');
     g.fillStyle=st.c;g.fillRect(0,0,128,128);const rg=g.createRadialGradient(44,40,4,64,64,70);rg.addColorStop(0,'rgba(255,255,255,.45)');rg.addColorStop(.55,'rgba(255,255,255,0)');rg.addColorStop(1,'rgba(0,0,0,.2)');g.fillStyle=rg;g.fillRect(0,0,128,128);
     g.beginPath();g.arc(64,64,48,0,TAU3);g.strokeStyle='rgba(255,255,255,.45)';g.lineWidth=5;g.stroke();g.save();g.translate(64,64);g.scale(3.6,3.6);drawSpaceIcon(g,type);g.restore();
-    const t=new T3.CanvasTexture(c);spaceTop[type]=t;return t;}
+    const t=CT(c);spaceTop[type]=t;return t;}
   const spGeo=new T3.CylinderGeometry(19,19,5,32);
-  B3.spaces=SP.map((s,i)=>{const st=SPACE[s.type],side=M(st.d);const m=new T3.Mesh(spGeo,[side,M('#ffffff',{map:topTex(s.type)}),side]);ol(m,.07);m.receiveShadow=true;world.add(m);return m;});
+  B3.spaces=CLASSIC.sp.map((s,i)=>{const st=SPACE[s.type],side=M(st.d);const m=new T3.Mesh(spGeo,[side,M('#ffffff',{map:topTex(s.type)}),side]);ol(m,.07);m.receiveShadow=true;world.add(m);return m;});
   const reachG=new T3.RingGeometry(23,28,32);reachG.rotateX(-Math.PI/2);const reachM=new T3.MeshBasicMaterial({color:0xFFFFFF,transparent:true,opacity:.95,depthWrite:false}),reachFarM=new T3.MeshBasicMaterial({color:0xFFE07A,transparent:true,opacity:.95,depthWrite:false});
-  B3.reach=SP.map(()=>{const m=new T3.Mesh(reachG,reachM);m.visible=false;world.add(m);return m;});
+  const reachGrp=new T3.Group();S.add(reachGrp);B3.reach=[];
+  const reachMapG=new T3.RingGeometry(26,35,32);reachMapG.rotateX(-Math.PI/2);const reachMapM=new T3.MeshBasicMaterial({color:0xFFE07A,transparent:true,opacity:.95,depthWrite:false}),reachMapFarM=new T3.MeshBasicMaterial({color:0xFF8A3C,transparent:true,opacity:.95,depthWrite:false});
+  const buildReach=()=>{B3.reach.forEach(m=>reachGrp.remove(m));B3.reach=SP.map(()=>{const m=new T3.Mesh(BOARD.map?reachMapG:reachG,reachM);m.visible=false;reachGrp.add(m);return m;});};buildReach();
 
   /* ---------- kids ---------- */
   function kid3(p,opt){opt=opt||{};const g=new T3.Group(),body=new T3.Group();g.add(body);
@@ -2572,7 +2764,7 @@ function init3D(){
     if(opt.ghost)g.traverse(m=>{if(m.isMesh&&!m.userData.ol){m.material=m.material.clone();m.material.transparent=true;m.material.opacity=.4;}else if(m.isMesh)m.visible=false;});
     if(!opt.noShadow)shadowAll(g);(opt.parent||S).add(g);return{g,body,legs,arms,head,eyes,mouth,yaw:0};}
   function yawOf(dir,face){return dir==='back'?Math.PI:(dir==='side'?(face>=0?Math.PI/2:-Math.PI/2):0);}
-  function pose(K,x,z,o,sc){const walk=o.walk;K.g.position.set(x,4+(o.lift||0),z);const s=sc||1;K.g.scale.set(s*(o.sx||1),s*(o.sy||1),s*(o.sx||1));
+  function pose(K,x,z,o,sc){const walk=o.walk;K.g.position.set(x,4+(o.lift||0)+(o.y0||0),z);const s=sc||1;K.g.scale.set(s*(o.sx||1),s*(o.sy||1),s*(o.sx||1));
     let ty=yawOf(o.dir,o.face),d=ty-K.yaw;while(d>Math.PI)d-=TAU3;while(d<-Math.PI)d+=TAU3;K.yaw+=d*.25;K.g.rotation.y=K.yaw;
     const sw=walk!=null?Math.sin(walk):0,m=o.mood||'idle';
     K.legs[0].rotation.x=sw*.75;K.legs[1].rotation.x=-sw*.75;
@@ -2589,15 +2781,70 @@ function init3D(){
     for(let k=0;k<5;k++){const a=k/5*TAU3;const sp=mesh(new T3.ConeGeometry(4,13,8),gold,Math.cos(a)*13,10.5,Math.sin(a)*13);ol(sp,.1);g.add(sp);g.add(mesh(new T3.SphereGeometry(2.3,8,6),M('#FFF6E6'),Math.cos(a)*13,17.5,Math.sin(a)*13));}
     ['#E2452E','#2E6FD8','#2FA35A'].forEach((c,k)=>{const a=k/3*TAU3;g.add(mesh(new T3.SphereGeometry(2.6,8,6),M(c),Math.cos(a)*14,0,Math.sin(a)*14));});
     const gl=document.createElement('canvas');gl.width=gl.height=64;const gg=gl.getContext('2d');const gr=gg.createRadialGradient(32,32,2,32,32,32);gr.addColorStop(0,'rgba(255,226,120,.85)');gr.addColorStop(1,'rgba(255,226,120,0)');gg.fillStyle=gr;gg.fillRect(0,0,64,64);
-    const glow=new T3.Sprite(new T3.SpriteMaterial({map:new T3.CanvasTexture(gl),transparent:true,depthWrite:false}));glow.scale.set(80,80,1);glow.position.y=6;g.add(glow);
+    const glow=new T3.Sprite(new T3.SpriteMaterial({map:CT(gl),transparent:true,depthWrite:false}));glow.scale.set(80,80,1);glow.position.y=6;g.add(glow);
     shadowAll(g);S.add(g);return g;}
   const ringM=new T3.MeshBasicMaterial({color:0xFFC93C,transparent:true,opacity:.9,side:T3.DoubleSide});const ringG=new T3.RingGeometry(23,27,6,1);ringG.rotateX(-Math.PI/2);
-  B3.crowns=[crown3(),crown3()];B3.rings=[new T3.Mesh(ringG,ringM),new T3.Mesh(ringG,ringM)];B3.rings.forEach(r=>S.add(r));
+  B3.crowns=[0,1,2,3].map(()=>crown3());B3.rings=[0,1,2,3].map(()=>{const r=new T3.Mesh(ringG,ringM);S.add(r);return r;});
 
   /* ---------- dice block ---------- */
-  B3.dice=[0,1].map(()=>{const c=document.createElement('canvas');c.width=c.height=128;const t=new T3.CanvasTexture(c);const m=new T3.Mesh(new T3.BoxGeometry(34,34,34),M('#ffffff',{map:t}));ol(m,.05);m.castShadow=true;m.visible=false;S.add(m);return{m,c,t,val:-1,col:''};});
+  B3.dice=[0,1].map(()=>{const c=document.createElement('canvas');c.width=c.height=128;const t=CT(c);const m=new T3.Mesh(new T3.BoxGeometry(34,34,34),M('#ffffff',{map:t}));ol(m,.05);m.castShadow=true;m.visible=false;S.add(m);return{m,c,t,val:-1,col:''};});
   function paintDie(d,v,col,gold){const key=gold?'gold':col;if(d.val===v&&d.col===key)return;d.val=v;d.col=key;const g=d.c.getContext('2d');g.fillStyle=gold?'#FFC93C':'#FFF6E6';g.fillRect(0,0,128,128);g.lineWidth=10;g.strokeStyle='#3B2316';g.strokeRect(5,5,118,118);
     g.fillStyle=gold?'rgba(255,246,218,.45)':'rgba(255,201,60,.35)';g.fillRect(12,12,104,14);otext(g,String(v),64,68,v>=10?62:76,gold?PAPER:col,13);d.t.needsUpdate=true;}
+
+  /* ---------- island maps (maps/): built in meters, then moved into a group scaled to game units ---------- */
+  const meterSpace=new T3.Group();meterSpace.scale.setScalar(UPM);meterSpace.visible=false;S.add(meterSpace);
+  const ISTAGE={_renderer:ren,_invalidate(){}};   // what polish/life/living expect from their stage
+  const OPTS={plaza:{banner:{x:0,z:27.6,text:'PLAZA',color:'#E2452E'},walkers:7,centerZ:-5},palengke:{banner:{x:0,z:29.4,text:'PALENGKE',color:'#2E6FD8'},walkers:9,centerZ:2},
+    aplaya:{banner:{x:-4.5,z:30.6,text:'APLAYA',color:'#13A39A'},walkers:7,boat:[[6.5,.1,1.5],[7.5,.1,-3],[9.5,.1,-7.2]]},palayan:{banner:{x:.4,z:28.4,text:'PALAYAN',color:'#3BAA4A'},walkers:6,hats:true,ducks:[[1.5,.07,-3],[-1.2,.07,3],[1,.07,9],[-1,.07,15],[.5,.07,20]]}};
+  const GRADE={plaza:{sky:'#5FB4E8',horizon:'#DCEFF5',sun:'#FFE2B0',fog:'#DCEFF5',exposure:1.05,rim:'#FFEBC8',rimK:.18,tint:'#C9B98F',path:'#E4D6BA'},
+    palengke:{sky:'#6FB2DA',horizon:'#EAEFEA',sun:'#FFD9A0',fog:'#E8ECE6',exposure:1.02,rim:'#FFDDB0',rimK:.2,tint:'#B89A6A',path:'#D8CDBB',curb:'#7E776C',env:.35},
+    aplaya:{sky:'#3FA9E8',horizon:'#D8F1F6',sun:'#FFF3D6',fog:'#D6EEF4',exposure:1.06,rim:'#E6FAFF',rimK:.18,tint:'#E9DDBE',path:'#EFE6D2',curb:'#A79F90',env:.45},
+    palayan:{sky:'#56AEE2',horizon:'#E4F1E4',sun:'#FFEFC8',fog:'#DDEBDD',exposure:1.04,rim:'#F4FFD8',rimK:.18,tint:'#9DB46A',path:'#DCCBA6',curb:'#7F7461',env:.38}};
+  const LIVE={plaza:{seed:11,vendorLines:['Taho!','Fishball!','Sorbetes!','Lobo kayo!'],vendors:4,vehicles:['tricycle'],dogs:2,cats:2,chickens:2},
+    palengke:{seed:12,vendorLines:['Bili na!','Mura lang!','Suki, dito!','Sariwa pa!','Tawad pa?'],vendors:5,vehicles:['tricycle','jeep'],dogs:2,cats:3,chickens:2},
+    aplaya:{seed:13,vendorLines:['Buko!','Halo-halo!','Mais, mais!'],vendors:3,vehicles:[],dogs:3,cats:1,chickens:2},
+    palayan:{seed:14,hat:true,vendorLines:['Gulay, gulay!','Bigas!'],vendors:2,vehicles:['kalabaw_cart','kuliglig'],dogs:2,cats:1,chickens:8}};
+  const nextFrame=()=>new Promise(r=>requestAnimationFrame(()=>setTimeout(r,0)));
+  B3.island=null;B3.loading=null;
+  function dropIsland(){const I=B3.island;if(!I)return;B3.island=null;I.stop.v=true;if(ISTAGE._living){ISTAGE._living.islands.length=0;ISTAGE._living.lights=null;}
+    meterSpace.remove(I.grp);I.grp.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material)[].concat(o.material).forEach(m=>{for(const k in m){const v=m[k];if(v&&v.isTexture)v.dispose();}m.dispose();});});
+    if(I.env.env)I.env.env.dispose();}
+  B3.loadIsland=(id,prog)=>{if(B3.island&&B3.island.id===id)return Promise.resolve(true);if(B3.loading&&B3.loading.id===id)return B3.loading.p;
+    const p=(async()=>{const say=(f,t)=>{try{prog&&prog(f,t);}catch(e){}};const m=MAPS[id];
+      say(.05,'Inihahanda ang '+m.name+'…');
+      const [isl,pol,lif,liv]=await Promise.all(['islands/'+id,'polish','life','living'].map(f=>import('./maps/'+f+'.js')));
+      await nextFrame();dropIsland();say(.2,'Itinatayo ang '+m.name+'…');await nextFrame();
+      const b=await isl.build(T3),root=b.root,isc=new T3.Scene(),stop={v:false};isc.add(root);
+      root.traverse(o=>{if(o.isMesh){o.castShadow=!LOW3;o.receiveShadow=true;}});
+      say(.55,'Pinapaganda ang '+m.name+'…');await nextFrame();
+      ISTAGE._scene=isc;pol.polish(T3,ISTAGE,root,{normals:false,skyRadius:220,grade:GRADE[id]});
+      say(.7,'Binubuhay ang '+m.name+'…');await nextFrame();
+      try{const lf=lif.addLife(T3,ISTAGE,root,Object.assign({name:id,ui:false,korona:0,seed:91,stopped:()=>stop.v},OPTS[id]));if(lf&&lf.setKorona)lf.setKorona(0);}catch(e){console.warn(e);}
+      try{await liv.addLiving(T3,ISTAGE,root,Object.assign({name:id,ui:false,post:false,leafCards:LOW3?800:4000,grassLayers:LOW3?3:8},LIVE[id]));}catch(e){console.warn(e);}
+      say(.9,'Halos tapos na…');await nextFrame();
+      const grp=new T3.Group();grp.name='island_'+id;[...isc.children].forEach(c=>grp.add(c));meterSpace.add(grp);
+      const f=isc.fog;B3.island={id,grp,root,stop,tiles:new Map(),
+        env:{bg:isc.background||ENV.classic.bg,fog:f?new T3.Fog(f.color.getHex(),f.near*UPM,f.far*UPM):null,env:isc.environment||null,envI:isc.environmentIntensity==null?1:isc.environmentIntensity}};
+      const bs=root.getObjectByName('board_spaces'),bx=new T3.Box3();if(bs)bs.children.forEach(g=>{if(g.userData&&g.userData.id)B3.island.tiles.set(g.userData.id,{g,y:g.position.y,top:bx.setFromObject(g).max.y*UPM});});
+      B3.envKey='';fitTops();say(1,'');return true;})();
+    B3.loading={id,p};p.then(()=>{if(B3.loading&&B3.loading.p===p)B3.loading=null;},e=>{console.warn(e);if(B3.loading&&B3.loading.p===p)B3.loading=null;});return p;};
+  /* which world is showing: the cloud board (title, minigames) or the loaded island */
+  B3.envKey='';
+  function syncWorld(mg){const isl=!mg&&BOARD.map&&B3.island&&B3.island.id===BOARD.id?B3.island:null,key=mg?'mg':(isl?'isl:'+isl.id:'classic');if(key===B3.envKey)return;B3.envKey=key;
+    const E=isl?isl.env:ENV.classic;S.background=E.bg;S.fog=E.fog;S.environment=E.env;S.environmentIntensity=E.envI;
+    world.visible=!mg&&!isl;meterSpace.visible=!!isl;B3.clouds.forEach(c=>c.g.visible=!isl);
+    if(isl){hemi.color.set(0xFFFFFF);hemi.groundColor.set(0xD8D2C4);hemi.intensity=1;sun.color.set(0xFFFFFF);sun.intensity=2.2;fill.intensity=.5;
+      const c=new T3.Box3().setFromObject(isl.root),ct=c.getCenter(new T3.Vector3()).multiplyScalar(UPM),r=c.getSize(new T3.Vector3()).length()*UPM*.55;
+      sun.target.position.set(ct.x,0,ct.z);sun.position.set(ct.x+r*.45,r*.8,ct.z+r*.56);const sc=sun.shadow.camera;sc.left=sc.bottom=-r;sc.right=sc.top=r;sc.near=10;sc.far=r*3;sc.updateProjectionMatrix();sun.shadow.bias=-.0006;
+      if(LOW3&&sun.shadow.mapSize.x!==1024){sun.shadow.mapSize.set(1024,1024);if(sun.shadow.map){sun.shadow.map.dispose();sun.shadow.map=null;}}
+      camera.far=r*9;}
+    else{hemi.color.set(0xFFF6E0);hemi.groundColor.set(0x86A2B4);hemi.intensity=.62*PI3;sun.color.set(0xFFF1D2);sun.intensity=.95*PI3;fill.intensity=0;
+      sun.position.set(870-650,1500,800+650);sun.target.position.set(870,0,800);const sc=sun.shadow.camera;sc.left=-1250;sc.right=1250;sc.top=1250;sc.bottom=-1250;sc.near=100;sc.far=4200;sc.updateProjectionMatrix();sun.shadow.bias=-.0012;camera.far=9000;}
+    camera.updateProjectionMatrix();}
+  /* the island's tiles are raised: kids, rings and korona stand on each tile's real top (h is 4 units below it, where a kid's feet go) */
+  function fitTops(){const I=B3.island;if(!I||I.id!==BOARD.id)return;SP.forEach(q=>{const t=I.tiles.get(q.id);if(t)q.h=t.top-4;});}
+  B3.onBoard=()=>{buildReach();fitTops();B3.envKey='';};
+  const tileOf=i=>B3.island&&B3.island.id===BOARD.id?B3.island.tiles.get(SP[i].id):null;
 
   /* ---------- per-frame ---------- */
   const V=new T3.Vector3(),fovT=Math.tan(40*Math.PI/360);
@@ -2608,7 +2855,7 @@ function init3D(){
   function dashRect(parent,x0,z0,x1,z1){const seg=(ax,az,bx,bz)=>{const L=Math.hypot(bx-ax,bz-az),n=Math.floor(L/18);for(let i=0;i<n;i++){const t0=i/n,t1=(i+.55)/n;flatBox(parent,lerp(ax,bx,t0),lerp(az,bz,t0),lerp(ax,bx,t1),lerp(az,bz,t1),3);}};seg(x0,z0,x1,z0);seg(x1,z0,x1,z1);seg(x1,z1,x0,z1);seg(x0,z1,x0,z0);}
   function flatRing(parent,x,z,r0,r1,mat,y){const g=new T3.RingGeometry(r0,r1,40);g.rotateX(-Math.PI/2);const m=mesh(g,mat||WHITE,x,y==null?1.3:y,z);parent.add(m);return m;}
   function groundText(parent,txt,x,z,w){const c=document.createElement('canvas');c.width=256;c.height=64;const g=c.getContext('2d');g.font='64px '+DISPLAY;g.textAlign='center';g.textBaseline='middle';g.fillStyle='rgba(255,255,255,.75)';g.fillText(txt,128,36);
-    const pg=new T3.PlaneGeometry(w,w/4);pg.rotateX(-Math.PI/2);const m=mesh(pg,new T3.MeshBasicMaterial({map:new T3.CanvasTexture(c),transparent:true,depthWrite:false}),x,1.4,z);parent.add(m);return m;}
+    const pg=new T3.PlaneGeometry(w,w/4);pg.rotateX(-Math.PI/2);const m=mesh(pg,new T3.MeshBasicMaterial({map:CT(c),transparent:true,depthWrite:false}),x,1.4,z);parent.add(m);return m;}
   let arena=null;
   function arenaGroup(){if(arena)return arena;const isl=ARENA,G3=new T3.Group(),T=34;
     const shape=(k)=>{const sh=new T3.Shape();for(let i=0;i<=96;i++){const th=i/96*TAU3,p=outlinePt(isl,th,k);i?sh.lineTo(p[0],-p[1]):sh.moveTo(p[0],-p[1]);}return sh;};
@@ -2690,38 +2937,41 @@ function init3D(){
     shadowAll(root);
     const updAll=dt=>{spect.forEach(({s,K})=>{const j=RM?0:Math.max(0,Math.sin(now*4+s.n*1.7))*8;pose(K,s.x,s.y,{lift:j,mood:j>4?'cheer':'happy',dir:'front'},.9);});upd(dt);};
     return{root,upd:updAll,over,cam};}
-  B3.unproj=(sx,sy)=>{const rc=new T3.Raycaster(),ndc=new T3.Vector2(sx/W*2-1,-(sy/H)*2+1);rc.setFromCamera(ndc,camera);const pl=new T3.Plane(new T3.Vector3(0,1,0),0),pt=new T3.Vector3();return rc.ray.intersectPlane(pl,pt)?{x:pt.x,y:pt.z}:null;};
+  B3.unproj=(sx,sy)=>{const rc=new T3.Raycaster(),ndc=new T3.Vector2(sx/W*2-1,-(sy/H)*2+1);rc.setFromCamera(ndc,camera);const pl=new T3.Plane(new T3.Vector3(0,1,0),B3.mg?0:-(B3.gy||0)),pt=new T3.Vector3();return rc.ray.intersectPlane(pl,pt)?{x:pt.x,y:pt.z}:null;};
   /* 3D portraits for the HUD cards */
   let pr=null;
-  B3.portrait=(c,p)=>{try{if(!pr){const cvp=document.createElement('canvas');cvp.width=cvp.height=104;const r2=new T3.WebGLRenderer({canvas:cvp,alpha:true,antialias:true,preserveDrawingBuffer:true});const s2=new T3.Scene();s2.add(new T3.HemisphereLight(0xFFF6E0,0x86A2B4,.75));const l=new T3.DirectionalLight(0xFFF1D2,.85);l.position.set(-40,80,90);s2.add(l);const c2=new T3.PerspectiveCamera(30,1,1,500);c2.position.set(10,48,70);c2.lookAt(0,42,0);pr={r2,s2,c2,cvp};}
+  B3.portrait=(c,p)=>{try{if(!pr){const cvp=document.createElement('canvas');cvp.width=cvp.height=104;const r2=new T3.WebGLRenderer({canvas:cvp,alpha:true,antialias:true,preserveDrawingBuffer:true});const s2=new T3.Scene();s2.add(new T3.HemisphereLight(0xFFF6E0,0x86A2B4,.75*Math.PI));const l=new T3.DirectionalLight(0xFFF1D2,.85*Math.PI);l.position.set(-40,80,90);s2.add(l);const c2=new T3.PerspectiveCamera(30,1,1,500);c2.position.set(10,48,70);c2.lookAt(0,42,0);pr={r2,s2,c2,cvp};}
     const K=kid3(p,{parent:pr.s2,noShadow:true});K.g.rotation.y=.25;pr.r2.render(pr.s2,pr.c2);pr.s2.remove(K.g);const g=c.getContext('2d');g.drawImage(pr.cvp,0,0,26,26);return true;}catch(e){return false;}};
 
   B3.render=dt=>{
-    if(B3.w!==W||B3.h!==H||B3.dpr!==DPR){B3.w=W;B3.h=H;B3.dpr=DPR;ren.setPixelRatio(DPR);ren.setSize(W,H,false);camera.aspect=W/H;}
+    const pr3=LOW3&&BOARD.map&&!B3.mg?Math.min(DPR,1.5):DPR;
+    if(B3.w!==W||B3.h!==H||B3.dpr!==pr3){B3.w=W;B3.h=H;B3.dpr=pr3;ren.setPixelRatio(pr3);ren.setSize(W,H,false);camera.aspect=W/H;}
     const sh=RM?0:cam.shake*14,sx=(R()-.5)*sh,sz=(R()-.5)*sh;
     const mgS=scene&&APP.screen==='game'?scene:null;
     if(mgS!==B3.curMg){if(B3.mg){S.remove(B3.mg.root);B3.mg=null;}B3.curMg=mgS;if(mgS){B3.mg=buildMg(mgS);S.add(B3.mg.root);}
-      world.visible=!mgS;B3.crowns.forEach(c=>c.visible=!mgS);B3.rings.forEach(r=>r.visible=!mgS);B3.dice.forEach(d=>d.m.visible=false);for(const K of B3.kids.values())K.g.visible=!mgS;for(const K of B3.allies.values())K.g.visible=!mgS;}
+      B3.crowns.forEach(c=>c.visible=!mgS);reachGrp.visible=!mgS;B3.rings.forEach(r=>r.visible=!mgS);B3.dice.forEach(d=>d.m.visible=false);for(const K of B3.kids.values())K.g.visible=!mgS;for(const K of B3.allies.values())K.g.visible=!mgS;}
+    syncWorld(!!B3.mg);
     if(B3.mg){const c=B3.mg.cam;camera.position.set(c.x+sx,c.y+c.d*Math.sin(c.el),c.z+sz+c.d*Math.cos(c.el));camera.lookAt(c.x+sx,c.y,c.z+sz);}
     else if(APP.screen==='title'&&state.players.length){const p0=state.players.at(0),az=now*.12,d=(H/.95)/(2*fovT)*.62,el=.42;camera.position.set(p0.x+40+Math.sin(az)*d*Math.cos(el),d*Math.sin(el),p0.y+Math.cos(az)*d*Math.cos(el));camera.lookAt(p0.x+40,30,p0.y);}
-    else{const far=state.overview||!state.active&&!korona.fly&&!state.focus,fit=!far&&state.reach&&!korona.fly;B3.vf=lerp(B3.vf||1,far?1.02:(fit?.9:.58),1-Math.exp(-dt*3));const d=(H/cam.z)/(2*fovT)*B3.vf,el=lerp(.8,.95,(B3.vf-.58)/.44);camera.position.set(cam.x+sx,d*Math.sin(el),cam.y+sz+d*Math.cos(el));camera.lookAt(cam.x+sx,0,cam.y+sz);}
+    else{const far=state.overview||!state.active&&!korona.fly&&!state.focus,fit=!far&&state.reach&&!korona.fly;B3.vf=lerp(B3.vf||1,far?1.02:(fit?.9:.58),1-Math.exp(-dt*3));const d=(H/cam.z)/(2*fovT)*B3.vf,el=BOARD.map?lerp(1.12,1.22,(B3.vf-.58)/.44):lerp(.8,.95,(B3.vf-.58)/.44);/* the maps look down more steeply, over roofs and trees */const gy=BOARD.map?groundAt(cam.x,cam.y):0;B3.gy=lerp(B3.gy||0,gy,1-Math.exp(-dt*4));camera.position.set(cam.x+sx,B3.gy+d*Math.sin(el),cam.y+sz+d*Math.cos(el));camera.lookAt(cam.x+sx,B3.gy,cam.y+sz);}
     camera.setViewOffset(W,H,0,-camOffY(),W,H);camera.updateProjectionMatrix();
     if(B3.plRef!==state.players){for(const K of B3.kids.values())S.remove(K.g);for(const K of B3.allies.values())S.remove(K.g);B3.kids.clear();B3.allies.clear();B3.plRef=state.players;}
     if(B3.mg){B3.mg.upd(dt);}else{
     for(const p of state.players){let K=B3.kids.get(p);if(!K){K=kid3(p);B3.kids.set(p,K);}
-      const o=kidOpts(p);o.walk=p.hopping?now*16:null;pose(K,p.x,p.y,o,1.3);
-      p.allies.forEach(a=>{let A=B3.allies.get(a);if(!A){A=kid3(NPCS[a.look]);B3.allies.set(a,A);}pose(A,a.x,a.y,{dir:p.hopping?p.dir:'front',face:p.face,walk:p.hopping?now*14:null,mood:p.mood==='cheer'?'cheer':'happy',lift:p.hopping?Math.abs(Math.sin(now*12))*6:0},.95);});}
+      const o=kidOpts(p),mp=!!BOARD.map;o.walk=p.hopping?now*16:null;o.y0=groundAt(p.x,p.y);pose(K,p.x,p.y,o,mp?1.15:1.3);
+      p.allies.forEach(a=>{let A=B3.allies.get(a);if(!A){A=kid3(NPCS[a.look]);B3.allies.set(a,A);}pose(A,a.x,a.y,{dir:p.hopping?p.dir:'front',face:p.face,walk:p.hopping?now*14:null,mood:p.mood==='cheer'?'cheer':'happy',lift:p.hopping?Math.abs(Math.sin(now*12))*6:0,y0:mp?groundAt(a.x,a.y):0},mp?.85:.95);});}
     // spaces
     const rc=state.reach,rk=1+(RM?0:Math.sin(now*6)*.06);
-    B3.spaces.forEach((m,i)=>{const sp=spacePos(i),k=1+SP[i].pulse*.35;m.position.set(sp.x,2.5+SP[i].pulse*4,sp.y);m.scale.set(k,1,k);
-      const d=rc?(i-rc.from+N)%N:-1,r=B3.reach[i];r.visible=!!rc&&d>=rc.min&&d<=rc.max;if(r.visible){r.material=d===rc.max?reachFarM:reachM;r.position.set(sp.x,6,sp.y);r.scale.set(rk,1,rk);}});
+    if(!BOARD.map)B3.spaces.forEach((m,i)=>{const sp=spacePos(i),k=1+SP[i].pulse*.35;m.position.set(sp.x,2.5+SP[i].pulse*4,sp.y);m.scale.set(k,1,k);});
+    else for(let i=0;i<N;i++){const t=tileOf(i);if(!t)break;const pu=SP[i].pulse;if(pu>0||t.g.userData.pu){t.g.userData.pu=pu>0;t.g.position.y=t.y+pu*.18;t.g.scale.set(1+pu*.3,1,1+pu*.3);}}
+    B3.reach.forEach((r,i)=>{r.visible=!!rc&&rc.all.has(i);if(r.visible){const sp=spacePos(i),mp=!!BOARD.map;r.material=rc.far.has(i)?(mp?reachMapFarM:reachFarM):(mp?reachMapM:reachM);r.position.set(sp.x,6+(SP[i].h||0),sp.y);r.scale.set(rk,1,rk);}});
     // korona
-    for(const k of [0,1]){const cg=B3.crowns[k],ring=B3.rings[k],fl=korona.fly&&korona.flyK===k;let x,z,h;
-      if(fl){x=korona.fly.gx!=null?korona.fly.gx:korona.fly.x;z=korona.fly.gy!=null?korona.fly.gy:korona.fly.y+50;h=korona.fly.h||0;ring.visible=false;}else{const sp=spacePos(korona.spots[k]);x=sp.x;z=sp.y;h=0;ring.visible=true;ring.position.set(x,6,z);ring.rotation.y=now*.8;}
+    for(let k=0;k<B3.crowns.length;k++){const cg=B3.crowns[k],ring=B3.rings[k],fl=korona.fly&&korona.flyK===k;let x,z,h;cg.visible=k<korona.spots.length;if(!cg.visible){ring.visible=false;continue;}
+      if(fl){x=korona.fly.gx!=null?korona.fly.gx:korona.fly.x;z=korona.fly.gy!=null?korona.fly.gy:korona.fly.y+50;h=(korona.fly.h||0)+groundAt(x,z);ring.visible=false;}else{const i=korona.spots[k],sp=spacePos(i);x=sp.x;z=sp.y;h=SP[i].h||0;ring.visible=true;ring.position.set(x,6+h,z);ring.rotation.y=now*.8;}
       cg.position.set(x,62+h+(RM?0:Math.sin(now*2.6)*4),z);cg.rotation.y=now*1.4;}
     // dice
     B3.dice.forEach((d,i)=>{const on=dice.on&&dice.owner&&i<dice.vals.length;d.m.visible=!!on;if(!on)return;const p=dice.owner,two=dice.vals.length>1;
-      paintDie(d,dice.gold&&dice.spin?'?':dice.vals[i],p.color,dice.gold);const k=(1+dice.punch*.45)*(two?.85:1);d.m.scale.setScalar(k);d.m.position.set(p.x+(two?(i?24:-24):0),128+p.lift+(dice.spin&&!RM?Math.sin(now*6+i)*4:0),p.y);
+      paintDie(d,dice.gold&&dice.spin?'?':dice.vals[i],p.color,dice.gold);const k=(1+dice.punch*.45)*(two?.85:1);d.m.scale.setScalar(k);d.m.position.set(p.x+(two?(i?24:-24):0),(BOARD.map?112:128)+p.lift+groundAt(p.x,p.y)+(dice.spin&&!RM?Math.sin(now*6+i)*4:0),p.y);
       if(dice.spin&&!RM){d.m.rotation.x+=dt*7*(i?-1:1);d.m.rotation.y+=dt*9;}else{d.m.rotation.x+=(-.35-d.m.rotation.x%TAU3)*.25;d.m.rotation.y+=(.55-d.m.rotation.y%TAU3)*.25;d.m.rotation.z=0;}});
     }
     // ambience
@@ -2742,12 +2992,12 @@ function drawFX3(g){const P=B3.proj;
     else if(p.type==='confetti'){g.fillStyle=p.color;g.fillRect(-p.size/2,-p.size/4,p.size,p.size/2);}
     else if(p.type==='dust'){g.globalAlpha=a*.6;g.beginPath();g.arc(0,0,p.size*(1.6-a*.6),0,TAU);g.fillStyle='#F3E6CC';g.fill();}
     else{g.beginPath();g.arc(0,0,p.size*.5,0,TAU);g.fillStyle=p.color;g.fill();}g.restore();}
-  for(const f of floats){const s=P(f.x,0,f.y),u=f.life/f.max,sc=u<.15?Ez.back(u/.15):1;g.save();g.globalAlpha=u>.7?1-(u-.7)/.3:1;g.translate(s.x,s.y);g.scale(sc*clamp(s.k,.55,1.5),sc*clamp(s.k,.55,1.5));otext(g,f.text,0,0,f.size,f.color);g.restore();}
+  for(const f of floats){const s=P(f.x,BOARD.map?groundAt(f.x,f.y):0,f.y),u=f.life/f.max,sc=u<.15?Ez.back(u/.15):1;g.save();g.globalAlpha=u>.7?1-(u-.7)/.3:1;g.translate(s.x,s.y);g.scale(sc*clamp(s.k,.55,1.5),sc*clamp(s.k,.55,1.5));otext(g,f.text,0,0,f.size,f.color);g.restore();}
 }
 function drawOverlay3(g){const P=B3.proj;
-  if(state.reach&&!korona.fly)for(const k of [0,1]){const sp=spacePos(korona.spots[k]),s=P(sp.x,112,sp.y);g.save();g.translate(s.x,s.y);const kk=clamp(s.k,.7,1.3);g.scale(kk,kk);drawReachTag(g,k,0,0);g.restore();}
-  if(dice.on&&dice.owner&&dice.bonus){const p=dice.owner,s=P(p.x+(dice.vals.length>1?50:32),152+p.lift,p.y);g.save();g.translate(s.x,s.y);const k=clamp(s.k,.6,1.5);g.scale(k,k);otext(g,'+'+dice.bonus,0,0,19,'#FFE07A',4);g.restore();}
-  if(dice.counter&&dice.counter.n>0){const p=dice.counter.p,s=P(p.x,p.lift+104,p.y);g.save();g.translate(s.x,s.y);const k=clamp(s.k,.6,1.5);g.scale(k,k);g.beginPath();g.arc(0,0,16,0,TAU);fs(g,PAPER,p.color,3.5);g.lineWidth=2;g.strokeStyle=INK;g.beginPath();g.arc(0,0,18,0,TAU);g.stroke();otext(g,String(dice.counter.n),0,1.5,19,p.color,4);g.restore();}
+  if(state.reach&&!korona.fly)for(let k=0;k<korona.spots.length;k++){const i=korona.spots[k],sp=spacePos(i),s=P(sp.x,112+(SP[i].h||0),sp.y);g.save();g.translate(s.x,s.y);const kk=clamp(s.k,.7,1.3);g.scale(kk,kk);drawReachTag(g,k,0,0);g.restore();}
+  if(dice.on&&dice.owner&&dice.bonus){const p=dice.owner,s=P(p.x+(dice.vals.length>1?50:32),152+p.lift+groundAt(p.x,p.y),p.y);g.save();g.translate(s.x,s.y);const k=clamp(s.k,.6,1.5);g.scale(k,k);otext(g,'+'+dice.bonus,0,0,19,'#FFE07A',4);g.restore();}
+  if(dice.counter&&dice.counter.n>0){const p=dice.counter.p,s=P(p.x,p.lift+104+groundAt(p.x,p.y),p.y);g.save();g.translate(s.x,s.y);const k=clamp(s.k,.6,1.5);g.scale(k,k);g.beginPath();g.arc(0,0,16,0,TAU);fs(g,PAPER,p.color,3.5);g.lineWidth=2;g.strokeStyle=INK;g.beginPath();g.arc(0,0,18,0,TAU);g.stroke();otext(g,String(dice.counter.n),0,1.5,19,p.color,4);g.restore();}
   drawFX3(g);
 }
 
@@ -2763,7 +3013,23 @@ function drawSky(g){
   g.save();g.setTransform(1,0,0,1,0,0);g.drawImage(skyCanvas(),0,0);g.restore();
   drawCloudLayer(g,CLOUDS.far,.35,.5,.7);drawFarIslands(g);drawCloudLayer(g,CLOUDS.below,.72,.85,.95);
 }
+function drawMapBoard(g){
+  g.save();applyCam(g);const m=BOARD.map,b=BOARD.bounds,cx=(b.x0+b.x1)/2,cy=(b.y0+b.y1)/2,rx=(b.x1-b.x0)/2+170,ry=(b.y1-b.y0)/2+170;
+  ell(g,cx,cy+36,rx,ry);fs(g,'#9B6A3D',INK,4);ell(g,cx,cy,rx,ry);fs(g,m.ground,INK,4);
+  g.lineCap='round';g.lineJoin='round';
+  for(const w of [[30,'rgba(96,66,38,.28)'],[22,'#E6D3AE']]){g.lineWidth=w[0];g.strokeStyle=w[1];g.beginPath();for(let i=0;i<N;i++)for(const j of SP[i].next){const a=SP[i],c=SP[j];if(Math.hypot(c.x-a.x,c.y-a.y)>260)continue;g.moveTo(a.x,a.y);g.lineTo(c.x,c.y);}g.stroke();}
+  for(let i=0;i<N;i++){const r=SP[i].ride;if(!r)continue;const a=SP[i],c=SP[r.to];g.setLineDash([10,12]);g.lineWidth=4;g.strokeStyle='rgba(59,35,22,.45)';g.beginPath();g.moveTo(a.x,a.y);g.lineTo(c.x,c.y);g.stroke();g.setLineDash([]);}
+  g.font='400 46px '+DISPLAY;g.textAlign='center';g.textBaseline='middle';g.lineWidth=10;g.strokeStyle=INK;g.strokeText(m.name.toUpperCase(),cx,b.y1+120);g.fillStyle=PAPER;g.fillText(m.name.toUpperCase(),cx,b.y1+120);
+  for(let i=0;i<N;i++)drawSpace(g,i);
+  const list=[];
+  for(const p of state.players){list.push({y:p.y+.1,f:()=>drawKid(g,p,p.x,p.y,kidOpts(p))});for(const a of p.allies)list.push({y:a.y,f:()=>drawKid(g,NPCS[a.look],a.x,a.y,{scale:.72,face:p.face,dir:p.hopping?p.dir:'front',walk:p.hopping?now*14:null,mood:p.mood==='cheer'?'cheer':'happy',lift:p.hopping?Math.abs(Math.sin(now*12))*6:0})});}
+  for(let k=0;k<korona.spots.length;k++){const kp=koronaPos(k);list.push({y:korona.fly&&korona.flyK===k?99999:kp.y-.5,f:()=>drawKoronaMarker(g,k)});}
+  list.sort((a,c)=>a.y-c.y).forEach(o=>o.f());
+  drawDiceLayer(g);drawFX(g);
+  g.restore();
+}
 function drawBoard(g){
+  if(BOARD.map){drawMapBoard(g);return;}
   g.save();applyCam(g);
   for(const r of ROCKS)drawRock(g,r);
   const order=[...ISL].sort((a,b)=>a.y-b.y);
@@ -2774,7 +3040,7 @@ function drawBoard(g){
   const list=[];
   for(const pr of PROPS){const p=propPos(pr);list.push({y:p.y,f:()=>drawProp(g,pr,p.x,p.y)});}
   for(const p of state.players){list.push({y:p.y+.1,f:()=>drawKid(g,p,p.x,p.y,kidOpts(p))});for(const a of p.allies)list.push({y:a.y,f:()=>drawKid(g,NPCS[a.look],a.x,a.y,{scale:.72,face:p.face,dir:p.hopping?p.dir:'front',walk:p.hopping?now*14:null,mood:p.mood==='cheer'?'cheer':'happy',lift:p.hopping?Math.abs(Math.sin(now*12))*6:0})});}
-  for(const k of [0,1]){const kp=koronaPos(k);list.push({y:korona.fly&&korona.flyK===k?99999:kp.y-.5,f:()=>drawKoronaMarker(g,k)});}
+  for(let k=0;k<korona.spots.length;k++){const kp=koronaPos(k);list.push({y:korona.fly&&korona.flyK===k?99999:kp.y-.5,f:()=>drawKoronaMarker(g,k)});}
   list.sort((a,b)=>a.y-b.y).forEach(o=>o.f());
   for(const [a,b] of BUNTING)drawBunting(g,propTop(PROPS[a]),propTop(PROPS[b]),a+b);
   drawDiceLayer(g);drawFX(g);for(const b of BIRDS)drawBird(g,b);
@@ -2821,6 +3087,7 @@ function update(dt){
 let lastDraw=performance.now();const kidsCv=$('#kidsCv');
 function draw(){const g=ctx;g.setTransform(DPR,0,0,DPR,0,0);
   const tn=performance.now(),dt3=Math.min(.05,(tn-lastDraw)/1000);lastDraw=tn;
+  if(B3.ok&&PREFS.g3d&&BOARD.map&&APP.screen==='game'&&!B3.loading&&!(B3.island&&B3.island.id===BOARD.id)&&!B3.failed[BOARD.id]){const id=BOARD.id;B3.loadIsland(id).catch(()=>{B3.failed[id]=1;});}
   B3.on=use3D()&&(APP.screen==='title'||APP.screen==='game');if(cv3.hidden===B3.on)cv3.hidden=!B3.on;if(kidsCv.hidden!==B3.on)kidsCv.hidden=B3.on;
   if(B3.on){g.clearRect(0,0,W,H);try{B3.render(dt3);}catch(e){console.error(e);B3.ok=false;refreshPortraits();}if(scene){try{B3.mg&&B3.mg.over(g);}catch(e){}if(scene.drawScreen)scene.drawScreen(g);drawFX3(g);drawCountdown(g,scene);}else drawOverlay3(g);}
   else{drawSky(g);if(APP.screen==='gallery')drawGallery(g);else if(scene)drawScene(g);else drawBoard(g);}
@@ -2830,7 +3097,7 @@ function frame(t){const dt=Math.min(.05,Math.max(0,(t-last)/1000));last=t;try{fo
 /* ================= boot ================= */
 function start(data){
   resize();
-  ISL.forEach(isl=>renderIsland(isl,false));renderIsland(ARENA,true);init3D();
+  ISL.forEach(isl=>renderIsland(isl,false));renderIsland(ARENA,true);loadThree().then(()=>{init3D();refreshPortraits();}).catch(()=>{});
   try{if(window.claude&&window.claude.use)window.claude.use('downloads').then(d=>{DL=d||null;}).catch(()=>{});}catch(e){}
   const cp=data&&data.checkpoint;
   if(cp&&cp.mode==='local'&&cp.setup){startLocal(cp.setup,cp);}
@@ -2841,7 +3108,7 @@ function start(data){
   requestAnimationFrame(t=>{last=t;requestAnimationFrame(frame);});
 }
 if(DEBUG){const m=/[?&]speed=(\d+)/.exec(location.search);if(m)SPEED=clamp(+m[1],1,60);
-  window.__lsu={state,NET,MG,SP,N,korona,DBG,get scene(){return scene;},get screen(){return APP.screen;},setSpeed:v=>{SPEED=clamp(v|0,1,60);},startLocal:(s,cp)=>startLocal(s,cp),toTitle:()=>toTitle(),bot:{usesItem:botUsesItem,shop:botShop,rival:botRival,ginto:botGintoPick},hamon:{fetchTop:fetchDailyTop,sync:syncDailyScore,dayKey,dailyKind,on:HAMON_ONLINE},b3:B3,toWorld:(x,y)=>toWorld(x,y),toScreen:(x,y)=>worldToScreen(x,y),spacePos:i=>spacePos(i),bench:n=>{const t=performance.now();for(let i=0;i<n;i++)draw();return(performance.now()-t)/n;}};}
+  window.__lsu={state,NET,MG,get SP(){return SP;},get N(){return N;},get board(){return BOARD;},korona,DBG,get scene(){return scene;},get screen(){return APP.screen;},setSpeed:v=>{SPEED=clamp(v|0,1,60);},startLocal:(s,cp)=>startLocal(s,cp),toTitle:()=>toTitle(),bot:{usesItem:botUsesItem,shop:botShop,rival:botRival,ginto:botGintoPick},hamon:{fetchTop:fetchDailyTop,sync:syncDailyScore,dayKey,dailyKind,on:HAMON_ONLINE},b3:B3,toWorld:(x,y)=>toWorld(x,y),toScreen:(x,y)=>worldToScreen(x,y),spacePos:i=>spacePos(i),bench:n=>{const t=performance.now();for(let i=0;i<n;i++)draw();return(performance.now()-t)/n;}};}
 try{window.claude&&window.claude.hot&&window.claude.hot.snapshot&&window.claude.hot.snapshot(()=>({checkpoint:NET.on?null:state.checkpoint}));}catch(e){}
 const boot=()=>{const h=window.claude&&window.claude.hot;if(h&&h.ready)h.ready(start);else start((h&&h.data)||{});};
 if(document.fonts&&document.fonts.load){Promise.race([Promise.all([document.fonts.load('20px "Bagel Fat One"'),document.fonts.load('900 12px "Nunito"')]),new Promise(r=>setTimeout(r,1200))]).then(boot,boot);}else boot();
