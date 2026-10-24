@@ -64,7 +64,7 @@ export function polish(THREE, stage, root, o = {}) {
     board.children.forEach(sp => { const rim = sp.getObjectByName('rim'), top = sp.getObjectByName('top'), ring = sp.getObjectByName('korona_spot_ring'); if (!rim || !top) return; const R2 = top.geometry.parameters.radius;
       rim.geometry.dispose(); rim.geometry = lathe(R2, .28); rim.position.y = .02; rim.material = rimM; top.position.y = .275; if (ring) { ring.material = goldRim; ring.position.y = .12; } }); }
   // ---------- animate ripples ----------
-  let last = performance.now(); const tick = now => { const dt = Math.min(.05, (now - last) / 1000); last = now; ripple.offset.x += dt * .015; ripple.offset.y += dt * .01; requestAnimationFrame(tick); }; requestAnimationFrame(tick);
+  let last = performance.now(); const tick = now => { const dt = Math.min(.05, (now - last) / 1000); last = now; ripple.offset.x += dt * .015; ripple.offset.y += dt * .01; if (!o.stopped || !o.stopped()) requestAnimationFrame(tick); }; requestAnimationFrame(tick);
   stage._invalidate?.();
   return { sky };
 }
