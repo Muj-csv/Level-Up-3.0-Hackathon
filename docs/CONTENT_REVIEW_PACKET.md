@@ -1,0 +1,168 @@
+# F9.2 content review packet
+
+For: a PE teacher or cultural expert reviewing the Filipino street-game facts in
+Taympers, per the PRD's F9.2 requirement ("Every fact is reviewed by a PE teacher or
+cultural expert; keep the reviewer's name and date in the file").
+
+**Source file:** `content/fil.json` — this packet is a reviewer-friendly copy of
+exactly what's in there now. Nothing in the game or this file is marked reviewed yet
+(`reviewed_by`/`reviewed_at` are all `null`).
+
+## Instructions for the reviewer
+
+For each item below, mark one of:
+- **✅ Correct as written** — nothing to change
+- **✏️ Needs a fix** — write the correction in the margin or a note
+- **⚠️ Flag** — not wrong exactly, but worth a second opinion (e.g. a regional
+  variation, a sensitive topic, or something you're not sure about)
+
+When you're done, sign and date at the bottom. Whoever updates `content/fil.json` will
+copy your name and the date into each item's `reviewed_by`/`reviewed_at` fields.
+
+---
+
+## Part 1 — Tanong ni Lola trivia (10 questions)
+
+Each question is multiple choice; the **first (bolded) answer is always the one the
+game marks correct**. The "why" line is the explanation shown after answering.
+
+1. **Ano ang ibinabato sa lata sa Tumbang Preso?**
+   Answers: **Tsinelas** / Bola / Holen
+   Why: "Tsinelas ang pamato, kaya kailangang mabilis ka ring kunin ito bago ka mataya."
+   ⬜ Correct  ⬜ Needs a fix  ⬜ Flag
+
+2. **Alin ang pambansang laro ng Pilipinas hanggang 2009?**
+   Answers: **Sipa** / Patintero / Piko
+   Why: "Noong 2009, idineklara ang arnis bilang pambansang sining ng pakikipaglaban at isport."
+   ⬜ Correct  ⬜ Needs a fix  ⬜ Flag
+
+3. **Ano ang isa pang tawag sa Patintero?**
+   Answers: **Tubigan** / Presohan / Sungka
+   Why: "Minsan tubig ang ginagamit pang-guhit ng mga linya, kaya tubigan."
+   ⬜ Correct  ⬜ Needs a fix  ⬜ Flag
+
+4. **Ano ang ipinapahid sa kawayan ng Palosebo?**
+   Answers: **Grasa o mantika** / Pandikit / Pulot
+   Why: "Galing sa Espanyol na palo ensebado: kawayang may grasa."
+   ⬜ Correct  ⬜ Needs a fix  ⬜ Flag
+
+5. **Sa Jack en Poy, ano ang tumatalo sa bato?**
+   Answers: **Papel** / Gunting / Tsinelas
+   Why: "Binabalot ng papel ang bato. Ang bato naman ang tumatalo sa gunting."
+   ⬜ Correct  ⬜ Needs a fix  ⬜ Flag
+
+6. **Sa Luksong Tinik, ano ang "tinik"?**
+   Answers: **Mga kamay at paang pinagpapatong** / Halamang may tinik / Mahabang lubid
+   Why: "Patataas nang patataas ang tinik habang dinadagdagan ng kamay at paa."
+   ⬜ Correct  ⬜ Needs a fix  ⬜ Flag
+
+7. **Sa Piko, ano ang inihahagis sa mga kahon?**
+   Answers: **Pamato, gaya ng patag na bato** / Barya / Bola
+   Why: "Lumulukso ka sa isang paa at nilalampasan ang kahong may pamato."
+   ⬜ Correct  ⬜ Needs a fix  ⬜ Flag
+
+8. **Ano ang holen?**
+   Answers: **Maliit na bolang salamin** / Laruang trumpo / Saranggola
+   Why: "Pinipitik ang holen gamit ang hinlalaki para tamaan ang holen ng kalaro."
+   ⬜ Correct  ⬜ Needs a fix  ⬜ Flag
+
+9. **Ano ang ginagamit sa Sungka?**
+   Answers: **Tablang may butas at mga sigay** / Baraha / Dice
+   Why: "Mga sigay o maliliit na kabibe ang inilalagay sa mga butas ng tabla."
+   ⬜ Correct  ⬜ Needs a fix  ⬜ Flag
+
+10. **Sa Agawan Base, paano nananalo?**
+    Answers: **Mahawakan ang base ng kalaban** / Makakuha ng pinakamaraming bola / Matapos ang takbo nang una
+    Why: "May dalawang base at dalawang koponan. Kapag nataya ka, bihag ka ng kalaban."
+    ⬜ Correct  ⬜ Needs a fix  ⬜ Flag
+
+---
+
+## Part 2 — Minigame facts (5 games currently in the app)
+
+For each game: the in-app name, other names it's known by, what you need to play it
+for real ("Subukan sa labas"), the simplified in-app rules, and how it's really played
+on the street ("Sa totoong kalye").
+
+### Tumbang Preso
+*Also known as:* presohan, tumba-lata, or tumba-patis in the Visayas
+*To play for real:* one can, one slipper per player, 3+ players; draw a circle for the
+can and a line to throw from.
+*In-app rules:* throw the slipper at the can; the throwing line moves and you can only
+hit it from the center white zone; 5 throws each, getting faster.
+*How it's really played:* a "taya" guards the can inside the circle. Others throw their
+slippers at the can from the line. If it falls, they run to grab their slippers while
+the taya re-stands the can; whoever the taya tags becomes the new taya while they
+retrieve a fallen slipper.
+⬜ Correct  ⬜ Needs a fix  ⬜ Flag
+
+### Patintero
+*Also known as:* harang taga, or tubigan
+*To play for real:* draw lines with chalk or water on a yard or court; split the group
+into line-guards and runners.
+*In-app rules:* cross every line to "Dulo" and back to "Bahay"; +2 per line going out,
++3 coming back, +5 for making it home; getting tagged sends you back to Bahay.
+*How it's really played:* lines are drawn on the ground, sometimes with water (hence
+"tubigan"). Two teams play: guards stand on the lines and can only move along them,
+while the other team tries to cross to the far end and back. A tag swaps which team
+guards and which team runs.
+⬜ Correct  ⬜ Needs a fix  ⬜ Flag
+
+### Sipa
+*Also known as:* the national game of the Philippines until 2009
+*To play for real:* make your own sipa — a washer or bottle cap with cut plastic or
+paper; count how many kicks before it drops.
+*In-app rules:* kick the sipa before it falls; tap when the ring glows; too early or
+button-mashing briefly locks you out; it gets faster each round.
+*How it's really played:* the sipa is a small weight (like lead or a washer) with
+colorful paper or cloth attached. It's kicked upward using the inside of the foot or
+knee, without letting it touch the ground. It was the national game until 2009, when
+arnis was declared the national martial art and sport.
+⬜ Correct  ⬜ Needs a fix  ⬜ Flag
+
+### Palosebo
+*Also known as:* from the Spanish "palo ensebado" — a greased pole
+*To play for real:* played during a fiesta; ask a grandparent how they used to win it.
+*In-app rules:* tap to climb a bamboo pole; hand turns green when you can tap again;
+tapping too fast in a row makes you slip; reach the prize at the top within 12 seconds
+for a speed bonus.
+*How it's really played:* a fiesta game. A long bamboo pole is greased with oil or fat,
+with a prize at the top like money or a flag. Participants race to climb it, which
+takes strength, strategy, and patience to avoid slipping.
+⬜ Correct  ⬜ Needs a fix  ⬜ Flag
+
+### Luksong Tinik
+*Also known as:* a game of jumping and courage
+*To play for real:* two players sit facing each other on the grass; they stack feet,
+then hands, to build the "tinik" (thorns); others jump over it; whoever snags it swaps
+places with a seated player.
+*In-app rules:* run toward the thorns and tap to jump when your foot is on the yellow
+line; too early or too late and you're caught, ending your turn; the thorns get higher
+and faster each level.
+*How it's really played:* two players sit on the ground and stack their feet, then
+their hands, to raise the "tinik." Others jump over without touching it. Whoever snags
+it swaps places with one of the seated players.
+⬜ Correct  ⬜ Needs a fix  ⬜ Flag
+
+---
+
+## Part 3 — General questions for the reviewer
+
+- Are there regional variations of any of these games/rules that should be noted (the
+  PRD calls these "sa ibang lugar" notes, not treated as errors)?
+- Is anything here culturally sensitive, or does it present something sacred/ceremonial
+  as mere decoration? (None of the above is intended to, but please flag anything that
+  reads that way.)
+- Anything missing that a kid should know about these games?
+
+## Sign-off
+
+Reviewer name: ________________________________
+Role (PE teacher / cultural expert / other): ________________________________
+Date: ________________________________
+Overall notes: ________________________________________________________________
+________________________________________________________________________________
+
+*Once signed, whoever updates `content/fil.json` copies the reviewer's name and this
+date into the `reviewed_by`/`reviewed_at` field for every item marked Correct or fixed
+per this packet's notes.*
