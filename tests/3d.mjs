@@ -131,9 +131,12 @@ for (const kind of Object.keys(MASH)) {
   await page.evaluate(() => window.__lsu.setSpeed(20));
   let reach = null;
   for (let i = 0; i < 400 && !reach; i++) {
-    reach = await page.evaluate(() => { const L = window.__lsu, rc = L.state.reach; if (!rc || document.querySelector('#actionBtn').hidden || !document.querySelector('#modal').hidden) return null;
-      L.setSpeed(1); const n = L.b3.reach.filter(m => m.visible).length; return n ? { all: rc.all.size, rings: n, korona: L.korona.spots.length, crowns: L.b3.crowns.filter(c => c.visible).length } : null; });
-    if (!reach) { await step(page); await page.waitForTimeout(300); }
+    // on the human's turn, wait for the rings to be drawn (never press the roll button here)
+    const st = await page.evaluate(() => { const L = window.__lsu, rc = L.state.reach; if (!rc || document.querySelector('#actionBtn').hidden || !document.querySelector('#modal').hidden) return null;
+      L.setSpeed(1); const n = L.b3.reach.filter(m => m.visible).length; return n ? { all: rc.all.size, rings: n, korona: L.korona.spots.length, crowns: L.b3.crowns.filter(c => c.visible).length } : 'wait'; });
+    if (st === 'wait') { await page.waitForTimeout(500); continue; }
+    reach = st;
+    if (!reach) { if (await page.evaluate(() => !document.querySelector('#modal').hidden)) await step(page); await page.waitForTimeout(300); }
   }
   check(reach && reach.rings === reach.all, 'island map: every space the roll can reach has a ring (both paths at a fork)', JSON.stringify(reach));
   check(reach && reach.korona === 4 && reach.crowns === 4, 'island map: four korona are on the board');
