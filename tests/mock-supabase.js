@@ -4,10 +4,37 @@
    channels through a BroadcastChannel. Broadcasts skip the sender (broadcast.self is false in the game).
    This checks the adapter and the game's sync logic; it says nothing about Supabase's latency or rate limits.
    window.__supaOffline = true makes a page drop everything it sends and receives, like a lost connection.
-   window.__supaSent counts the broadcasts a page sends, so tests can check traffic against Supabase's limits. */
+   window.__supaSent counts the broadcasts a page sends, so tests can check traffic against Supabase's limits.
+
+   Also implements createClient().from(table) for F9.3 (online Hamon ng Araw scores): insert/select/eq/order/limit,
+   each step thenable like the real postgrest-js builder. Rows live in memory for this one page only (no
+   BroadcastChannel) -- enough to test the game's own submit-then-read logic, not a real multi-device leaderboard. */
 (function () {
-  function createClient() {
+  function makeSelectBuilder(getRows) {
+    let rows = getRows();
+    const b = {
+      eq(col, val) { rows = rows.filter((r) => r[col] === val); return b; },
+      order(col, opts) { const asc = !(opts && opts.ascending === false); rows = rows.slice().sort((x, y) => (asc ? (x[col] > y[col] ? 1 : -1) : (x[col] < y[col] ? 1 : -1))); return b; },
+      limit(n) { rows = rows.slice(0, n); return b; },
+      then(resolve, reject) { return Promise.resolve({ data: rows, error: null }).then(resolve, reject); },
+    };
+    return b;
+  }
+  function fromTable(store, name) {
+    store[name] = store[name] || [];
     return {
+      insert(row) {
+        const arr = Array.isArray(row) ? row : [row];
+        store[name].push(...arr.map((r) => Object.assign({}, r)));
+        return { then(resolve, reject) { return Promise.resolve({ data: arr, error: null }).then(resolve, reject); } };
+      },
+      select() { return makeSelectBuilder(() => store[name]); },
+    };
+  }
+  function createClient() {
+    const tableStore = {};
+    return {
+      from(name) { return fromTable(tableStore, name); },
       channel(name, opts) {
         const key = (opts && opts.config && opts.config.presence && opts.config.presence.key) || 'k' + Math.random().toString(36).slice(2, 9);
         const bus = new BroadcastChannel('mock-supa-' + name);
