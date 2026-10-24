@@ -41,10 +41,12 @@ const step = page => page.evaluate(() => {
   // the cloud board (fast in software WebGL); the island maps have their own run below
   await page.evaluate(() => window.__lsu.startLocal({ n: 1, names: ['Ian'], cfg: { mode: 'party', rounds: 3, diff: 1, map: 'ulap' } }));
   // wait for the human's roll: the roll button shows and the reachable spaces get rings
+  // (the bots' turns run sped up: software WebGL draws the rigged kids slowly)
+  await page.evaluate(() => window.__lsu.setSpeed(8));
   let reach = null;
   for (let i = 0; i < 400 && !reach; i++) {
     reach = await page.evaluate(() => { const L = window.__lsu, rc = L.state.reach; if (!rc || document.querySelector('#actionBtn').hidden || !document.querySelector('#modal').hidden) return null;
-      return { min: rc.min, max: rc.max, rings: L.b3.reach.filter(m => m.visible).length }; });
+      L.setSpeed(1); return { min: rc.min, max: rc.max, rings: L.b3.reach.filter(m => m.visible).length }; });
     if (!reach) { const m = await page.evaluate(() => !document.querySelector('#modal').hidden); if (m) await step(page); await page.waitForTimeout(150); }
   }
   // the rings are placed by the next 3D frame, so give the renderer a moment before counting them
@@ -65,11 +67,12 @@ const step = page => page.evaluate(() => {
   const row = await page.$('#menuCard button[data-k="g3d"][data-val="0"]');
   check(!!row, 'pause menu has the Grapiko 3D/2D setting');
   if (row) {
-    await row.click(); await page.waitForTimeout(400);
+    // the switch shows on the next drawn frame, which software WebGL can take a while to reach
+    await row.click(); await page.waitForFunction(() => !window.__lsu.b3.on, null, { timeout: 20000 }).catch(() => {});
     const two = await page.evaluate(() => ({ on: window.__lsu.b3.on, cv3: document.getElementById('stage3d').hidden, saved: JSON.parse(localStorage.getItem('lsu-prefs')).g3d }));
     check(!two.on && two.cv3 && two.saved === false, 'switching to 2D hides the 3D canvas and is saved', JSON.stringify(two));
     await page.click('#menuCard [data-v="close"]'); await page.waitForTimeout(500); await shot(page, 'board-2d');
-    await page.click('#menuBtn'); await page.click('#menuCard button[data-k="g3d"][data-val="1"]'); await page.waitForTimeout(400);
+    await page.click('#menuBtn'); await page.click('#menuCard button[data-k="g3d"][data-val="1"]'); await page.waitForFunction(() => window.__lsu.b3.on, null, { timeout: 20000 }).catch(() => {});
     const three = await page.evaluate(() => window.__lsu.b3.on && !document.getElementById('stage3d').hidden);
     check(three, 'switching back to 3D shows the 3D board again');
     await page.click('#menuCard [data-v="close"]');

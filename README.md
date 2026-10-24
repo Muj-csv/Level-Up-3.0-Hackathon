@@ -48,7 +48,7 @@ The repo is ready to import as is:
    install, no build, output is the repo root) and press **Deploy**.
 3. Every push to `main` then redeploys; pushes to other branches get preview links.
 
-What gets deployed: `index.html`, `vendor/`, `maps/` and `content/` (`.vercelignore`
+What gets deployed: `index.html`, `vendor/`, `maps/`, `kids/` and `content/` (`.vercelignore`
 leaves out the tests, docs, tools and `package.json`, so Vercel never installs the test
 tools). `vercel.json`
 caches `vendor/` for a year (the version is in each file name) and adds basic security
@@ -163,6 +163,7 @@ Details in [`tests/README.md`](tests/README.md).
 | Bagel Fat One, Nunito (Google Fonts) | Title and UI type | SIL Open Font License 1.1 |
 | qrcode-generator 1.4.4 by Kazuhiko Arase (`vendor/`) | Draws the room QR code | MIT |
 | three.js r184 (0.184.0) by the three.js authors (`vendor/three-r184/`) | Draws the 3D islands, kids and minigame arenas | MIT |
+| Mga Bata: the four playable kids in 3D (`kids/`) | Jun, Neneng, Totoy and Bunso on the board, title, HUD and minigames, with their animations and faces | Made by the team: Ian Patrick A. Flores (idea), using Claude (AI) to build them; see AI use |
 | Taympers Maps: the four 3D islands, their boards and their life (`maps/`) | The Plaza, Palengke, Aplaya and Palayan maps and the map-screen pictures (`maps/world/`, rendered from them with `tools/world-render.mjs`) | Made by the team: Ian Patrick A. Flores (idea), using Claude (AI) to build them; see AI use |
 | Playwright (development only, not part of the game) | Automated play-tests | Apache-2.0 |
 
