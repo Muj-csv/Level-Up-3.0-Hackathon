@@ -70,6 +70,10 @@ reserve when shopping, and pick their Jack en Poy rivals (Mahirap goes after the
 
 ## Maps
 
+The **title screen** shows the four islands: the picture of the world slowly flies from
+island to island behind the menu, with the four 3D kids hopping in above the logo (the 2D
+kids stand in on devices without 3D). With reduced motion on, the picture stays still.
+
 **Maglaro → Simulan** opens the map screen: a picture of all four islands that zooms in
 to the island being picked (tap an island, use its button, or the arrow keys), then
 **Laro na!** builds that island in 3D (a loading card shows for a few seconds) and the
