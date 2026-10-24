@@ -40,8 +40,11 @@ async function playToEnd(page, { ms = 300000, human = true } = {}) {
 // ---------- 1. launch at four sizes, layout fits ----------
 for (const [label, w, h] of [['phone 360x740', 360, 740], ['phone landscape 740x360', 740, 360], ['tablet 820x1180', 820, 1180], ['desktop 1440x900', 1440, 900]]) {
   const page = await newPage({ viewport: { width: w, height: h }, isMobile: w < 900, hasTouch: w < 900 });
-  const lay = await page.evaluate(() => { const b = document.querySelector('.titlebox').getBoundingClientRect(); return { top: b.top, bottom: b.bottom, vh: innerHeight, sw: document.documentElement.scrollWidth, vw: innerWidth }; });
-  check(lay.top >= 0 && lay.bottom <= lay.vh + 1, `${label}: title menu fits on screen`, `${Math.round(lay.top)}..${Math.round(lay.bottom)} of ${lay.vh}`);
+  const lay = await page.evaluate(() => { const r = s => document.querySelector(s).getBoundingClientRect(), b = r('#scrTitle .brand'), m = r('#scrTitle .menu'), s = r('#soundBtn');
+    const apart = (p, q) => p.right <= q.left || q.right <= p.left || p.bottom <= q.top || q.bottom <= p.top;
+    return { top: Math.min(b.top, m.top), bottom: Math.max(b.bottom, m.bottom), left: Math.min(b.left, m.left), right: Math.max(b.right, m.right), apart: apart(b, m) && apart(m, s), vh: innerHeight, sw: document.documentElement.scrollWidth, vw: innerWidth }; });
+  check(lay.top >= 0 && lay.bottom <= lay.vh + 1 && lay.left >= 0 && lay.right <= lay.vw + 1, `${label}: title logo and menu fit on screen`, `${Math.round(lay.top)}..${Math.round(lay.bottom)} of ${lay.vh}`);
+  check(lay.apart, `${label}: title logo, menu and sound button do not overlap`);
   check(lay.sw <= lay.vw, `${label}: no sideways page scroll`);
   await lsu(page, () => window.__lsu.startLocal({ n: 1, names: ['Ian'], cfg: { mode: 'party', rounds: 3, diff: 1 } }));
   await page.waitForTimeout(2500);

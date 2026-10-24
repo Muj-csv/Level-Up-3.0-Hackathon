@@ -1,5 +1,5 @@
 // F10 benchmark: the same scenes at the same screen size for each graphics quality, through the game's ?perf readout.
-// Scenes: the title (frame gaps only: its kids have their own renderer, kids/hero.js), all four islands one after another (also shows whether switching islands leaks GPU
+// Scenes: the title (frame gaps only: its Plaza scene has its own renderer, maps/title.js), all four islands one after another (also shows whether switching islands leaks GPU
 // memory), every minigame, five minigames in a row (the same leak check), and the 2D fallback.
 // Software WebGL (SwiftShader) draws on the CPU, so the numbers compare settings with each other; they are
 // not phone frame rates. Run: node tests/perf.mjs [label] [qualities, e.g. low,mid,high] [--phone]

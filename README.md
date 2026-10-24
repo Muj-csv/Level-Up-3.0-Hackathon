@@ -70,9 +70,13 @@ reserve when shopping, and pick their Jack en Poy rivals (Mahirap goes after the
 
 ## Maps
 
-The **title screen** shows the four islands: the picture of the world slowly flies from
-island to island behind the menu, with the four 3D kids hopping in above the logo (the 2D
-kids stand in on devices without 3D). With reduced motion on, the picture stays still.
+The **title screen** is the Plaza at golden hour (`maps/title.js`, from the team's title
+screen design): the four 3D kids play on the plaza's entrance path, Bunso keeping the sipa
+up, Neneng cheering, Totoy waving Jun over to his patintero line, on a 12-second loop, and
+they all cheer when **Maglaro** is pressed. The logo sits top left and the buttons in a
+column on the right; portrait phones stack them with the kids in between. A still picture of
+the scene shows while it is built and stands in on devices without 3D. With reduced motion
+on, the scene stays still.
 
 **Maglaro → Simulan** opens the map screen: a picture of all four islands that zooms in
 to the island being picked (tap an island, use its button, or the arrow keys), then
@@ -168,7 +172,7 @@ Details in [`tests/README.md`](tests/README.md).
 | qrcode-generator 1.4.4 by Kazuhiko Arase (`vendor/`) | Draws the room QR code | MIT |
 | three.js r184 (0.184.0) by the three.js authors (`vendor/three-r184/`) | Draws the 3D islands, kids and minigame arenas | MIT |
 | Mga Bata: the four playable kids in 3D (`kids/`) | Jun, Neneng, Totoy and Bunso on the board, title, HUD and minigames, with their animations and faces | Made by the team: Ian Patrick A. Flores (idea), using Claude (AI) to build them; see AI use |
-| Taympers Maps: the four 3D islands, their boards and their life (`maps/`) | The Plaza, Palengke, Aplaya and Palayan maps and the map-screen pictures (`maps/world/`, rendered from them with `tools/world-render.mjs`) | Made by the team: Ian Patrick A. Flores (idea), using Claude (AI) to build them; see AI use |
+| Taympers Maps: the four 3D islands, their boards and their life (`maps/`) | The Plaza, Palengke, Aplaya and Palayan maps and the map-screen and menu pictures (`maps/world/`, rendered from them with `tools/world-render.mjs` and `tools/title-render.mjs`) | Made by the team: Ian Patrick A. Flores (idea), using Claude (AI) to build them; see AI use |
 | Playwright (development only, not part of the game) | Automated play-tests | Apache-2.0 |
 
 All art is drawn in code: 2D on an HTML canvas, 3D as Three.js shapes built in code (no

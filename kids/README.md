@@ -15,7 +15,7 @@ no model files. `index.html` loads these modules after Three.js and builds each 
 |---|---|
 | `kids.js` | `buildKid(THREE, def)` builds one kid: a skinned body on an 18-joint rig, face, hair, clothes, tsinelas and prop. `KIDS` holds the four designs, `CLIPS` the animations (idle, walk, run, jump, fall, victory, defeat, pickUp, kick, throw, wave), `setExpression` the 8 faces, `applyPose` / `poseAt` pose a kid |
 | `kidgeo.js` | The shape helpers the kids are swept from |
-| `hero.js` | The four kids on their own transparent layer for the main menu (and the splash): they hop in, Neneng waves, all cheer on cue. Adapted from the splash design's "3D kids v4" |
+| `hero.js` | The four kids on their own transparent layer, for the splash: they hop in, Neneng waves, all cheer on cue. Adapted from the splash design's "3D kids v4". (The main menu now shows the kids in its Plaza scene, `maps/title.js`) |
 
 Sizes are in meters (a kid is about 0.95 m tall); the game scales them by 60.
 

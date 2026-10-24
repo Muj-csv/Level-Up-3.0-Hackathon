@@ -64,10 +64,11 @@ const matches = (i, q) => i.pr === WANT[q].pr && i.shadow === WANT[q].shadow && 
 // ---------- 2. each quality reaches the renderer on the title, the board and a minigame ----------
 for (const q of ['low', 'mid', 'high']) {
   const page = await newPage(JSON.stringify({ gq: q }));
-  // the title's kids are drawn by their own renderer (kids/hero.js): its canvas is sized at the quality's pixel ratio
-  await page.waitForFunction(() => window.__lsu.hero.title, null, { timeout: 30000 }).catch(() => {});
-  const hr = await page.evaluate(() => { const c = document.getElementById('heroCv'), r = c.getBoundingClientRect(); return r.width ? +(c.width / r.width).toFixed(2) : null; });
-  check(hr === WANT[q].pr, `${q}: the title's 3D kids drawn at its pixel ratio`, String(hr));
+  // the title's Plaza scene has its own renderer (maps/title.js), built with the quality's pixel-ratio cap and shadows;
+  // its frame pump may draw below the cap while frames are slow (software WebGL), never above it
+  await page.waitForFunction(() => window.__lsu.title.ctl && window.__lsu.title.on, null, { timeout: 60000 }).catch(() => {});
+  const ti = await page.evaluate(() => { const t = window.__lsu.title.ctl; return t ? t.info() : null; });
+  check(!!ti && ti.cap === WANT[q].pr && ti.pr <= ti.cap && ti.shadow === WANT[q].shadow, `${q}: the title scene drawn at most at its pixel ratio, with its shadows`, JSON.stringify(ti));
   await page.evaluate(() => window.__lsu.startLocal({ n: 1, names: ['Ian'], cfg: { mode: 'party', rounds: 3, diff: 1, map: 'ulap' } }));
   await page.waitForTimeout(1500);
   const b = await info(page);

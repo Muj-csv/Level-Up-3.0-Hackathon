@@ -59,8 +59,9 @@ at pixel ratio 2 with a 2048 shadow map on every device.
 **What is there now:** **Kalidad** in the pause menu (Mababa / Katamtaman / Mataas), saved
 in `lsu-prefs` as `gq`, separate from Grapiko 3D/2D. One table (`GQ` in `index.html`) sets
 every 3D screen: title, board, islands and minigames. Katamtaman is the default for every
-device (no touch-screen guess any more). The title's 3D kids (`kids/hero.js`, own renderer) take the
-quality's pixel ratio when they are made at start-up, and the players' 3D kids (`kids/`) are
+device (no touch-screen guess any more). The title's Plaza scene (`maps/title.js`, own renderer) takes the
+quality's pixel ratio, shadows and foliage (at most the design's 2500 leaf cards and 6 grass layers) each time it is
+built (at start-up, and again on the way back from a game), and the players' 3D kids (`kids/`) are
 built at 0.6 detail on Mababa (as phones had) and full detail otherwise.
 
 | | Mababa | Katamtaman (default) | Mataas |
