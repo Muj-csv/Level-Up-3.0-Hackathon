@@ -9,31 +9,32 @@ A party board game for 1 to 4 players built on Filipino street games, made for t
 **Level Up 3.0 Esports Game Dev Challenge** (Student Category). It covers two official
 themes: **Philippine Games and Sports**, and **Board Games / Brain Games**.
 
-Four barrio kids race across four floating islands (Plaza, Palengke, Aplaya, Bukid),
-collect piso, buy korona (crowns), and play a street-game minigame after every round:
-Tumbang Preso, Patintero, Sipa, Palosebo and Luksong Tinik.
+Four barrio kids pick one of four island maps (**Plaza, Palengke, Aplaya, Palayan**),
+race around its board, collect piso, buy korona (crowns), and play a street-game minigame
+after every round: Tumbang Preso, Patintero, Sipa, Palosebo and Luksong Tinik.
 
-The game is now **3D**: the board, the kids and every minigame arena are drawn with
-Three.js. When WebGL or Three.js is not available, it falls back to the original 2D
-canvas board, and players can pick 2D in the menu (see Controls and settings).
+The game is **3D**: the island, the kids and every minigame arena are drawn with
+Three.js. When WebGL or Three.js is not available, it falls back to a 2D canvas board,
+and players can pick 2D in the menu (see Controls and settings).
 
 ## Play it
 
-The game is `index.html` plus two libraries in `vendor/` (Three.js and a QR code
-generator). There is no build step and nothing to install.
+The game is `index.html`, the island maps in `maps/`, the text in `content/`, and two
+libraries in `vendor/` (Three.js and a QR code generator). There is no build step and
+nothing to install.
 
-- **Online:** https://muj-csv.github.io/Level-Up-3.0-Hackathon/ (GitHub Pages, built from
-  the `main` branch), or the team's Vercel address once it is set up (below).
-- **Quickest:** open `index.html` in a phone or computer browser.
-- **Local server** (needed on some browsers for clipboard and sharing):
+- **Online:** the live game on Vercel and a backup on GitHub Pages, both built from the
+  `main` branch. All project links are in [`docs/LINKS.md`](docs/LINKS.md).
+- **Local server** (needed for 3D: Three.js and the islands are JavaScript modules, which
+  browsers do not load from a `file://` page; opened as a file, the game plays in 2D):
   ```bash
   python3 -m http.server 8000
   # then open http://localhost:8000
   ```
 - **GitHub Pages:** every push to `main` republishes the site (Settings → Pages →
   Deploy from a branch → `main` / root). `.nojekyll` makes Pages serve the files as-is.
-- **itch.io:** zip `index.html` with the `vendor/` folder and mark it "This file will be
-  played in the browser".
+- **itch.io:** zip `index.html` with the `vendor/`, `maps/` and `content/` folders and mark
+  it "This file will be played in the browser".
 
 The only thing loaded from the internet is Google Fonts (Bagel Fat One, Nunito). Without
 a connection the game uses fallback fonts.
@@ -47,8 +48,9 @@ The repo is ready to import as is:
    install, no build, output is the repo root) and press **Deploy**.
 3. Every push to `main` then redeploys; pushes to other branches get preview links.
 
-What gets deployed: only `index.html` and `vendor/` (`.vercelignore` leaves out the
-tests, docs and `package.json`, so Vercel never installs the test tools). `vercel.json`
+What gets deployed: `index.html`, `vendor/`, `maps/` and `content/` (`.vercelignore`
+leaves out the tests, docs, tools and `package.json`, so Vercel never installs the test
+tools). `vercel.json`
 caches `vendor/` for a year (the version is in each file name) and adds basic security
 headers. The settings were checked with `vercel build` (Vercel CLI 65).
 
@@ -66,6 +68,26 @@ Bots come in three levels. **Madali** bots use items at once and play minigames 
 **Sakto** and **Mahirap** bots save items for a korona they can afford, keep 10 piso in
 reserve when shopping, and pick their Jack en Poy rivals (Mahirap goes after the leader).
 
+## Maps
+
+**Maglaro → Simulan** opens the map screen: a picture of all four islands that zooms in
+to the island being picked (tap an island, use its button, or the arrow keys), then
+**Laro na!** builds that island in 3D (a loading card shows for a few seconds) and the
+game starts on it. Online, the host picks the map in the lobby.
+
+| Map | Board | Shortcut |
+|---|---|---|
+| **Plaza** | Kiosko, simbahan, munisipyo, bantayog; a side path past the church | Kalesa, 6 piso |
+| **Palengke** | Wet and dry market, timbangan, a middle aisle through the stalls | Padyak, 6 piso |
+| **Aplaya** | Lagoon, pantalan, a boardwalk over the water | Bangka, 6 piso |
+| **Palayan** | Rice terraces and a waterfall; a trail up the terraces | Kariton ng kalabaw, 6 piso |
+
+Each map is an 80-space loop with a side path that forks off and joins it again (about
+100 spaces in all), and 10 places where korona can sit; **4 korona** are on the board at
+once. At the fork the player picks the path (each button says how far the nearest korona
+is that way). Landing on the shortcut space offers a paid ride to the far side of the
+map. The 3D islands come from the team's Taympers Maps package (`maps/`, see Credits).
+
 ## Rules in short
 
 - **Goal:** most korona at the end; piso break ties. Turn order is drawn at the start.
@@ -76,6 +98,13 @@ reserve when shopping, and pick their Jack en Poy rivals (Mahirap goes after the
   (pick any rival, winner takes up to 5 piso), **Kasama** (a friend joins you and adds 1 or
   2 steps to every roll; up to 2), **Tanong ni Lola** (a question about Filipino games,
   +5 piso if right).
+- **Island spaces** (one set per map): Plaza: Banda (forward 3), Kampana (+5),
+  Munisipyo (a free Kendi or Agimat, or +3), Rizal (a Tanong ni Lola question).
+  Palengke: Tawad (+3), Timbangan (+2), Suki (free item or +3), Basa (slip back 2),
+  Ulan (buy an umbrella, −2). Aplaya: Alon (forward 2), Huli (+4), Buko (free item or
+  +3), Taog (back 2), Araw (buy water, −2). Palayan: Tanim (+2), Ani (+5), Bayanihan
+  (+2 for every player), Balang (−4), Ulan (the rice is watered, +3). Agimat blocks the
+  losses.
 - **Items** (carry one): Dobleng dice 5 (two dice), Kendi 3 (+3 steps), Gintong dice 8
   (pick your number), Agimat 4 (blocks the next Utang, Tikbalang or Jack en Poy loss).
 - **Minigames:** +10 / +5 / +3 piso for 1st / 2nd / 3rd. Last round (**Huling Hirit**):
@@ -101,9 +130,12 @@ reserve when shopping, and pick their Jack en Poy rivals (Mahirap goes after the
 
 ### Known limitation: 3D on real phones
 
-The 3D board has been tested in headless Chromium with software WebGL (SwiftShader), not
-yet on real phones. Before the event, try it on the slowest phone the team expects; if it
-stutters, switch **Grapiko** to 2D in the menu.
+The 3D islands have been tested in headless Chromium with software WebGL (SwiftShader),
+not yet on real phones. Each island is about 230,000 to 330,000 triangles; phones and
+tablets get a lighter version (fewer leaves and grass layers, no island shadows, at most
+1.5× pixel density), and building the island takes a few seconds when the game starts.
+Before the event, try every map on the slowest phone the team expects; if one stutters,
+switch **Grapiko** to 2D in the menu.
 
 ### Known limitation: online rooms
 
@@ -130,11 +162,12 @@ Details in [`tests/README.md`](tests/README.md).
 |---|---|---|
 | Bagel Fat One, Nunito (Google Fonts) | Title and UI type | SIL Open Font License 1.1 |
 | qrcode-generator 1.4.4 by Kazuhiko Arase (`vendor/`) | Draws the room QR code | MIT |
-| three.js r149 (0.149.0) by the three.js authors (`vendor/`) | Draws the 3D board, kids and minigame arenas | MIT |
+| three.js r184 (0.184.0) by the three.js authors (`vendor/three-r184/`) | Draws the 3D islands, kids and minigame arenas | MIT |
+| Taympers Maps: the four 3D islands, their boards and their life (`maps/`) | The Plaza, Palengke, Aplaya and Palayan maps and the map-screen pictures (`maps/world/`, rendered from them with `tools/world-render.mjs`) | Made by the team: Ian Patrick A. Flores (idea), using Claude (AI) to build them; see AI use |
 | Playwright (development only, not part of the game) | Automated play-tests | Apache-2.0 |
 
 All art is drawn in code: 2D on an HTML canvas, 3D as Three.js shapes built in code (no
-model files). All music and sound effects are synthesized in code with the Web Audio API.
+model files). The map-screen pictures are renders of those islands. All music and sound effects are synthesized in code with the Web Audio API.
 No outside images, 3D models, audio or game code are used.
 
 ## Team
