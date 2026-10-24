@@ -85,6 +85,78 @@
       "f": "May dalawang base at dalawang koponan. Kapag nataya ka, bihag ka ng kalaban.",
       "reviewed_by": null,
       "reviewed_at": null
+    },
+    {
+      "id": "plaza-kiosko",
+      "island": "plaza",
+      "q": "Ano ang kiosko na madalas makikita sa gitna ng plaza ng bayan?",
+      "a": ["Tambayan ng banda tuwing may pista", "Palengke ng bayan", "Himpilan ng pulis"],
+      "f": "Ang kiosko ay istrukturang parang maliit na tanghalan, kinatatayuan ng banda ng bayan tuwing may pista o pagdiriwang sa plaza.",
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": "plaza-kalesa",
+      "island": "plaza",
+      "q": "Ano ang kalesa?",
+      "a": ["Karwaheng hila ng kabayo", "Bangkang de-layag", "Traysikel na pedal"],
+      "f": "Ang kalesa ay tradisyonal na sasakyang hila ng kabayo, ginamit noon bilang pangunahing transportasyon at makikita pa rin ngayon sa ilang lugar tulad ng Intramuros.",
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": "palengke-tawad",
+      "island": "palengke",
+      "q": "Ano ang tawad sa palengke?",
+      "a": ["Paghingi na babaan ang presyo", "Pagtitimbang ng paninda", "Pagbalot ng isda"],
+      "f": "Karaniwan sa palengke ang pagtawad, kung saan hinihingi ng mamimili na babaan ng tindera ang presyo ng paninda.",
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": "palengke-padyak",
+      "island": "palengke",
+      "q": "Ano ang padyak?",
+      "a": ["Sasakyang pedal, walang motor", "Bangkang de-layag", "Karwaheng hila ng kabayo"],
+      "f": "Ang padyak ay sasakyang pedal na walang makina, karaniwang ginagamit para sa maikling biyahe malapit sa palengke o sa kalapit baranggay.",
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": "aplaya-bangka",
+      "island": "aplaya",
+      "q": "Ano ang bangka?",
+      "a": ["Sasakyang-tubig na gawa sa kahoy para mangisda", "Karwaheng hila ng kabayo", "Kariton na hila ng kalabaw"],
+      "f": "Ang bangka ay tradisyonal na sasakyang-tubig na ginagamit ng mga mangingisda sa pangingisda malapit sa baybayin.",
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": "aplaya-patuyo",
+      "island": "aplaya",
+      "q": "Bakit ipinapatuyo sa araw ang isda sa mga baybaying bayan?",
+      "a": ["Para hindi masira at tumagal", "Para lumambot", "Para lumaki"],
+      "f": "Pinapatuyo ang isda sa init ng araw bilang tradisyonal na paraan ng pangangalaga nito, lalo na sa mga lugar na walang palamig.",
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": "palayan-kalabaw",
+      "island": "palayan",
+      "q": "Ano ang gamit ng kalabaw sa palayan?",
+      "a": ["Pag-araro ng lupa bago itanim ang bigas", "Pagbantay sa bukid sa gabi", "Panggiling ng bigas"],
+      "f": "Ginagamit ang kalabaw para hilahin ang araro at lupain ang lupa bago magtanim ng palay.",
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": "palayan-bayanihan",
+      "island": "palayan",
+      "q": "Ano ang bayanihan?",
+      "a": ["Sama-samang pagtutulungan ng komunidad", "Opisyal na piyesta ng bayan", "Uri ng sayawang pambansa"],
+      "f": "Ang bayanihan ay tradisyong Pilipino ng pagtutulungan, gaya ng sama-samang paglipat ng bahay, na nagmula sa salitang 'bayan.'",
+      "reviewed_by": null,
+      "reviewed_at": null
     }
   ],
   "minigames": {
@@ -170,12 +242,12 @@
     { "t": "Sungka", "d": "Tablang may butas at mga sigay. Laro ng diskarte." }
   ],
   "islands": {
-    "note": "F5 island facts placeholder — not yet consumed by the game. Fill in once Mark confirms the final island list (D2, due Nov 1) and Ian wires island facts into Tanong ni Lola per F5.4. Two facts per island required by F5.4, each reviewed per F9.2.",
+    "note": "F5.4: the island list is locked (the 4 island maps in index.html's MAPS: Plaza, Palengke, Aplaya, Palayan — replaces the earlier placeholder guess of 'Dalampasigan'/'Bukid'). The two trivia questions per island below already live in the main `trivia` array above (tagged with an `island` field) so they drop into the shared Tanong ni Lola pool with no new game code; `triviaIds` here just indexes them per island for traceability. Pending F9.2 expert review like everything else in this file — not yet gated to only appear on their own island's board (that would be a further, separate decision for whoever wires island-specific trivia selection).",
     "list": [
-      { "id": "plaza", "name": "Plaza", "facts": [] },
-      { "id": "palengke", "name": "Palengke", "facts": [] },
-      { "id": "aplaya", "name": "Dalampasigan", "short": "Aplaya", "facts": [] },
-      { "id": "bukid", "name": "Bukid", "facts": [] }
+      { "id": "plaza", "name": "Plaza", "triviaIds": ["plaza-kiosko", "plaza-kalesa"] },
+      { "id": "palengke", "name": "Palengke", "triviaIds": ["palengke-tawad", "palengke-padyak"] },
+      { "id": "aplaya", "name": "Aplaya", "triviaIds": ["aplaya-bangka", "aplaya-patuyo"] },
+      { "id": "palayan", "name": "Palayan", "triviaIds": ["palayan-kalabaw", "palayan-bayanihan"] }
     ]
   }
 }
