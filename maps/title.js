@@ -36,30 +36,32 @@ const yieldUI = () => new Promise(r => setTimeout(r, 0));
 // one stage for every build, so living.js keeps a single clock loop however often the menu is rebuilt
 const stage = { _scene: null, _renderer: null, _invalidate() {} };
 
-/* low: phones and tablets (fewer leaves, smaller shadows); reduced: one still frame; maxDpr caps the pixel ratio */
-export function create(canvas, { low = false, reduced = false, maxDpr = 2 } = {}) {
+/* reduced: one still frame. The rest is the graphics quality (Kalidad in the game; the defaults are the design's):
+   maxDpr caps the pixel ratio, shadow is the sun's shadow-map size (0: none), islShadow lets the island's buildings and
+   trees cast shadows, leaf and grass are living.js's leaf cards and grass layers */
+export function create(canvas, { reduced = false, maxDpr = 2, shadow = 2048, islShadow = true, leaf = 2500, grass = 6 } = {}) {
   let ctx = null, made = null, dead = false, shown = false, raf = 0, t0 = performance.now(), cheerAt = -99, view = { w: 0, h: 0, focus: null };
   const stop = { v: false };
   const ready = (async () => {
     const ren = new T3.WebGLRenderer({ canvas, antialias: true });
-    ren.shadowMap.enabled = true; ren.shadowMap.type = T3.PCFShadowMap;
+    ren.shadowMap.enabled = shadow > 0; ren.shadowMap.type = T3.PCFShadowMap;
     const scene = new T3.Scene(); stage._scene = scene; stage._renderer = ren; made = { ren, scene };
 
     // ---- island (unchanged game asset) ----
     await yieldUI(); const root = (await buildPlaza(T3)).root; if (dead) throw new Error('disposed'); scene.add(root);
-    root.traverse(o => { if (o.isMesh) { o.castShadow = !low; o.receiveShadow = true; } });
+    root.traverse(o => { if (o.isMesh) { o.castShadow = islShadow; o.receiveShadow = true; } });
 
     // ---- golden-hour lights (the game's island rig, warmed and lowered) ----
     const sunDir = new T3.Vector3(.78, .30, -.42).normalize();
     scene.add(new T3.HemisphereLight(0xFFE0BA, 0x9A8F6A, 1.0));
     const sun = new T3.DirectionalLight(0xFFC890, 2.35); sun.position.copy(sunDir).multiplyScalar(140); sun.target.position.set(0, 0, 0);
-    sun.castShadow = true; sun.shadow.mapSize.setScalar(low ? 1024 : 2048); sun.shadow.bias = -.0004; sun.shadow.normalBias = .03;
+    sun.castShadow = shadow > 0; sun.shadow.mapSize.setScalar(shadow || 1024); sun.shadow.bias = -.0004; sun.shadow.normalBias = .03;
     const sc = sun.shadow.camera; sc.left = sc.bottom = -62; sc.right = sc.top = 62; sc.near = 1; sc.far = 400; scene.add(sun, sun.target);
     const fill = new T3.DirectionalLight(0xC4CCEE, .5); fill.position.set(-40, 25, 60); scene.add(fill);
 
-    await yieldUI(); polish(T3, stage, root, { normals: false, skyRadius: 900, grade: { sky: '#E59C78', horizon: '#FFD59A', sun: '#FFE7B0', fog: '#F6CB95', exposure: 1.04, rim: '#FFD7A0', rimK: .26, tint: '#C9A878', path: '#E4D6BA', env: .35 } });
+    await yieldUI(); polish(T3, stage, root, { normals: false, skyRadius: 900, grade: { sky: '#E59C78', horizon: '#FFD59A', sun: '#FFE7B0', fog: '#F6CB95', exposure: 1.04, rim: '#FFD7A0', rimK: .26, tint: '#C9A878', path: '#E4D6BA', env: .35 }, stopped: () => stop.v });
     await yieldUI(); try { const l = addLife(T3, stage, root, { name: 'plaza', ui: false, korona: 0, seed: 91, walkers: 0, birds: 0, butterflies: 0, centerZ: -5, stopped: () => stop.v }); l && l.setKorona && l.setKorona(0); } catch (e) { console.warn(e); }
-    await yieldUI(); try { made.isl = await addLiving(T3, stage, root, { name: 'plaza', ui: false, post: false, sounds: false, leafCards: low ? 800 : 2500, grassLayers: low ? 3 : 6, seed: 11, vendors: 0, strollers: 0, tambays: 0, kidGroups: 0, dogs: 0, cats: 0, chickens: 0, dragonflies: 0, vehicles: [] }); } catch (e) { console.warn(e); }
+    await yieldUI(); try { made.isl = await addLiving(T3, stage, root, { name: 'plaza', ui: false, post: false, sounds: false, leafCards: leaf, grassLayers: grass, seed: 11, vendors: 0, strollers: 0, tambays: 0, kidGroups: 0, dogs: 0, cats: 0, chickens: 0, dragonflies: 0, vehicles: [] }); } catch (e) { console.warn(e); }
     if (dead) throw new Error('disposed');
     const bs = root.getObjectByName('board_spaces'); if (bs) bs.visible = false;
 
@@ -133,7 +135,7 @@ export function create(canvas, { low = false, reduced = false, maxDpr = 2 } = {}
     await yieldUI(); if (dead) throw new Error('disposed');
     try { await ren.compileAsync(scene, cam); } catch (e) { console.warn(e); }
     if (dead) throw new Error('disposed');
-    ctx = { ren, scene, cam, kids, sipa, clouds, tU, sun, center, dolly: new T3.Vector3(), drift: 1, res: low ? 0 : 1 };
+    ctx = { ren, scene, cam, kids, sipa, clouds, tU, sun, center, dolly: new T3.Vector3(), drift: 1, res: 1 };
     if (view.w) layout(view.w, view.h, view.focus);
     return true;
   })();
@@ -246,6 +248,8 @@ export function create(canvas, { low = false, reduced = false, maxDpr = 2 } = {}
     cheer() { if (reduced) return; cheerAt = (performance.now() - t0) / 1000; },
     /* one frame at loop time T (for the still picture) */
     still(T = 0) { if (ctx) render(T); },
+    /* the pixel-ratio cap, the pixel ratio drawn at now (the frame pump may lower it) and the shadow-map size */
+    info() { const cap = Math.min(maxDpr, window.devicePixelRatio || 1); return { cap, pr: ctx ? cap * RES[ctx.res] : 0, shadow: shadow > 0 ? shadow : 0 }; },
     dispose() {
       dead = true; stop.v = true; shown = false; cancelAnimationFrame(raf); document.removeEventListener('visibilitychange', vis);
       // a build still under way (shaders compiling) stops at its next step; free the GPU memory once it has

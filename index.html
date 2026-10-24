@@ -402,7 +402,8 @@ function star(g,x,y,r,ri,n){g.beginPath();n=n||5;for(let i=0;i<n*2;i++){const a=
 
 /* ================= sound ================= */
 /* settings kept on this device: music, sound effects, vibration */
-const PREFS=(()=>{const d={music:true,sfx:true,vib:true,g3d:true};try{const o=JSON.parse(localStorage.getItem('lsu-prefs')||'{}');for(const k in d)if(typeof o[k]==='boolean')d[k]=o[k];}catch(e){}return d;})();
+/* gq: 3D graphics quality (low, mid, high; see GQ in the 3D board section), separate from the 3D/2D choice */
+const PREFS=(()=>{const d={music:true,sfx:true,vib:true,g3d:true,gq:'mid'};try{const o=JSON.parse(localStorage.getItem('lsu-prefs')||'{}');for(const k in d)if(typeof o[k]===typeof d[k])d[k]=o[k];}catch(e){}if(!['low','mid','high'].includes(d.gq))d.gq='mid';return d;})();
 function savePrefs(){try{localStorage.setItem('lsu-prefs',JSON.stringify(PREFS));}catch(e){}}
 /* audio graph: effects and music buses -> master -> limiter, so stacked sounds never clip */
 const Sfx={ac:null,out:null,fx:null,lastTick:0,
@@ -1253,6 +1254,11 @@ let scene=null,gameToken=0,hitstop=0,decK=0,mgSeq=0;
 const HALT=new Promise(()=>{});
 /* test hook: "?debug" logs game events and allows "&speed=N" (N simulation steps per frame) for automated play-tests; inert otherwise */
 const DEBUG=/[?&]debug\b/.test(location.search),DBG=[];let SPEED=1;
+/* F10 developer readout: ?perf shows frame rate, frame times and 3D renderer counts in a corner; players never see it.
+   Frame times are the gaps between animation frames, so they include the GPU when it holds the page back */
+const PERF=/[?&]perf\b/.test(location.search),FT=[];
+function perfStats(){const a=FT.slice(-240).sort((x,y)=>x-y),n=a.length,q=f=>n?+a[Math.min(n-1,Math.floor(f*n))].toFixed(1):0,mean=n?a.reduce((s,x)=>s+x,0)/n:0;
+  return Object.assign({fps:mean?+(1000/mean).toFixed(1):0,p50:q(.5),p95:n>=20?q(.95):null,n,q:PREFS.gq,mode:B3.on?'3d':'2d'},B3.info?B3.info():{});}
 function dbg(type,o){if(DEBUG)DBG.push(Object.assign({type,round:state.round},o||{}));}
 let gs=1;
 function G(){gs|=0;gs=gs+0x6D2B79F5|0;let t=Math.imul(gs^gs>>>15,1|gs);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;}
@@ -2550,14 +2556,22 @@ let PAUSED=false;
 function closeMenu(){const m=$('#menu');if(m.hidden)return;m.hidden=true;$('#menuCard').innerHTML='';PAUSED=false;}
 function openMenuCard(html){const m=$('#menu'),c=$('#menuCard');c.innerHTML=html;m.hidden=false;const h2=c.querySelector('h2');if(h2)h2.id='menuTitle';const f=c.querySelector('[data-focus]')||c.querySelector('[data-primary]')||c.querySelector('button');if(f)setTimeout(()=>{try{f.focus({preventScroll:true});}catch(e){}},40);return c;}
 function prefRow(key,label){return segRow(key,label,[{v:1,l:'Bukas'},{v:0,l:'Sarado'}],PREFS[key]?1:0);}
+/* the settings rows and their buttons: the in-game menu uses them, and a settings screen on the title (F3.2) can too.
+   Kalidad (graphics quality) only changes how the 3D is drawn; Grapiko stays the 3D/2D choice */
+function settingsRows(){return prefRow('music','Musika')+prefRow('sfx','Tunog')+(navigator.vibrate?prefRow('vib','Vibrate'):'')+
+  (B3.ok?segRow('g3d','Grapiko',[{v:1,l:'3D'},{v:0,l:'2D'}],PREFS.g3d?1:0)+segRow('gq','Kalidad',[{v:'low',l:'Mababa'},{v:'mid',l:'Katamtaman'},{v:'high',l:'Mataas'}],PREFS.gq):'');}
+function wireSettings(c){c.querySelectorAll('button[data-k]').forEach(b=>b.addEventListener('click',()=>{const k=b.dataset.k;
+  if(k==='gq'){if(!GQ[b.dataset.val])return;const was=B3.island&&B3.island.q;PREFS.gq=b.dataset.val;if(was&&was!==gqIsland())toast('Inaayos ang isla para sa bagong kalidad…','#fff',1800);}
+  else PREFS[k]=b.dataset.val==='1';
+  savePrefs();Sfx.init();syncSoundBtn();
+  c.querySelectorAll('button[data-k="'+k+'"]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));if(k==='sfx'&&PREFS.sfx)Sfx.tick(4);if(k==='vib'&&PREFS.vib)buzz(30);if(k==='g3d')refreshPortraits();}));}
 async function openMenu(){
   if(APP.screen!=='game'||!$('#menu').hidden)return;Sfx.init();PAUSED=!NET.on;const back=document.activeElement;
   for(;;){
     const c=openMenuCard('<h2>'+(PAUSED?'Naka-pause':'Menu')+'</h2>'+(NET.on?'<p class="note">Hindi tumitigil ang online na laro habang bukas ito.</p>':'')+
-      prefRow('music','Musika')+prefRow('sfx','Tunog')+(navigator.vibrate?prefRow('vib','Vibrate'):'')+(B3.ok?segRow('g3d','Grapiko',[{v:1,l:'3D'},{v:0,l:'2D'}],PREFS.g3d?1:0):'')+
+      settingsRows()+
       '<div class="row"><button type="button" class="btn" data-v="guide">Paano maglaro</button><button type="button" class="btn" data-v="quit">Umalis sa laro</button></div><div class="row"><button type="button" class="btn primary" data-v="close" data-primary>Tuloy</button></div>');
-    c.querySelectorAll('button[data-k]').forEach(b=>b.addEventListener('click',()=>{const k=b.dataset.k;PREFS[k]=b.dataset.val==='1';savePrefs();Sfx.init();syncSoundBtn();
-      c.querySelectorAll('button[data-k="'+k+'"]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));if(k==='sfx'&&PREFS.sfx)Sfx.tick(4);if(k==='vib'&&PREFS.vib)buzz(30);if(k==='g3d')refreshPortraits();}));
+    wireSettings(c);
     const v=await cardChoice(c);
     if(v==='guide'){await guideFlow(openMenuCard);continue;}
     if(v==='quit'){if(await confirmQuit()){closeMenu();toTitle();return;}continue;}
@@ -2621,8 +2635,17 @@ const B3={ok:false,on:false,failed:{}};
 const use3D=()=>B3.ok&&PREFS.g3d&&(!BOARD.map||APP.screen!=='game'||!!scene||!!(B3.island&&B3.island.id===BOARD.id));
 const THREE_URL='./vendor/three-r184/three.module.min.js';
 function loadThree(){if(window.THREE)return Promise.resolve(window.THREE);if(!loadThree.p)loadThree.p=import(THREE_URL).then(m=>{window.THREE=m;return m;});return loadThree.p;}
-/* phones and tablets get lighter islands: fewer leaf cards and grass layers, no island shadows */
-const LOW3=!!(window.matchMedia&&matchMedia('(pointer:coarse)').matches)||Math.min(screen.width||999,screen.height||999)<700;
+/* F10 graphics quality, picked in the menu (Kalidad), the same for every 3D screen: title, board, islands and minigames.
+   pr: highest pixel ratio; shadow: sun shadow-map size, 0 = none (the kids get a soft round shadow instead);
+   isl: island buildings and trees cast shadows; leaf, grass: leaf cards and grass shell layers on the islands; aniso: texture anisotropy;
+   crowd: the four cheering kids at the edge of each minigame (decoration only; set when a minigame starts).
+   kid: detail of the players' 3D kids (kids/kidgeo.js LOD; set when they are first built) and the title kids' pixel ratio follows pr.
+   Katamtaman (the default) matches what phones drew on the islands before F10, and is lighter on the title and minigames.
+   Measured with tests/perf.mjs --ab; see docs/F10_PERFORMANCE.md */
+const GQ={low:{pr:1,shadow:0,isl:false,leaf:400,grass:2,aniso:1,crowd:false,kid:.6},mid:{pr:1.5,shadow:1024,isl:false,leaf:800,grass:3,aniso:2,crowd:true,kid:1},high:{pr:2,shadow:2048,isl:true,leaf:4000,grass:8,aniso:4,crowd:true,kid:1}};
+const gq=()=>GQ[PREFS.gq]||GQ.mid;
+/* what an island was built with; when it no longer matches the setting, the island is built again */
+const gqIsland=()=>{const Q=gq();return Q.leaf+'/'+Q.grass+'/'+Q.isl;};
 /* how high the ground is under a board point (terraces on the maps) */
 function groundAt(x,y){if(!BOARD.map)return 0;let a=0,b=-1,da=1e18,db=1e18;for(let i=0;i<N;i++){const q=SP[i],d=(q.x-x)*(q.x-x)+(q.y-y)*(q.y-y);if(d<da){db=da;b=a;da=d;a=i;}else if(d<db){db=d;b=i;}}
   if(b<0)return SP[a].h;const wa=1/(Math.sqrt(da)+1),wb=1/(Math.sqrt(db)+1);return(SP[a].h*wa+SP[b].h*wb)/(wa+wb);}
@@ -2648,10 +2671,12 @@ function init3D(){
   const M=(c,o)=>{if(!o){const k=String(c);if(MC.has(k))return MC.get(k);const m=new T3.MeshToonMaterial({color:c,gradientMap:gm});MC.set(k,m);return m;}return new T3.MeshToonMaterial(Object.assign({color:c,gradientMap:gm},o));};
   const B=c=>new T3.MeshBasicMaterial({color:c});
   const OUT=new T3.MeshBasicMaterial({color:0x3B2316,side:T3.BackSide});
-  const tex=(name,rx,ry)=>{const t=CT(TEX[name]);t.wrapS=t.wrapT=T3.RepeatWrapping;t.repeat.set(rx,ry==null?rx:ry);t.anisotropy=4;return t;};
+  const tex=(name,rx,ry)=>{const t=CT(TEX[name]);t.wrapS=t.wrapT=T3.RepeatWrapping;t.repeat.set(rx,ry==null?rx:ry);t.anisotropy=gq().aniso;return t;};
+  /* image textures under o take the quality's anisotropy (render targets, environment maps and the toon gradient are left alone) */
+  const setAniso=(o,a)=>o.traverse(m=>{for(const mt of [].concat(m.material||[]))for(const k in mt){const t=mt[k];if(t&&t.isTexture&&!t.isDataTexture&&!t.isRenderTargetTexture&&t.image&&t.anisotropy!==a){t.anisotropy=a;t.needsUpdate=true;}}});
   const mesh=(geo,mat,x,y,z)=>{const m=new T3.Mesh(geo,mat);m.position.set(x||0,y||0,z||0);return m;};
   const ol=(m,k)=>{const o=new T3.Mesh(m.geometry,OUT);o.scale.setScalar(1+k);o.userData.ol=1;m.add(o);return m;};
-  const shadowAll=(o,recv)=>o.traverse(m=>{if(m.isMesh&&!m.userData.ol){m.castShadow=true;if(recv)m.receiveShadow=true;}});
+  const shadowAll=(o,recv)=>o.traverse(m=>{if(m.isMesh&&!m.userData.ol&&!m.userData.blob){m.castShadow=true;if(recv)m.receiveShadow=true;}});
 
   /* ---------- islands ---------- */
   const world=new T3.Group();S.add(world);
@@ -2751,6 +2776,8 @@ function init3D(){
     const sp=new T3.Sprite(new T3.SpriteMaterial({map:CT(c),transparent:true}));sp.center.set(ox/w,1-oy/h);sp.scale.set(w,h,1);return sp;}
   const blob=(()=>{const c=document.createElement('canvas');c.width=c.height=64;const g=c.getContext('2d');const gr=g.createRadialGradient(32,32,2,32,32,30);gr.addColorStop(0,'rgba(30,20,10,.38)');gr.addColorStop(1,'rgba(30,20,10,0)');g.fillStyle=gr;g.fillRect(0,0,64,64);return new T3.MeshBasicMaterial({map:CT(c),transparent:true,depthWrite:false});})();
   const blobGeo=new T3.PlaneGeometry(1,1);blobGeo.rotateX(-Math.PI/2);
+  /* the round shadow under each kid: drawn only when the quality has no shadow map (applyQ turns the material on and off) */
+  const kidBlobM=blob.clone();kidBlobM.visible=false;
   B3.palms=[];
   for(const pr of PROPS){const p=propPos(pr);let o=null;
     switch(pr.type){case'palm':o=palm3(pr.s||1,pr.seed||0);B3.palms.push(o);break;case'kubo':o=kubo3(pr.s||1);break;case'kiosko':o=kiosko3();break;case'stall':o=stall3(pr.c);break;case'store':o=store3();break;case'banca':o=banca3();break;
@@ -2789,9 +2816,11 @@ function init3D(){
     if(p.hat==='pigtails')for(const s of [-1,1]){head.add(ol(mesh(new T3.SphereGeometry(5,12,10),hair,s*13.8,1,-3),.06));head.add(mesh(new T3.SphereGeometry(2.3,8,6),shirt,s*10.9,-.5,-2));}
     if(p.hat==='salakot'){const hr=mesh(new T3.SphereGeometry(13,20,10,0,TAU3,0,Math.PI*.45),hair,0,0,-1);head.add(hr);const sk=mesh(new T3.ConeGeometry(23,12,24),M('#D9B26A',{map:tex('thatch',1/16)}),0,13,0);ol(sk,.04);head.add(sk);head.add(mesh(new T3.SphereGeometry(2.6,8,6),M('#A97E3C'),0,19.5,0));}
     if(opt.ghost)g.traverse(m=>{if(m.isMesh&&!m.userData.ol){m.material=m.material.clone();m.material.transparent=true;m.material.opacity=.4;}else if(m.isMesh)m.visible=false;});
-    if(!opt.noShadow)shadowAll(g);(opt.parent||S).add(g);return{g,body,legs,arms,head,eyes,mouth,yaw:0};}
+    let blobK=null;if(!opt.noShadow){shadowAll(g);blobK=new T3.Mesh(blobGeo,kidBlobM);blobK.scale.set(30,1,24);blobK.userData.blob=1;blobK.renderOrder=-1;g.add(blobK);}
+    (opt.parent||S).add(g);return{g,body,legs,arms,head,eyes,mouth,blob:blobK,yaw:0};}
   function yawOf(dir,face){return dir==='back'?Math.PI:(dir==='side'?(face>=0?Math.PI/2:-Math.PI/2):0);}
-  function pose(K,x,z,o,sc){if(K.nk)return poseNew(K,x,z,o,sc);const walk=o.walk;K.g.position.set(x,4+(o.lift||0)+(o.y0||0),z);const s=sc||1;K.g.scale.set(s*(o.sx||1),s*(o.sy||1),s*(o.sx||1));
+  function pose(K,x,z,o,sc){if(K.blob)K.blob.position.y=(.6-(o.lift||0))/(K.nk?60*(sc||1)*(o.sy||1):(sc||1)*(o.sy||1));   // the round shadow stays on the ground when the kid jumps or climbs
+    if(K.nk)return poseNew(K,x,z,o,sc);const walk=o.walk;K.g.position.set(x,4+(o.lift||0)+(o.y0||0),z);const s=sc||1;K.g.scale.set(s*(o.sx||1),s*(o.sy||1),s*(o.sx||1));
     let ty=yawOf(o.dir,o.face),d=ty-K.yaw;while(d>Math.PI)d-=TAU3;while(d<-Math.PI)d+=TAU3;K.yaw+=d*.25;K.g.rotation.y=K.yaw;
     const sw=walk!=null?Math.sin(walk):0,m=o.mood||'idle';
     K.legs[0].rotation.x=sw*.75;K.legs[1].rotation.x=-sw*.75;
@@ -2805,11 +2834,12 @@ function init3D(){
   /* the four playable kids are the rigged models in kids/ (Mga Bata v5): one model per character, built once and
      reused; until the module loads (or if it fails) the simple shape kids above stand in. NPCs keep the simple kids. */
   B3.nk={};B3.kidsMod=null;
-  Promise.all([import('./kids/kidgeo.js'),import('./kids/kids.js')]).then(([geo,m])=>{if(geo.LOD)geo.LOD.k=LOW3?.6:1;B3.kidsMod=m;B3.plRef=null;try{refreshPortraits();}catch(e){}}).catch(e=>console.warn('kids',e));
+  Promise.all([import('./kids/kidgeo.js'),import('./kids/kids.js')]).then(([geo,m])=>{if(geo.LOD)geo.LOD.k=gq().kid;B3.kidsMod=m;B3.plRef=null;try{refreshPortraits();}catch(e){}}).catch(e=>console.warn('kids',e));
   function newKid(p){const KM0=B3.kidsMod;if(!KM0)return null;const ch=CHARS[p.id]||null;if(!ch||CHARS[p.id].color!==p.color)return null;let w=B3.nk[ch.name];if(w)return w;
     const def=KM0.KIDS.find(d=>d.name===ch.name);if(!def)return null;
     const m=KM0.buildKid(T3,def),g=new T3.Group();g.add(m.group);m.group.traverse(o=>{if(o.isMesh)o.castShadow=true;});
-    w={g,m,nk:true,yaw:0,ex:'',eyeY:[1,1]};B3.nk[ch.name]=w;return w;}
+    const bl=new T3.Mesh(blobGeo,kidBlobM);bl.scale.set(.5,1,.4);bl.userData.blob=1;bl.renderOrder=-1;g.add(bl);   // the round shadow on Mababa (g is scaled 60x)
+    w={g,m,nk:true,blob:bl,yaw:0,ex:'',eyeY:[1,1]};B3.nk[ch.name]=w;return w;}
   function kidFor(p){let K=B3.kids.get(p);if(K)return K;K=newKid(p);if(K)S.add(K.g);else K=kid3(p);B3.kids.set(p,K);return K;}
   const MOOD_EX={cheer:'excited',happy:'happy',sad:'sad',dizzy:'confused',kick:'determined',guard:'determined',climb:'determined',hop:'excited'};
   function poseNew(K,x,z,o,sc){const KM=B3.kidsMod,m=K.m,md=o.mood||'idle',walk=o.walk;
@@ -2869,16 +2899,16 @@ function init3D(){
       say(.05,'Inihahanda ang '+m.name+'…');
       const [isl,pol,lif,liv]=await Promise.all(['islands/'+id,'polish','life','living'].map(f=>import('./maps/'+f+'.js')));
       await nextFrame();dropIsland();say(.2,'Itinatayo ang '+m.name+'…');await nextFrame();
-      const b=await isl.build(T3),root=b.root,isc=new T3.Scene(),stop={v:false};isc.add(root);
-      root.traverse(o=>{if(o.isMesh){o.castShadow=!LOW3;o.receiveShadow=true;}});
+      const Q=gq(),qk=gqIsland(),b=await isl.build(T3),root=b.root,isc=new T3.Scene(),stop={v:false};isc.add(root);
+      root.traverse(o=>{if(o.isMesh){o.castShadow=Q.isl;o.receiveShadow=true;}});
       say(.55,'Pinapaganda ang '+m.name+'…');await nextFrame();
-      ISTAGE._scene=isc;pol.polish(T3,ISTAGE,root,{normals:false,skyRadius:220,grade:GRADE[id]});
+      ISTAGE._scene=isc;pol.polish(T3,ISTAGE,root,{normals:false,skyRadius:220,grade:GRADE[id],stopped:()=>stop.v});
       say(.7,'Binubuhay ang '+m.name+'…');await nextFrame();
       try{const lf=lif.addLife(T3,ISTAGE,root,Object.assign({name:id,ui:false,korona:0,seed:91,stopped:()=>stop.v},OPTS[id]));if(lf&&lf.setKorona)lf.setKorona(0);}catch(e){console.warn(e);}
-      try{await liv.addLiving(T3,ISTAGE,root,Object.assign({name:id,ui:false,post:false,leafCards:LOW3?800:4000,grassLayers:LOW3?3:8},LIVE[id]));}catch(e){console.warn(e);}
+      try{await liv.addLiving(T3,ISTAGE,root,Object.assign({name:id,ui:false,post:false,leafCards:Q.leaf,grassLayers:Q.grass},LIVE[id]));}catch(e){console.warn(e);}
       say(.9,'Halos tapos na…');await nextFrame();
-      const grp=new T3.Group();grp.name='island_'+id;[...isc.children].forEach(c=>grp.add(c));meterSpace.add(grp);
-      const f=isc.fog;B3.island={id,grp,root,stop,tiles:new Map(),
+      const grp=new T3.Group();grp.name='island_'+id;[...isc.children].forEach(c=>grp.add(c));setAniso(grp,gq().aniso);meterSpace.add(grp);
+      const f=isc.fog;B3.island={id,grp,root,stop,q:qk,tiles:new Map(),
         env:{bg:isc.background||ENV.classic.bg,fog:f?new T3.Fog(f.color.getHex(),f.near*UPM,f.far*UPM):null,env:isc.environment||null,envI:isc.environmentIntensity==null?1:isc.environmentIntensity}};
       const bs=root.getObjectByName('board_spaces'),bx=new T3.Box3();if(bs)bs.children.forEach(g=>{if(g.userData&&g.userData.id)B3.island.tiles.set(g.userData.id,{g,y:g.position.y,top:bx.setFromObject(g).max.y*UPM});});
       B3.envKey='';fitTops();say(1,'');return true;})();
@@ -2891,7 +2921,6 @@ function init3D(){
     if(isl){hemi.color.set(0xFFFFFF);hemi.groundColor.set(0xD8D2C4);hemi.intensity=1;sun.color.set(0xFFFFFF);sun.intensity=2.2;fill.intensity=.5;
       const c=new T3.Box3().setFromObject(isl.root),ct=c.getCenter(new T3.Vector3()).multiplyScalar(UPM),r=c.getSize(new T3.Vector3()).length()*UPM*.55;
       sun.target.position.set(ct.x,0,ct.z);sun.position.set(ct.x+r*.45,r*.8,ct.z+r*.56);const sc=sun.shadow.camera;sc.left=sc.bottom=-r;sc.right=sc.top=r;sc.near=10;sc.far=r*3;sc.updateProjectionMatrix();sun.shadow.bias=-.0006;
-      if(LOW3&&sun.shadow.mapSize.x!==1024){sun.shadow.mapSize.set(1024,1024);if(sun.shadow.map){sun.shadow.map.dispose();sun.shadow.map=null;}}
       camera.far=r*9;}
     else{hemi.color.set(0xFFF6E0);hemi.groundColor.set(0x86A2B4);hemi.intensity=.62*PI3;sun.color.set(0xFFF1D2);sun.intensity=.95*PI3;fill.intensity=0;
       sun.position.set(870-650,1500,800+650);sun.target.position.set(870,0,800);const sc=sun.shadow.camera;sc.left=-1250;sc.right=1250;sc.top=1250;sc.bottom=-1250;sc.near=100;sc.far=4200;sc.updateProjectionMatrix();sun.shadow.bias=-.0012;camera.far=9000;}
@@ -2934,7 +2963,7 @@ function init3D(){
   function buildMg(sc){
     const root=new T3.Group(),v=sc.v3||{},kind=sc.kind;root.add(arenaGroup());
     const npc=(p,o)=>kid3(p,Object.assign({parent:root},o||{}));
-    const spect=SPECT.map(s=>({s,K:npc(NPCS.at(s.n))}));
+    const spect=gq().crowd?SPECT.map(s=>({s,K:npc(NPCS.at(s.n))})):[];
     const kidOf=p=>{const K=kidFor(p);K.g.visible=true;return K;};
     let upd=()=>{},over=()=>{},cam=mgCam(sc,.95);
     if(kind==='tumbang'){const TOL=v.TOL;
@@ -2993,26 +3022,39 @@ function init3D(){
     const updAll=dt=>{spect.forEach(({s,K})=>{const j=RM?0:Math.max(0,Math.sin(now*4+s.n*1.7))*8;pose(K,s.x,s.y,{lift:j,mood:j>4?'cheer':'happy',dir:'front'},.9);});upd(dt);};
     return{root,upd:updAll,over,cam};}
   B3.unproj=(sx,sy)=>{const rc=new T3.Raycaster(),ndc=new T3.Vector2(sx/W*2-1,-(sy/H)*2+1);rc.setFromCamera(ndc,camera);const pl=new T3.Plane(new T3.Vector3(0,1,0),B3.mg?0:-(B3.gy||0)),pt=new T3.Vector3();return rc.ray.intersectPlane(pl,pt)?{x:pt.x,y:pt.z}:null;};
+  /* frees what a removed minigame, kid or portrait built on the GPU. The shared pieces stay: the cached toon colours (M),
+     the outline, the arena island and the world's textured materials */
+  function freeTree(o){const keep=new Set([...MC.values(),OUT,WHITE,blob,kidBlobM,grassM,sandM,dirtM,stoneM,cliffM,rockM,waterM,woodM,ropeM,cloudM]);
+    const free=n=>{if(n===arena)return;n.children.forEach(free);if(n.geometry&&n.geometry!==blobGeo)n.geometry.dispose();
+      for(const m of [].concat(n.material||[]))if(!keep.has(m)){for(const k in m){const t=m[k];if(t&&t.isTexture&&t!==gm)t.dispose();}m.dispose();}};
+    free(o);}
+  /* the graphics quality: shadows, the kids' round shadows and texture sharpness change at once; the pixel ratio is read every frame;
+     an island built for another quality is dropped, and the game builds it again (the 2D board shows meanwhile, the game goes on) */
+  function applyQ(){const Q=gq();B3.q=PREFS.gq;sun.castShadow=Q.shadow>0;kidBlobM.visible=!sun.castShadow;
+    if(Q.shadow&&sun.shadow.mapSize.x!==Q.shadow){sun.shadow.mapSize.set(Q.shadow,Q.shadow);if(sun.shadow.map){sun.shadow.map.dispose();sun.shadow.map=null;}}
+    setAniso(S,Q.aniso);}
   /* 3D portraits for the HUD cards */
   let pr=null;
   B3.portrait=(c,p)=>{try{if(!pr){const cvp=document.createElement('canvas');cvp.width=cvp.height=104;const r2=new T3.WebGLRenderer({canvas:cvp,alpha:true,antialias:true,preserveDrawingBuffer:true});const s2=new T3.Scene();s2.add(new T3.HemisphereLight(0xFFF6E0,0x86A2B4,.75*Math.PI));const l=new T3.DirectionalLight(0xFFF1D2,.85*Math.PI);l.position.set(-40,80,90);s2.add(l);const c2=new T3.PerspectiveCamera(30,1,1,500);c2.position.set(10,48,70);c2.lookAt(0,42,0);pr={r2,s2,c2,cvp};}
-    const W=newKid(p);if(W){const par=W.g.parent,pos=W.g.position.clone(),rot=W.g.rotation.y,scl=W.g.scale.clone();pr.s2.add(W.g);W.g.position.set(0,0,0);W.g.scale.setScalar(60);W.g.rotation.y=.25;
-      B3.kidsMod.applyPose(W.m,{});B3.kidsMod.setExpression(W.m,'happy');W.ex='';pr.r2.render(pr.s2,pr.c2);pr.s2.remove(W.g);if(par)par.add(W.g);W.g.position.copy(pos);W.g.rotation.y=rot;W.g.scale.copy(scl);}
-    else{const K=kid3(p,{parent:pr.s2,noShadow:true});K.g.rotation.y=.25;pr.r2.render(pr.s2,pr.c2);pr.s2.remove(K.g);}const g=c.getContext('2d');g.drawImage(pr.cvp,0,0,26,26);return true;}catch(e){return false;}};
+    const W=newKid(p);if(W){const par=W.g.parent,pos=W.g.position.clone(),rot=W.g.rotation.y,scl=W.g.scale.clone();pr.s2.add(W.g);W.g.position.set(0,0,0);W.g.scale.setScalar(60);W.g.rotation.y=.25;if(W.blob)W.blob.visible=false;
+      B3.kidsMod.applyPose(W.m,{});B3.kidsMod.setExpression(W.m,'happy');W.ex='';pr.r2.render(pr.s2,pr.c2);pr.s2.remove(W.g);if(W.blob)W.blob.visible=true;if(par)par.add(W.g);W.g.position.copy(pos);W.g.rotation.y=rot;W.g.scale.copy(scl);}
+    else{const K=kid3(p,{parent:pr.s2,noShadow:true});K.g.rotation.y=.25;pr.r2.render(pr.s2,pr.c2);pr.s2.remove(K.g);freeTree(K.g);}const g=c.getContext('2d');g.drawImage(pr.cvp,0,0,26,26);return true;}catch(e){return false;}};
 
   B3.render=dt=>{
-    const pr3=LOW3&&BOARD.map&&!B3.mg?Math.min(DPR,1.5):DPR;
+    if(B3.q!==PREFS.gq)applyQ();
+    if(B3.island&&B3.island.q!==gqIsland()&&!B3.loading)dropIsland();
+    const pr3=Math.min(DPR,gq().pr);
     if(B3.w!==W||B3.h!==H||B3.dpr!==pr3){B3.w=W;B3.h=H;B3.dpr=pr3;ren.setPixelRatio(pr3);ren.setSize(W,H,false);camera.aspect=W/H;}
     const sh=RM?0:cam.shake*14,sx=(R()-.5)*sh,sz=(R()-.5)*sh;
     const mgS=scene&&APP.screen==='game'?scene:null;
-    if(mgS!==B3.curMg){if(B3.mg){S.remove(B3.mg.root);B3.mg=null;}B3.curMg=mgS;if(mgS){B3.mg=buildMg(mgS);S.add(B3.mg.root);}
+    if(mgS!==B3.curMg){if(B3.mg){S.remove(B3.mg.root);freeTree(B3.mg.root);B3.mg=null;}B3.curMg=mgS;if(mgS){B3.mg=buildMg(mgS);S.add(B3.mg.root);}
       B3.crowns.forEach(c=>c.visible=!mgS);reachGrp.visible=!mgS;B3.rings.forEach(r=>r.visible=!mgS);B3.dice.forEach(d=>d.m.visible=false);for(const K of B3.kids.values())K.g.visible=!mgS;for(const K of B3.allies.values())K.g.visible=!mgS;}
     syncWorld(!!B3.mg);
     if(B3.mg){const c=B3.mg.cam;camera.position.set(c.x+sx,c.y+c.d*Math.sin(c.el),c.z+sz+c.d*Math.cos(c.el));camera.lookAt(c.x+sx,c.y,c.z+sz);}
     else if(APP.screen==='title'&&state.players.length){const p0=state.players.at(0),az=now*.12,d=(H/.95)/(2*fovT)*.62,el=.42;camera.position.set(p0.x+40+Math.sin(az)*d*Math.cos(el),d*Math.sin(el),p0.y+Math.cos(az)*d*Math.cos(el));camera.lookAt(p0.x+40,30,p0.y);}
     else{const far=state.overview||!state.active&&!korona.fly&&!state.focus,fit=!far&&state.reach&&!korona.fly;B3.vf=lerp(B3.vf||1,far?1.02:(fit?.9:.58),1-Math.exp(-dt*3));const d=(H/cam.z)/(2*fovT)*B3.vf,el=BOARD.map?lerp(1.12,1.22,(B3.vf-.58)/.44):lerp(.8,.95,(B3.vf-.58)/.44);/* the maps look down more steeply, over roofs and trees */const gy=BOARD.map?groundAt(cam.x,cam.y):0;B3.gy=lerp(B3.gy||0,gy,1-Math.exp(-dt*4));camera.position.set(cam.x+sx,B3.gy+d*Math.sin(el),cam.y+sz+d*Math.cos(el));camera.lookAt(cam.x+sx,B3.gy,cam.y+sz);}
     camera.setViewOffset(W,H,0,-camOffY(),W,H);camera.updateProjectionMatrix();
-    if(B3.plRef!==state.players){for(const K of B3.kids.values())S.remove(K.g);for(const K of B3.allies.values())S.remove(K.g);B3.kids.clear();B3.allies.clear();B3.plRef=state.players;}
+    if(B3.plRef!==state.players){for(const K of B3.kids.values()){S.remove(K.g);if(!K.nk)freeTree(K.g);}for(const K of B3.allies.values()){S.remove(K.g);freeTree(K.g);}B3.kids.clear();B3.allies.clear();B3.plRef=state.players;}
     if(B3.mg){B3.mg.upd(dt);}else{
     for(const p of state.players){const K=kidFor(p);
       const o=kidOpts(p),mp=!!BOARD.map;o.walk=p.hopping?now*16:null;o.y0=groundAt(p.x,p.y);pose(K,p.x,p.y,o,mp?1.15:1.3);
@@ -3038,6 +3080,8 @@ function init3D(){
       B3.clouds.forEach(c=>{c.g.position.x+=c.v*dt;if(c.g.position.x>2800)c.g.position.x=-1000;});}
     ren.render(S,camera);
   };
+  const px1=new Uint8Array(4);B3.finish=()=>{const gl=ren.getContext();gl.readPixels(0,0,1,1,gl.RGBA,gl.UNSIGNED_BYTE,px1);};   // waits until the GPU has drawn the frame (benchmarks)
+  B3.info=()=>{const r=ren.info.render,m=ren.info.memory;return{pr:ren.getPixelRatio(),calls:r.calls,tris:r.triangles,geo:m.geometries,tex:m.textures,progs:(ren.info.programs||[]).length,shadow:sun.castShadow?sun.shadow.mapSize.x:0};};
   B3.ok=true;
   }catch(e){console.error(e);B3.ok=false;}
 }
@@ -3141,7 +3185,7 @@ function draw(){const g=ctx;g.setTransform(DPR,0,0,DPR,0,0);
   else if(APP.screen==='title'||APP.screen==='maps')g.clearRect(0,0,W,H);   /* the world picture shows through */
   else{drawSky(g);if(APP.screen==='gallery')drawGallery(g);else if(scene)drawScene(g);else drawBoard(g);}
   drawFlyers(g);drawWipe(g);}
-function frame(t){const dt=Math.min(.05,Math.max(0,(t-last)/1000));last=t;try{for(let i=0;i<SPEED;i++)update(dt);draw();}catch(err){console.error(err);}requestAnimationFrame(frame);}
+function frame(t){if((PERF||DEBUG)&&t>last){FT.push(t-last);if(FT.length>600)FT.splice(0,300);}const dt=Math.min(.05,Math.max(0,(t-last)/1000));last=t;try{for(let i=0;i<SPEED;i++)update(dt);draw();}catch(err){console.error(err);}requestAnimationFrame(frame);}
 
 /* ================= boot ================= */
 function start(data){
@@ -3155,17 +3199,21 @@ function start(data){
     if(ol&&roomAvailable())setTimeout(()=>netResume(ol),400);
     else if(/^[A-Z0-9]{4}$/.test(hc))setTimeout(()=>roomAvailable()?joinFlow(hc):onlineFlow(),400);}
   requestAnimationFrame(t=>{last=t;requestAnimationFrame(frame);});
+  if(PERF){const d=document.createElement('div');d.setAttribute('aria-hidden','true');d.style.cssText='position:fixed;left:4px;top:4px;z-index:99;pointer-events:none;font:700 11px/1.35 monospace;color:#fff;background:rgba(0,0,0,.6);padding:3px 6px;border-radius:4px;white-space:pre';document.body.appendChild(d);
+    setInterval(()=>{const s=perfStats();d.textContent=s.fps+' fps  p50 '+s.p50+'  p95 '+s.p95+' ms\n'+s.mode+(s.mode==='3d'?' '+s.q+'  pr '+s.pr+'  calls '+s.calls+'  tris '+s.tris+'\ngeo '+s.geo+'  tex '+s.tex+'  shadow '+s.shadow:'');},500);}
 }
 if(DEBUG){const m=/[?&]speed=(\d+)/.exec(location.search);if(m)SPEED=clamp(+m[1],1,60);
-  window.__lsu={get title(){return TS;},state,NET,MG,get SP(){return SP;},get N(){return N;},get board(){return BOARD;},korona,DBG,get scene(){return scene;},get screen(){return APP.screen;},setSpeed:v=>{SPEED=clamp(v|0,1,60);},startLocal:(s,cp)=>startLocal(s,cp),toTitle:()=>toTitle(),bot:{usesItem:botUsesItem,shop:botShop,rival:botRival,ginto:botGintoPick},hamon:{fetchTop:fetchDailyTop,sync:syncDailyScore,dayKey,dailyKind,on:HAMON_ONLINE},b3:B3,toWorld:(x,y)=>toWorld(x,y),toScreen:(x,y)=>worldToScreen(x,y),spacePos:i=>spacePos(i),bench:n=>{const t=performance.now();for(let i=0;i<n;i++)draw();return(performance.now()-t)/n;}};}
+  window.__lsu={get title(){return TS;},state,NET,MG,get SP(){return SP;},get N(){return N;},get board(){return BOARD;},korona,DBG,get scene(){return scene;},get screen(){return APP.screen;},setSpeed:v=>{SPEED=clamp(v|0,1,60);},startLocal:(s,cp)=>startLocal(s,cp),toTitle:()=>toTitle(),bot:{usesItem:botUsesItem,shop:botShop,rival:botRival,ginto:botGintoPick},hamon:{fetchTop:fetchDailyTop,sync:syncDailyScore,dayKey,dailyKind,on:HAMON_ONLINE},b3:B3,toWorld:(x,y)=>toWorld(x,y),toScreen:(x,y)=>worldToScreen(x,y),spacePos:i=>spacePos(i),bench:n=>{const t=performance.now();for(let i=0;i<n;i++){draw();if(B3.on&&B3.finish)B3.finish();}return(performance.now()-t)/n;},perf:()=>perfStats(),perfReset:()=>{FT.length=0;},
+    GQ,setQ:q=>{PREFS.gq=q;}};}
 try{window.claude&&window.claude.hot&&window.claude.hot.snapshot&&window.claude.hot.snapshot(()=>({checkpoint:NET.on?null:state.checkpoint}));}catch(e){}
 /* ================= title scene: the Plaza at golden hour behind the main menu (maps/title.js) =================
    The still picture (maps/world/title*.jpg) shows at once and stands in without 3D; the live scene fades in over it
-   once built. It is dropped while a game runs (the game's island needs the memory) and built again on the way back. */
+   once built. It is dropped while a game runs (the game's island needs the memory) and built again on the way back,
+   with the graphics quality (Kalidad) set at that time. */
 const TS={ctl:null,mk:null,tok:0,on:false,bg:$('#titleBg'),cv:$('#titleCv')};
 async function titleBuild(){const tok=++TS.tok;try{await loadThree();
-    const [geo,m]=await Promise.all([import('./kids/kidgeo.js'),import('./maps/title.js')]);if(tok!==TS.tok)return;if(geo.LOD)geo.LOD.k=LOW3?.6:1;
-    const ctl=TS.mk=m.create(TS.cv,{low:LOW3,reduced:RM,maxDpr:LOW3?1.5:2});await ctl.ready;if(tok!==TS.tok)return;
+    const [geo,m]=await Promise.all([import('./kids/kidgeo.js'),import('./maps/title.js')]);if(tok!==TS.tok)return;const Q=gq();if(geo.LOD)geo.LOD.k=Q.kid;
+    const ctl=TS.mk=m.create(TS.cv,{reduced:RM,maxDpr:Q.pr,shadow:Q.shadow,islShadow:Q.isl,leaf:Math.min(2500,Q.leaf),grass:Math.min(6,Q.grass)});await ctl.ready;if(tok!==TS.tok)return;
     TS.ctl=ctl;if(TS.on)titleShow();}catch(e){if(tok===TS.tok){TS.mk=null;console.warn('title scene',e);}}}
 function titleDrop(){TS.tok++;const c=TS.mk;TS.mk=TS.ctl=null;TS.cv.classList.remove('on');if(c)c.dispose();}
 function titleShow(){titleLayout();TS.ctl.show(true);requestAnimationFrame(()=>requestAnimationFrame(()=>{if(TS.ctl&&TS.on)TS.cv.classList.add('on');}));}
