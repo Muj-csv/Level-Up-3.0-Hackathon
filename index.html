@@ -2357,12 +2357,12 @@ function mapPick(cur){return new Promise(res=>{
     if(prev&&prev!==k){place(null);timers.push(setTimeout(()=>{place(k);timers.push(setTimeout(settle,820));},430));}
     else{place(k);timers.push(setTimeout(settle,820));}
     if(!first)Sfx.tick(3);};
-  const finish=v=>{if(done)return;done=true;timers.forEach(clearTimeout);removeEventListener('resize',onRs);scr.removeEventListener('keydown',onKey);view.onclick=null;go.onclick=back.onclick=null;res(v);};
+  const finish=v=>{if(done)return;done=true;timers.forEach(clearTimeout);removeEventListener('resize',onRs);document.removeEventListener('keydown',onKey);view.onclick=null;go.onclick=back.onclick=null;res(v);};
   const onRs=()=>place(shown,true);addEventListener('resize',onRs);
   const onKey=e=>{const i=MAP_KEYS.indexOf(sel);if(e.key==='ArrowRight'||e.key==='ArrowDown'){e.preventDefault();pick(MAP_KEYS[(i+1)%4]);btns.querySelector('[data-k="'+sel+'"]').focus();}
     else if(e.key==='ArrowLeft'||e.key==='ArrowUp'){e.preventDefault();pick(MAP_KEYS[(i+3)%4]);btns.querySelector('[data-k="'+sel+'"]').focus();}
     else if(e.key==='Escape'){e.preventDefault();finish(null);}};
-  scr.addEventListener('keydown',onKey);
+  document.addEventListener('keydown',onKey);   // arrows work wherever the focus is while the map screen is up
   btns.querySelectorAll('button').forEach(b=>b.onclick=()=>{if(b.dataset.k!==shown)pick(b.dataset.k);});
   /* tapping the picture picks the island nearest to the tap */
   view.onclick=e=>{const m=new DOMMatrix(getComputedStyle(wd).transform).inverse(),p=m.transformPoint(new DOMPoint(e.clientX,e.clientY));let best=null,bd=1e18;
@@ -2370,7 +2370,7 @@ function mapPick(cur){return new Promise(res=>{
   go.onclick=()=>{Sfx.init();Sfx.tick(5);finish(sel);};back.onclick=()=>finish(null);
   /* first the whole world, then fly to the island picked last time */
   paint();place(null,true);if(RM)pick(sel,true);else timers.push(setTimeout(()=>pick(sel,true),650));
-  setTimeout(()=>{try{btns.querySelector('[data-k="'+sel+'"]').focus({preventScroll:true});}catch(e){}},60);
+  try{btns.querySelector('[data-k="'+sel+'"]').focus({preventScroll:true});}catch(e){}
   for(const k of MAP_KEYS)setTimeout(()=>{if(!done&&!close[k].getAttribute('src'))close[k].src='maps/world/'+k+'.jpg';},2500);
 });}
 function drawQR(canvas,text){try{if(typeof qrcode!=='function')return false;const q=qrcode(0,'M');q.addData(text);q.make();const n=q.getModuleCount(),size=canvas.width,cell=Math.floor(size/(n+8)),off=Math.floor((size-cell*n)/2);const g=canvas.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,size,size);g.fillStyle=INK;for(let r=0;r<n;r++)for(let c2=0;c2<n;c2++)if(q.isDark(r,c2))g.fillRect(off+c2*cell,off+r*cell,cell,cell);return true;}catch(e){return false;}}

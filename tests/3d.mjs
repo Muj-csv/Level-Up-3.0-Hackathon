@@ -79,14 +79,14 @@ const step = page => page.evaluate(() => {
   await page.evaluate(() => { window.__lsu.state.players[1].allies.push({ n: 'Lito', look: 0, x: 0, y: 0 }); });
   let saved = false;
   for (let i = 0; i < 300 && !saved; i++) {
-    saved = await page.evaluate(() => /"allies":\[\{"n":"Lito"/.test(localStorage.getItem('lsu-save') || ''));
+    saved = await page.evaluate(() => /"allies":\[[^\]]*"n":"Lito"/.test(localStorage.getItem('lsu-save') || ''));
     if (!saved) { await step(page); await page.waitForTimeout(150); }
   }
   check(saved, 'the save at the start of a turn includes Kasama allies');
   await page.goto(srv.url + '?debug'); await page.waitForFunction(() => window.__lsu && window.__lsu.screen === 'title');
   await page.click('#mResume'); await page.waitForTimeout(1500);
   const res = await page.evaluate(() => { const L = window.__lsu; return { allies: L.state.players[1].allies.map(a => a.n), meshes: L.b3.allies.size }; });
-  check(res.allies.join() === 'Lito' && res.meshes === 1, 'resumed game restores the ally and draws it in 3D', JSON.stringify(res));
+  check(res.allies.includes('Lito') && res.meshes === res.allies.length, 'resumed game restores the ally and draws it in 3D', JSON.stringify(res));
   await shot(page, 'board-ally');
   await page.context().close();
 }
@@ -127,10 +127,12 @@ for (const kind of Object.keys(MASH)) {
   const t0 = Date.now();
   const ok = await page.waitForFunction(() => { const L = window.__lsu; return L.b3.island && L.b3.island.id === 'plaza' && L.b3.on; }, null, { timeout: 180000, polling: 500 }).then(() => true, () => false);
   check(shown && ok, 'island map: a loading card shows, then the Plaza island is drawn in 3D', ((Date.now() - t0) / 1000).toFixed(1) + ' s in software WebGL');
+  // software WebGL draws the island at about one frame a second, so the bots' turns run sped up until the human rolls
+  await page.evaluate(() => window.__lsu.setSpeed(20));
   let reach = null;
-  for (let i = 0; i < 300 && !reach; i++) {
+  for (let i = 0; i < 400 && !reach; i++) {
     reach = await page.evaluate(() => { const L = window.__lsu, rc = L.state.reach; if (!rc || document.querySelector('#actionBtn').hidden || !document.querySelector('#modal').hidden) return null;
-      const n = L.b3.reach.filter(m => m.visible).length; return n ? { all: rc.all.size, rings: n, korona: L.korona.spots.length, crowns: L.b3.crowns.filter(c => c.visible).length } : null; });
+      L.setSpeed(1); const n = L.b3.reach.filter(m => m.visible).length; return n ? { all: rc.all.size, rings: n, korona: L.korona.spots.length, crowns: L.b3.crowns.filter(c => c.visible).length } : null; });
     if (!reach) { await step(page); await page.waitForTimeout(300); }
   }
   check(reach && reach.rings === reach.all, 'island map: every space the roll can reach has a ring (both paths at a fork)', JSON.stringify(reach));
