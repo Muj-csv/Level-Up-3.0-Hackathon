@@ -91,16 +91,27 @@ body{background:var(--sky);color:var(--ink);font-family:var(--body);overflow:hid
 .screen{position:absolute;inset:0;z-index:4;display:flex;align-items:center;justify-content:center;pointer-events:none;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px}
 .screen.bottomed{align-items:flex-end}
-.titlebox{pointer-events:auto;width:100%;max-width:340px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center}
-#kidsCv{width:100%;max-width:300px;height:118px;display:block}
-.logo{font-family:var(--display);font-weight:400;font-size:clamp(46px,14vw,66px);line-height:.92;color:var(--paper);margin:0;transform:rotate(-3deg);text-wrap:balance;
-  text-shadow:0 7px 0 var(--ink),4px 0 0 var(--ink),-4px 0 0 var(--ink),0 -4px 0 var(--ink),3px 3px 0 var(--ink),-3px 3px 0 var(--ink),3px -3px 0 var(--ink),-3px -3px 0 var(--ink),4px 6px 0 var(--ink),-4px 6px 0 var(--ink)}
+/* main menu over the Plaza at golden hour (maps/title.js), laid out on the title design's safe areas (at 1920x1080:
+   the logo in a 620x330 box at 96,72; the buttons in a 460-wide column 120 from the right edge, 250 from the top).
+   Portrait screens stack them: logo on top, the kids in the middle, buttons at the bottom */
+.titlebg{position:absolute;inset:0;overflow:hidden;background:linear-gradient(#E89A7E,#FFD79C 55%,#C9A878)}
+.titlebg img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+#titleCv{position:absolute;inset:0;width:100%;height:100%;display:block;opacity:0;transition:opacity .6s}
+#titleCv.on{opacity:1}
+#scrTitle{display:block;padding:0}
+.titlebox{position:absolute;inset:0;pointer-events:none;
+  --gl:max(16px,env(safe-area-inset-left,0px));--gr:max(16px,env(safe-area-inset-right,0px));--gt:max(16px,env(safe-area-inset-top,0px));--gb:max(16px,env(safe-area-inset-bottom,0px))}
+.brand{position:absolute;left:max(5vw,var(--gl));top:max(6.6vh,var(--gt));width:min(34vw,640px);display:flex;flex-direction:column;align-items:flex-start;min-width:0}
+.logo{font-family:var(--display);font-weight:400;font-size:clamp(56px,7.4vw,140px);line-height:.92;color:var(--paper);margin:0;transform:rotate(-4deg);transform-origin:0 100%;white-space:nowrap;
+  text-shadow:0 .1em 0 var(--ink),.06em 0 0 var(--ink),-.06em 0 0 var(--ink),0 -.06em 0 var(--ink),.045em .045em 0 var(--ink),-.045em .045em 0 var(--ink),.045em -.045em 0 var(--ink),-.045em -.045em 0 var(--ink),.06em .09em 0 var(--ink),-.06em .09em 0 var(--ink)}
 .logo span{color:var(--sun)}
-.tagline{font-weight:900;font-size:14px;background:var(--paper);border:2.5px solid var(--ink);border-radius:999px;padding:4px 14px;box-shadow:0 3px 0 var(--ink);margin:6px 0 8px}
-.brand{display:flex;flex-direction:column;align-items:center;width:100%;min-width:0}
-.menu{display:flex;flex-direction:column;gap:12px;width:100%}
-.menu .btn{width:100%}
+.tagline{font-weight:900;font-size:clamp(14px,1.05vw,20px);background:var(--paper);border:2.5px solid var(--ink);border-radius:999px;padding:.3em 1em;box-shadow:0 3px 0 var(--ink);margin:clamp(14px,1.6vw,28px) 0 0 .4em;transform:rotate(-2deg)}
+.menu{position:absolute;right:max(6.25vw,var(--gr));top:max(23vh,var(--gt));width:clamp(270px,24vw,460px);display:flex;flex-direction:column;gap:clamp(10px,1.1vw,16px);pointer-events:auto}
+.menu .btn{width:100%;font-size:clamp(19px,1.4vw,27px);padding-block:clamp(12px,1vw,17px)}
+.menu .btn.small{font-size:clamp(15px,1.05vw,19px);padding-inline:6px}
 .menu .btn small{display:block;margin-top:3px;font:800 12.5px var(--body);color:var(--muted)}
+/* on the menu the sound button sits under the button column, off the kids */
+#hudBottom.ontitle{justify-content:flex-end;margin-right:calc(max(6.25vw,16px) - 16px)}
 
 .galpanel{pointer-events:auto;width:100%;max-width:620px;background:var(--paper);border:3px solid var(--ink);border-radius:20px;box-shadow:0 5px 0 var(--ink);padding:12px}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
@@ -122,9 +133,7 @@ body{background:var(--sky);color:var(--ink);font-family:var(--body);overflow:hid
 #loadIsl.pic{background:var(--bgpic) center/cover no-repeat,#1361B6}
 .mapscr{z-index:5;padding:0;pointer-events:auto;cursor:pointer}
 .mapview{position:absolute;inset:0;overflow:hidden;background:#1361B6}
-.mapview.dim::after{content:'';position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 60% 55% at 50% 50%,rgba(14,58,110,.38),rgba(14,58,110,0) 100%)}
 .mapworld{position:absolute;left:0;top:0;transform-origin:0 0;transition:transform .8s cubic-bezier(.65,0,.35,1);will-change:transform}
-.mapworld.tour{transition:transform 3s cubic-bezier(.45,0,.35,1)}
 .mapworld img{position:absolute;display:block;user-select:none;-webkit-user-drag:none}
 #mapImg{left:0;top:0;width:100%;height:100%;-webkit-mask-image:linear-gradient(transparent,#000 14%);mask-image:linear-gradient(transparent,#000 14%)}
 .mapworld .mapclose{opacity:0;transition:opacity .45s}
@@ -231,8 +240,17 @@ body{background:var(--sky);color:var(--ink);font-family:var(--body);overflow:hid
 .lbh{font-weight:900;font-size:13px;margin:12px 0 0}
 .lbh span{color:var(--muted);font-weight:800}
 .rank.lb li{padding:4px 10px}
-@media (max-height:700px){
-  #kidsCv{height:92px}
+@media (max-aspect-ratio:4/5){
+  .brand{left:var(--gl);right:var(--gr);top:max(3.5vh,var(--gt));width:auto;align-items:center}
+  .logo{font-size:clamp(46px,14vw,84px);transform:rotate(-3deg);transform-origin:50% 50%}
+  .tagline{font-size:14px;margin:10px 0 0}
+  .menu{left:0;right:0;margin-inline:auto;top:auto;bottom:calc(76px + env(safe-area-inset-bottom,0px));width:min(380px,calc(100% - 32px));gap:12px}
+  .menu .btn{font-size:19px;padding-block:12px}
+  .menu .btn.primary{padding-block:13px}
+  .menu .btn.small{font-size:15px;padding-block:9px}
+  #hudBottom.ontitle{justify-content:center;margin-right:0}
+}
+@media (max-aspect-ratio:4/5) and (max-height:700px){
   .logo{font-size:clamp(40px,12vw,56px)}
   .menu{gap:9px}
   .menu .btn{padding-block:10px}
@@ -253,13 +271,12 @@ body{background:var(--sky);color:var(--ink);font-family:var(--body);overflow:hid
   .pcard{grid-template-columns:minmax(0,1fr);border-left:7px solid var(--pc)}
   .pcard canvas{display:none}
 }
-/* phones held sideways: brand beside the menu, one compact HUD row */
+/* phones held sideways: logo top left, the menu a compact column on the right, one compact HUD row */
 @media (orientation:landscape) and (max-height:560px){
-  .titlebox{max-width:700px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:28px;align-items:center}
-  #kidsCv{height:80px}
+  .brand{top:var(--gt)}
   .logo{font-size:clamp(34px,6.4vw,50px)}
-  .tagline{margin:4px 0 0}
-  .menu{gap:8px}
+  .tagline{font-size:13px;margin:8px 0 0 .3em}
+  .menu{top:50%;transform:translateY(-50%);width:clamp(250px,36vw,340px);gap:8px}
   .menu .btn{padding-block:8px;font-size:17px}
   .menu .btn.small{font-size:14px;padding-block:8px}
 }
@@ -278,22 +295,18 @@ body{background:var(--sky);color:var(--ink);font-family:var(--body);overflow:hid
   .toast{top:42%}
 }
 @keyframes tipinL{from{transform:translateY(10px);opacity:0}}
-/* the 3D kids above the main-menu logo (kids/hero.js) */
-#heroCv{position:absolute;left:0;top:0;width:100%;height:100%;display:block;pointer-events:none}
-#heroCv.ontitle{z-index:3}
-#heroCv[hidden]{display:none}
 @media (prefers-reduced-motion: reduce){
-  .mapworld,.mapworld .mapclose{transition:none}
+  .mapworld,.mapworld .mapclose,#titleCv{transition:none}
   .toast.show,.card,.bump,.tip.show{animation:none}
 }
 </style>
 </head>
 <body>
 <div id="app">
-  <div class="mapview" id="mapView" aria-hidden="true"><div class="mapworld" id="mapWorld"><img id="mapImg" alt="" decoding="async"></div></div>
+  <div class="titlebg" id="titleBg" aria-hidden="true"><picture><source media="(max-aspect-ratio:4/5)" srcset="maps/world/title-tall.jpg"><img id="titleImg" src="maps/world/title.jpg" alt="" decoding="async"></picture><canvas id="titleCv"></canvas></div>
+  <div class="mapview" id="mapView" aria-hidden="true" hidden><div class="mapworld" id="mapWorld"><img id="mapImg" alt="" decoding="async"></div></div>
   <canvas id="stage3d" aria-hidden="true" hidden></canvas>
   <canvas id="stage" role="img" aria-label="Game board"></canvas>
-  <canvas id="heroCv" class="ontitle" aria-hidden="true" hidden></canvas>
   <div class="hud">
     <div class="top" id="hudTop" hidden>
       <div class="players" id="players"></div>
@@ -323,7 +336,6 @@ body{background:var(--sky);color:var(--ink);font-family:var(--body);overflow:hid
   <div class="screen" id="scrTitle">
     <div class="titlebox">
       <div class="brand">
-        <canvas id="kidsCv" aria-hidden="true"></canvas>
         <h1 class="logo">Taym<span>pers</span></h1>
         <p class="tagline">Board party ng larong kalye</p>
       </div>
@@ -2310,7 +2322,7 @@ function startOnline(pr,cp,log){
 }
 
 /* ================= screens & menus ================= */
-function setScreen(s){APP.screen=s;$('#scrTitle').hidden=s!=='title';$('#scrGallery').hidden=s!=='gallery';$('#scrMaps').hidden=s!=='maps';$('#mapView').hidden=s!=='title'&&s!=='maps';$('#mapView').classList.toggle('dim',s==='title');if(s==='title'){titleTour();titleCheer=now+1.2;}else tourTok++;heroTitle(s==='title');$('#hudTop').hidden=s!=='game';mapBtn.hidden=s!=='game';$('#menuBtn').hidden=s!=='game';$('#soundBtn').hidden=s==='game';$('#hudBottom').hidden=s==='gallery'||s==='maps';closeMenu();
+function setScreen(s){APP.screen=s;$('#scrTitle').hidden=s!=='title';$('#scrGallery').hidden=s!=='gallery';$('#scrMaps').hidden=s!=='maps';$('#mapView').hidden=s!=='maps';titleScene(s);$('#hudTop').hidden=s!=='game';mapBtn.hidden=s!=='game';$('#menuBtn').hidden=s!=='game';$('#soundBtn').hidden=s==='game';$('#hudBottom').hidden=s==='gallery'||s==='maps';$('#hudBottom').classList.toggle('ontitle',s==='title');closeMenu();
   if(s!=='game'){actionBtn.hidden=true;itemBtn.hidden=true;setHint('');clearTips();}measureHud();Music.play(s==='game'?'board':'title');}
 function demoPlayers(){state.players=makePlayers(CHARS.map(c=>({name:c.name,ctrl:'bot'})));state.players.forEach((p,i)=>{p.pos=[0,1,0,1][i];});state.active=null;}
 function toTitle(){gameToken++;loadBar(-1);scene=null;closeCard();clearRun();if(NET.rm)netLeave();netUnsave();state.party=false;state.ended=false;state.checkpoint=null;state.cfg=normCfg({});setBoard('ulap');demoPlayers();resetKorona();setScreen('title');refreshResume();setTimeout(()=>{try{($('#mResume').hidden?$('#mLocal'):$('#mResume')).focus({preventScroll:true});}catch(e){}},50);}
@@ -2343,7 +2355,7 @@ async function localFlow(){
 /* ================= map select: the world picture of all four islands zooms to the one being picked =================
    maps/world/world.jpg is a still render of the four islands; <id>.jpg is the sharp close-up of each island's box in it */
 const WORLD={W:2048,H:1280,islands:{plaza:{x:.0217,y:.4831,w:.5038,h:.5038},palengke:{x:.5212,y:.5563,w:.4058,h:.4058},aplaya:{x:.4975,y:.0942,w:.3875,h:.3875},palayan:{x:.1217,y:.124,w:.3723,h:.3723}}};
-/* the world picture behind the title and the map screen: one element, moved with CSS transforms */
+/* the world picture behind the map screen: one element, moved with CSS transforms */
 const WV={cur:null,close:{}};
 function wvSetup(){const wd=$('#mapWorld'),img=$('#mapImg');wd.style.width=WORLD.W+'px';wd.style.height=WORLD.H+'px';if(!img.getAttribute('src'))img.src='maps/world/world.jpg';
   for(const k of MAP_KEYS){let el=WV.close[k];if(!el){const r=WORLD.islands[k];el=document.createElement('img');el.className='mapclose';el.dataset.k=k;el.alt='';el.decoding='async';
@@ -2355,18 +2367,10 @@ function wvPlace(k,a,f,instant,cover){const wd=$('#mapWorld'),r=k?WORLD.islands[
 /* the sharp close-up of island k fades in over the picture (k null: none) */
 function wvClose(k){for(const q of MAP_KEYS){const el=WV.close[q];if(!el)continue;if(q!==k){el.classList.remove('on');continue;}
   if(!el.getAttribute('src'))el.src='maps/world/'+q+'.jpg';if(el.complete&&el.naturalWidth)el.classList.add('on');else el.onload=()=>{if(WV.cur===q)el.classList.add('on');};}}
-/* title: the world slowly flies from island to island (still with reduced motion) */
-let tourTok=0;
-function titleTour(){const tok=++tourTok,wd=$('#mapWorld');wvSetup();wvClose(null);wd.classList.add('tour');
-  const full=()=>({x:0,y:0,w:innerWidth,h:innerHeight}),live=()=>tok===tourTok&&APP.screen==='title',T=(f,ms)=>setTimeout(()=>{if(live())f();},ms);
-  wvPlace(null,full(),1,true,true);if(RM)return;
-  let i=0;const step=()=>{const k=MAP_KEYS[i++%MAP_KEYS.length];wvClose(null);wvPlace(k,full(),1,false,true);T(()=>wvClose(k),3100);T(()=>{wvClose(null);wvPlace(null,full(),1,false,true);T(step,3600);},7600);};
-  T(step,2200);}
-addEventListener('resize',()=>{if(APP.screen==='title')wvPlace(WV.cur,{x:0,y:0,w:innerWidth,h:innerHeight},1,true,true);});
 function mapPick(cur){return new Promise(res=>{
   setScreen('maps');const scr=$('#scrMaps'),wd=$('#mapWorld'),btns=$('#mapBtns'),go=$('#mapGo'),back=$('#mapBack'),panel=$('#mapPanel');
   let sel=MAPS[cur]?cur:'plaza',timers=[],done=false;
-  wvSetup();wvClose(null);wd.classList.remove('tour');const close=WV.close;
+  wvSetup();wvClose(null);wvPlace(null,{x:0,y:0,w:innerWidth,h:innerHeight},1,true,true);const close=WV.close;
   btns.innerHTML=MAP_KEYS.map(k=>'<button type="button" role="radio" data-k="'+k+'" style="--mc:'+MAPS[k].color+'">'+esc(MAPS[k].name)+'</button>').join('');
   /* fit a box of the world picture into the part of the screen the panel leaves free */
   const area=()=>{const pr=panel.getBoundingClientRect(),side=matchMedia('(min-width:640px) and (orientation:landscape)').matches;return side?{x:0,y:0,w:Math.max(200,pr.left-12),h:innerHeight}:{x:0,y:0,w:innerWidth,h:Math.max(160,pr.top-8)};};
@@ -2390,7 +2394,7 @@ function mapPick(cur){return new Promise(res=>{
   scr.onclick=e=>{if(panel.contains(e.target))return;const m=new DOMMatrix(getComputedStyle(wd).transform).inverse(),p=m.transformPoint(new DOMPoint(e.clientX,e.clientY));let best=null,bd=1e18;
     for(const k of MAP_KEYS){const r=WORLD.islands[k],cx=(r.x+r.w/2)*WORLD.W,cy=(r.y+r.h/2)*WORLD.H,d=(cx-p.x)**2+(cy-p.y)**2;if(d<bd){bd=d;best=k;}}if(best&&best!==shown)pick(best);};
   go.onclick=()=>{Sfx.init();Sfx.tick(5);finish(sel);};back.onclick=()=>finish(null);
-  /* first the whole world (flying out from where the title left it), then in to the island picked last time */
+  /* first the whole world (flying out from filling the screen), then in to the island picked last time */
   paint();place(null,RM);if(RM)pick(sel,true);else timers.push(setTimeout(()=>pick(sel,true),650));
   try{btns.querySelector('[data-k="'+sel+'"]').focus({preventScroll:true});}catch(e){}
   for(const k of MAP_KEYS)setTimeout(()=>{if(!done&&!close[k].getAttribute('src'))close[k].src='maps/world/'+k+'.jpg';},2500);
@@ -2585,7 +2589,7 @@ function showGallery(){setScreen('gallery');const box=$('#animChips');box.innerH
   setTimeout(()=>{try{$('#galBack').focus({preventScroll:true});}catch(e){}},50);}
 $('#galBack').addEventListener('click',()=>toTitle());
 $('#galDl').addEventListener('click',()=>{Sfx.init();saveCanvas(buildSheet(),'taympers-sprites.png','Na-save ang sprite sheet');});
-$('#mLocal').addEventListener('click',()=>{Sfx.init();titleCheer=now+1.6;if(HERO.ctl&&HERO.title)HERO.ctl.cheer();localFlow();});
+$('#mLocal').addEventListener('click',()=>{Sfx.init();if(TS.ctl&&TS.on)TS.ctl.cheer();localFlow();});
 $('#mOnline').addEventListener('click',()=>{Sfx.init();onlineFlow();});
 $('#mSprites').addEventListener('click',()=>{Sfx.init();showGallery();});
 $('#mHamon').addEventListener('click',()=>{Sfx.init();hamonFlow();});
@@ -3111,16 +3115,6 @@ function drawGallery(g){
     for(let k=0;k<an.n;k++){const fx=cx+14+k*fw,fy=cy+ch-14-fw;rr(g,fx+1,fy,fw-2,fw,6);fs(g,k===fi?'rgba(255,201,60,.7)':'rgba(246,231,204,.95)');drawKid(g,c,fx+fw/2,fy+fw-3,Object.assign({scale:fw/72},an.f(k)));}
   });
 }
-let titleCheer=0;   // until this time all four title kids cheer (menu opened, Maglaro pressed)
-function drawTitleKids(){
-  const c=$('#kidsCv');const r=c.getBoundingClientRect();if(!r.width||!r.height)return;const w=Math.round(r.width*DPR),h=Math.round(r.height*DPR);if(c.width!==w||c.height!==h){c.width=w;c.height=h;}
-  const g=c.getContext('2d');g.setTransform(DPR,0,0,DPR,0,0);g.clearRect(0,0,r.width,r.height);
-  const cx=r.width/2,py=r.height-22;
-  g.beginPath();g.moveTo(cx-r.width*.36,py+8);g.lineTo(cx-r.width*.1,py+20);g.lineTo(cx,py+22);g.lineTo(cx+r.width*.12,py+19);g.lineTo(cx+r.width*.36,py+8);g.closePath();fs(g,'#6B3B22',INK,2.5);
-  ell(g,cx,py+5,r.width*.42,12);fs(g,'#8E5532',INK,2.5);ell(g,cx,py,r.width*.42,12);fs(g,'#7CC35A',INK,2.5);
-  CHARS.forEach((ch,i)=>{const x=cx+(i-1.5)*r.width*.2,ph=now*3+i*1.3,j=RM?0:Math.max(0,Math.sin(ph))*12;const cheer=now<titleCheer||Math.floor(now*.6+i*.7)%3===0;
-    drawKid(g,ch,x,py+3,{scale:1.2,lift:j,mood:cheer?'cheer':'happy',sy:j<1?.93:1.04,blink:Math.sin(now*1.3+i*2)>.97});});
-}
 let last=performance.now(),frameN=0,jeepT=2;
 function update(dt){
   if(PAUSED){updCam(dt);return;}
@@ -3138,7 +3132,7 @@ function update(dt){
   if((++frameN)%20===0)measureHud();
   updCam(dt);hudTick(dt);
 }
-let lastDraw=performance.now();const kidsCv=$('#kidsCv');
+let lastDraw=performance.now();
 function draw(){const g=ctx;g.setTransform(DPR,0,0,DPR,0,0);
   const tn=performance.now(),dt3=Math.min(.05,(tn-lastDraw)/1000);lastDraw=tn;
   if(B3.ok&&PREFS.g3d&&BOARD.map&&APP.screen==='game'&&!B3.loading&&!(B3.island&&B3.island.id===BOARD.id)&&!B3.failed[BOARD.id]){const id=BOARD.id;B3.loadIsland(id).catch(()=>{B3.failed[id]=1;});}
@@ -3146,7 +3140,7 @@ function draw(){const g=ctx;g.setTransform(DPR,0,0,DPR,0,0);
   if(B3.on){g.clearRect(0,0,W,H);try{B3.render(dt3);}catch(e){console.error(e);B3.ok=false;refreshPortraits();}if(scene){try{B3.mg&&B3.mg.over(g);}catch(e){}if(scene.drawScreen)scene.drawScreen(g);drawFX3(g);drawCountdown(g,scene);}else drawOverlay3(g);}
   else if(APP.screen==='title'||APP.screen==='maps')g.clearRect(0,0,W,H);   /* the world picture shows through */
   else{drawSky(g);if(APP.screen==='gallery')drawGallery(g);else if(scene)drawScene(g);else drawBoard(g);}
-  drawFlyers(g);drawWipe(g);if(APP.screen==='title'&&!HERO.title)drawTitleKids();}
+  drawFlyers(g);drawWipe(g);}
 function frame(t){const dt=Math.min(.05,Math.max(0,(t-last)/1000));last=t;try{for(let i=0;i<SPEED;i++)update(dt);draw();}catch(err){console.error(err);}requestAnimationFrame(frame);}
 
 /* ================= boot ================= */
@@ -3163,29 +3157,32 @@ function start(data){
   requestAnimationFrame(t=>{last=t;requestAnimationFrame(frame);});
 }
 if(DEBUG){const m=/[?&]speed=(\d+)/.exec(location.search);if(m)SPEED=clamp(+m[1],1,60);
-  window.__lsu={get hero(){return HERO;},state,NET,MG,get SP(){return SP;},get N(){return N;},get board(){return BOARD;},korona,DBG,get scene(){return scene;},get screen(){return APP.screen;},setSpeed:v=>{SPEED=clamp(v|0,1,60);},startLocal:(s,cp)=>startLocal(s,cp),toTitle:()=>toTitle(),bot:{usesItem:botUsesItem,shop:botShop,rival:botRival,ginto:botGintoPick},hamon:{fetchTop:fetchDailyTop,sync:syncDailyScore,dayKey,dailyKind,on:HAMON_ONLINE},b3:B3,toWorld:(x,y)=>toWorld(x,y),toScreen:(x,y)=>worldToScreen(x,y),spacePos:i=>spacePos(i),bench:n=>{const t=performance.now();for(let i=0;i<n;i++)draw();return(performance.now()-t)/n;}};}
+  window.__lsu={get title(){return TS;},state,NET,MG,get SP(){return SP;},get N(){return N;},get board(){return BOARD;},korona,DBG,get scene(){return scene;},get screen(){return APP.screen;},setSpeed:v=>{SPEED=clamp(v|0,1,60);},startLocal:(s,cp)=>startLocal(s,cp),toTitle:()=>toTitle(),bot:{usesItem:botUsesItem,shop:botShop,rival:botRival,ginto:botGintoPick},hamon:{fetchTop:fetchDailyTop,sync:syncDailyScore,dayKey,dailyKind,on:HAMON_ONLINE},b3:B3,toWorld:(x,y)=>toWorld(x,y),toScreen:(x,y)=>worldToScreen(x,y),spacePos:i=>spacePos(i),bench:n=>{const t=performance.now();for(let i=0;i<n;i++)draw();return(performance.now()-t)/n;}};}
 try{window.claude&&window.claude.hot&&window.claude.hot.snapshot&&window.claude.hot.snapshot(()=>({checkpoint:NET.on?null:state.checkpoint}));}catch(e){}
-/* ================= hero kids: the four 3D kids above the main-menu logo (kids/hero.js) ================= */
-const HERO={ctl:null,p:null,cv:$('#heroCv'),title:false};
-function heroInit(){if(HERO.p)return HERO.p;HERO.p=(async()=>{if(!PREFS.g3d)return false;try{await loadThree();
-    const [geo,m]=await Promise.all([import('./kids/kidgeo.js'),import('./kids/hero.js')]);if(geo.LOD)geo.LOD.k=LOW3?.6:1;
-    HERO.ctl=m.create(HERO.cv,{reduced:RM,maxDpr:LOW3?1.5:2});return true;}catch(e){console.warn('hero kids',e);HERO.ctl=null;return false;}})();return HERO.p;}
-/* the kids stand where the title's kids canvas is, a little larger than it so jumps and hats fit */
-function heroTitleLayout(){const c=HERO.cv,r=kidsCv.getBoundingClientRect();if(!r.width||!r.height)return;
-  const pw=Math.round(r.width*.2),ph=Math.round(r.height*.7),w=Math.round(r.width+pw*2),h=Math.round(r.height+ph+10);
-  Object.assign(c.style,{left:Math.round(r.left-pw)+'px',top:Math.round(r.top-ph)+'px',width:w+'px',height:h+'px'});
-  const kh=r.height*.96,sp=Math.min(r.width/4.1,kh*.66),fy=h-10;
-  HERO.ctl.layout([{f:-1.5,k:1,yaw:.4,z:30},{f:-.5,k:.9,yaw:.18,z:-30},{f:.5,k:.94,yaw:-.12,z:-40},{f:1.5,k:.97,yaw:-.4,z:25}].map(q=>({x:w/2+q.f*sp,y:fy,h:kh*q.k,yaw:q.yaw,z:q.z*kh/120})),w,h);}
-/* on the menu the kids hop in each time it opens; elsewhere they are hidden (the 2D kids stand in without 3D) */
-function heroTitle(on){if(!HERO.ctl){HERO.title=false;kidsCv.style.visibility='';return;}
-  HERO.title=on;HERO.cv.hidden=!on;kidsCv.style.visibility=on?'hidden':'';HERO.ctl.show(on);
-  if(on){HERO.ctl.play(true);requestAnimationFrame(heroTitleLayout);}}
-addEventListener('resize',()=>{if(HERO.title)heroTitleLayout();});
+/* ================= title scene: the Plaza at golden hour behind the main menu (maps/title.js) =================
+   The still picture (maps/world/title*.jpg) shows at once and stands in without 3D; the live scene fades in over it
+   once built. It is dropped while a game runs (the game's island needs the memory) and built again on the way back. */
+const TS={ctl:null,mk:null,tok:0,on:false,bg:$('#titleBg'),cv:$('#titleCv')};
+async function titleBuild(){const tok=++TS.tok;try{await loadThree();
+    const [geo,m]=await Promise.all([import('./kids/kidgeo.js'),import('./maps/title.js')]);if(tok!==TS.tok)return;if(geo.LOD)geo.LOD.k=LOW3?.6:1;
+    const ctl=TS.mk=m.create(TS.cv,{low:LOW3,reduced:RM,maxDpr:LOW3?1.5:2});await ctl.ready;if(tok!==TS.tok)return;
+    TS.ctl=ctl;if(TS.on)titleShow();}catch(e){if(tok===TS.tok){TS.mk=null;console.warn('title scene',e);}}}
+function titleDrop(){TS.tok++;const c=TS.mk;TS.mk=TS.ctl=null;TS.cv.classList.remove('on');if(c)c.dispose();}
+function titleShow(){titleLayout();TS.ctl.show(true);requestAnimationFrame(()=>requestAnimationFrame(()=>{if(TS.ctl&&TS.on)TS.cv.classList.add('on');}));}
+/* where the kids stand: on portrait screens between the logo and the buttons, otherwise in the area left of the buttons */
+function titleLayout(){if(!TS.ctl||!TS.on)return;const w=innerWidth,h=innerHeight,b=$('#scrTitle .brand').getBoundingClientRect(),m=$('#scrTitle .menu').getBoundingClientRect();
+  TS.ctl.layout(w,h,matchMedia('(max-aspect-ratio:4/5)').matches?{x:.5,y:clamp((b.bottom+m.top)/2/h,.25,.6),fw:1}:{x:clamp(m.left/2/w,.25,.5),y:.74,fw:clamp(m.left/w,.4,1)});}
+/* the backdrop follows the screen: live on the title, paused on the map and gallery screens, dropped in a game */
+function titleScene(s){TS.on=s==='title';TS.bg.hidden=!TS.on;
+  if(s==='game'){titleDrop();return;}
+  if(TS.ctl){if(TS.on)titleShow();else TS.ctl.show(false);}
+  else if(TS.on&&!TS.mk&&PREFS.g3d)titleBuild();}
+addEventListener('resize',titleLayout);
+if(window.ResizeObserver)new ResizeObserver(titleLayout).observe($('#scrTitle .menu'));   // Ituloy ang laro shows or hides
 
 const boot=()=>{const h=window.claude&&window.claude.hot;if(h&&h.ready)h.ready(start);else start((h&&h.data)||{});};
 const fontsP=document.fonts&&document.fonts.load?Promise.race([Promise.all([document.fonts.load('20px "Bagel Fat One"'),document.fonts.load('900 12px "Nunito"')]),new Promise(r=>setTimeout(r,1200))]).catch(()=>{}):Promise.resolve();
 fontsP.then(boot,boot);
-heroInit().then(ok=>{if(ok&&APP.screen==='title')heroTitle(true);});
 
 })();
 </script>

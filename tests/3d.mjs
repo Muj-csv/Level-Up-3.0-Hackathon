@@ -33,15 +33,20 @@ const step = page => page.evaluate(() => {
 // ---------- 1. title and board in 3D ----------
 {
   const page = await newPage('3d');
-  // the menu's kids are the rigged 3D kids (kids/hero.js), built after Three.js loads
-  await page.waitForFunction(() => window.__lsu.hero.title, null, { timeout: 30000 }).catch(() => {});
-  const t = await page.evaluate(() => ({ ok: window.__lsu.b3.ok, hero: !!window.__lsu.hero.ctl && window.__lsu.hero.title, heroCv: !document.getElementById('heroCv').hidden, world: !document.getElementById('mapView').hidden && document.getElementById('mapImg').complete, cv3: !document.getElementById('stage3d').hidden, kids2d: getComputedStyle(document.getElementById('kidsCv')).visibility }));
-  check(t.ok && t.hero && t.heroCv && t.kids2d === 'hidden', '3D title: the new 3D kids stand above the logo (the 2D kids are hidden)', JSON.stringify(t));
-  check(t.world && !t.cv3, '3D title: the world picture of the four islands is the backdrop (no old cloud board behind the menu)');
+  // the menu's backdrop is the Plaza at golden hour with the four kids (maps/title.js), built after Three.js loads
+  await page.waitForFunction(() => document.getElementById('titleCv').classList.contains('on'), null, { timeout: 60000 }).catch(() => {});
+  const t = await page.evaluate(() => ({ ok: window.__lsu.b3.ok, scene: !!window.__lsu.title.ctl && window.__lsu.title.on, cv: document.getElementById('titleCv').classList.contains('on'), bg: !document.getElementById('titleBg').hidden, world: !document.getElementById('mapView').hidden, cv3: !document.getElementById('stage3d').hidden }));
+  check(t.ok && t.scene && t.cv && t.bg, '3D title: the Plaza scene with the four kids is the menu backdrop', JSON.stringify(t));
+  check(!t.world && !t.cv3, '3D title: no world picture or cloud board behind the menu');
   await shot(page, 'title');
+  // Maglaro: the kids cheer while the setup card opens over the scene
+  await page.click('#mLocal'); await page.waitForTimeout(300);
+  check(await page.evaluate(() => window.__lsu.screen === 'title' && !!window.__lsu.title.ctl && !document.querySelector('#modal').hidden), '3D title: Maglaro opens the setup over the scene');
+  await page.click('#card [data-v="back"]');
 
   // the cloud board (fast in software WebGL); the island maps have their own run below
   await page.evaluate(() => window.__lsu.startLocal({ n: 1, names: ['Ian'], cfg: { mode: 'party', rounds: 3, diff: 1, map: 'ulap' } }));
+  check(await page.evaluate(() => !window.__lsu.title.ctl && document.getElementById('titleBg').hidden), '3D title: the menu scene is dropped while a game runs');
   // wait for the human's roll: the roll button shows and the reachable spaces get rings
   // (the bots' turns run sped up: software WebGL draws the rigged kids slowly)
   await page.evaluate(() => window.__lsu.setSpeed(8));
@@ -159,8 +164,8 @@ for (const kind of Object.keys(MASH)) {
 // ---------- 3. without Three.js (blocked CDN or no WebGL) the game falls back to 2D ----------
 {
   const page = await newPage('2d');
-  const f = await page.evaluate(() => ({ ok: window.__lsu.b3.ok, cv3: document.getElementById('stage3d').hidden, kids: document.getElementById('kidsCv').hidden }));
-  check(!f.ok && f.cv3 && !f.kids, 'no Three.js: the 2D board and title kids are used', JSON.stringify(f));
+  const f = await page.evaluate(() => { const img = document.getElementById('titleImg'); return { ok: window.__lsu.b3.ok, cv3: document.getElementById('stage3d').hidden, bg: !document.getElementById('titleBg').hidden, still: img.complete && img.naturalWidth > 0, scene: !!window.__lsu.title.ctl }; });
+  check(!f.ok && f.cv3 && f.bg && f.still && !f.scene, 'no Three.js: the 2D board is used and the menu shows the still picture of the Plaza', JSON.stringify(f));
   await page.click('#mLocal'); await page.click('#card [data-v="go"]'); await page.click('#mapGo'); await page.waitForTimeout(1500);
   check(await page.evaluate(() => window.__lsu.screen === 'game' && window.__lsu.board.id === 'plaza' && document.querySelector('#loadIsl').hidden), 'no Three.js: a map game starts at once on the 2D board');
   await page.click('#menuBtn');

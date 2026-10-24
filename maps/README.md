@@ -12,7 +12,8 @@ played, when the game starts.
 | `life.js` | Banners, walkers, birds, flags (the game hides this file's korona; it draws its own) |
 | `living.js` | Water, grass, leaves, people, animals, vehicles, seasons |
 | `boards.js` | The four board graphs as data (`window.TAYMPERS_BOARDS`), so the board also works in 2D and without WebGL |
-| `world/` | The map-screen pictures: `world.jpg` (all four islands) and a close-up of each island |
+| `title.js` | The main menu's backdrop: the Plaza at golden hour with the four kids playing, on a 12 s loop (from the team's title screen design) |
+| `world/` | The map-screen pictures: `world.jpg` (all four islands) and a close-up of each island; `title.jpg` and `title-tall.jpg`, stills of the menu's scene |
 
 Changes from the package:
 
@@ -24,4 +25,5 @@ Changes from the package:
   on-screen controls) and fewer leaves and grass layers on phones and tablets.
 
 If an island changes, re-render the map-screen pictures with `node tools/world-render.mjs`
-and copy the island boxes it prints into `WORLD` in `index.html`.
+and copy the island boxes it prints into `WORLD` in `index.html`. If the Plaza or `title.js`
+changes, re-render the menu's stills with `node tools/title-render.mjs`.
