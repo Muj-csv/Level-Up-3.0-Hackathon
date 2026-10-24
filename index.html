@@ -11,9 +11,15 @@
 <meta name="theme-color" content="#9DD6DF">
 <meta name="claude:viewport-fit-sides" content="cover">
 <style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=Nunito:wght@700;800;900&display=swap">
+<style>
+/* F10.3: fonts self-hosted from vendor/fonts/ (see vendor/README.md) so the first load
+   and every reload after it work with no internet. Latin subset only: covers Filipino
+   and English text, including accented letters (Latin-1 Supplement). */
+@font-face{font-family:'Bagel Fat One';font-style:normal;font-weight:400;font-display:swap;src:url(vendor/fonts/bagel-fat-one-latin-400.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;}
+@font-face{font-family:'Nunito';font-style:normal;font-weight:700;font-display:swap;src:url(vendor/fonts/nunito-latin-700-900.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;}
+@font-face{font-family:'Nunito';font-style:normal;font-weight:800;font-display:swap;src:url(vendor/fonts/nunito-latin-700-900.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;}
+@font-face{font-family:'Nunito';font-style:normal;font-weight:900;font-display:swap;src:url(vendor/fonts/nunito-latin-700-900.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;}
+</style>
 <style>
 /* Layout: one full-bleed canvas world (sky, floating islands, minigame arenas); DOM "stickers" float on top: title menu, players across the top, actions along the bottom, cards in the middle. Deliberately one daytime look. */
 :root{
@@ -2165,7 +2171,8 @@ function setScreen(s){APP.screen=s;$('#scrTitle').hidden=s!=='title';$('#scrGall
 function demoPlayers(){state.players=makePlayers(CHARS.map(c=>({name:c.name,ctrl:'bot'})));state.players.forEach((p,i)=>{p.pos=[0,1,0,1][i];});state.active=null;}
 function toTitle(){gameToken++;scene=null;closeCard();clearRun();if(NET.rm)netLeave();netUnsave();state.party=false;state.ended=false;state.checkpoint=null;state.cfg=normCfg({});demoPlayers();resetKorona();setScreen('title');refreshResume();setTimeout(()=>{try{($('#mResume').hidden?$('#mLocal'):$('#mResume')).focus({preventScroll:true});}catch(e){}},50);}
 function showMsg(title,body){openCard('<h2>'+esc(title)+'</h2><p>'+esc(body)+'</p>');}
-function netHelp(){return'Kailangang bukas ang laro sa claude.ai, naka-sign in ka, at naka-share ang laro sa mga kalaro mo (hindi gumagana sa public link).';}
+function netHelp(){return inClaude()?'Kailangang bukas ang laro sa claude.ai, naka-sign in ka, at naka-share ang laro sa mga kalaro mo (hindi gumagana sa public link).'
+  :'Kailangan ng internet ang bawat phone. Kapag naputol ang koneksyon, hintayin lang o i-reload ang page: babalik ka sa laro.';}
 
 /* game settings rows (mode, length, bot skill), shared by the one-phone setup and the online lobby */
 function segRow(key,label,opts,val){return'<div class="setrow"><span class="setlbl">'+esc(label)+'</span><div class="seg sm" role="group" aria-label="'+esc(label)+'">'+opts.map(o=>'<button type="button" data-k="'+key+'" data-val="'+esc(o.v)+'" aria-pressed="'+(String(o.v)===String(val))+'">'+esc(o.l)+'</button>').join('')+'</div></div>';}

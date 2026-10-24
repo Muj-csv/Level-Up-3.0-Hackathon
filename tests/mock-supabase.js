@@ -4,6 +4,7 @@
    channels through a BroadcastChannel. Broadcasts skip the sender (broadcast.self is false in the game).
    This checks the adapter and the game's sync logic; it says nothing about Supabase's latency or rate limits.
    window.__supaOffline = true makes a page drop everything it sends and receives, like a lost connection.
+   window.__supaSent counts the broadcasts a page sends, so tests can check traffic against Supabase's limits.
 
    Also implements createClient().from(table) for F9.3 (online Hamon ng Araw scores): insert/select/eq/order/limit,
    each step thenable like the real postgrest-js builder. Rows live in memory for this one page only (no
@@ -50,7 +51,7 @@
         const ch = {
           on(type, filter, cb) { handlers.push({ type, event: filter.event, cb }); return ch; },
           subscribe(cb) { setTimeout(() => { if (!closed) cb('SUBSCRIBED'); }, 0); return ch; },
-          send(msg) { if (!closed && !window.__supaOffline) bus.postMessage({ t: 'b', event: msg.event, payload: msg.payload }); return Promise.resolve('ok'); },
+          send(msg) { if (!closed && !window.__supaOffline) window.__supaSent = (window.__supaSent || 0) + 1, bus.postMessage({ t: 'b', event: msg.event, payload: msg.payload }); return Promise.resolve('ok'); },
           track() { if (!closed) bus.postMessage({ t: 'join', key, hello: true }); return Promise.resolve('ok'); },
           _close() { if (closed) return; closed = true; bus.postMessage({ t: 'leave', key }); bus.close(); }
         };
