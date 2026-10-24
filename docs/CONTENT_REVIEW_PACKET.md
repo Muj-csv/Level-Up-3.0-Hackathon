@@ -21,7 +21,7 @@ copy your name and the date into each item's `reviewed_by`/`reviewed_at` fields.
 
 ---
 
-## Part 1 — Tanong ni Lola trivia (10 questions)
+## Part 1 — Tanong ni Lola trivia (18 questions)
 
 Each question is multiple choice; the **first (bolded) answer is always the one the
 game marks correct**. The "why" line is the explanation shown after answering.
@@ -74,6 +74,48 @@ game marks correct**. The "why" line is the explanation shown after answering.
 10. **Sa Agawan Base, paano nananalo?**
     Answers: **Mahawakan ang base ng kalaban** / Makakuha ng pinakamaraming bola / Matapos ang takbo nang una
     Why: "May dalawang base at dalawang koponan. Kapag nataya ka, bihag ka ng kalaban."
+    ⬜ Correct  ⬜ Needs a fix  ⬜ Flag
+
+**New for F5.4 (8 questions, 2 per island map — Plaza, Palengke, Aplaya, Palayan):**
+
+11. **[Plaza] Ano ang kiosko na madalas makikita sa gitna ng plaza ng bayan?**
+    Answers: **Tambayan ng banda tuwing may pista** / Palengke ng bayan / Himpilan ng pulis
+    Why: "Ang kiosko ay istrukturang parang maliit na tanghalan, kinatatayuan ng banda ng bayan tuwing may pista o pagdiriwang sa plaza."
+    ⬜ Correct  ⬜ Needs a fix  ⬜ Flag
+
+12. **[Plaza] Ano ang kalesa?**
+    Answers: **Karwaheng hila ng kabayo** / Bangkang de-layag / Traysikel na pedal
+    Why: "Ang kalesa ay tradisyonal na sasakyang hila ng kabayo, ginamit noon bilang pangunahing transportasyon at makikita pa rin ngayon sa ilang lugar tulad ng Intramuros."
+    ⬜ Correct  ⬜ Needs a fix  ⬜ Flag
+
+13. **[Palengke] Ano ang tawad sa palengke?**
+    Answers: **Paghingi na babaan ang presyo** / Pagtitimbang ng paninda / Pagbalot ng isda
+    Why: "Karaniwan sa palengke ang pagtawad, kung saan hinihingi ng mamimili na babaan ng tindera ang presyo ng paninda."
+    ⬜ Correct  ⬜ Needs a fix  ⬜ Flag
+
+14. **[Palengke] Ano ang padyak?**
+    Answers: **Sasakyang pedal, walang motor** / Bangkang de-layag / Karwaheng hila ng kabayo
+    Why: "Ang padyak ay sasakyang pedal na walang makina, karaniwang ginagamit para sa maikling biyahe malapit sa palengke o sa kalapit baranggay."
+    ⬜ Correct  ⬜ Needs a fix  ⬜ Flag
+
+15. **[Aplaya] Ano ang bangka?**
+    Answers: **Sasakyang-tubig na gawa sa kahoy para mangisda** / Karwaheng hila ng kabayo / Kariton na hila ng kalabaw
+    Why: "Ang bangka ay tradisyonal na sasakyang-tubig na ginagamit ng mga mangingisda sa pangingisda malapit sa baybayin."
+    ⬜ Correct  ⬜ Needs a fix  ⬜ Flag
+
+16. **[Aplaya] Bakit ipinapatuyo sa araw ang isda sa mga baybaying bayan?**
+    Answers: **Para hindi masira at tumagal** / Para lumambot / Para lumaki
+    Why: "Pinapatuyo ang isda sa init ng araw bilang tradisyonal na paraan ng pangangalaga nito, lalo na sa mga lugar na walang palamig."
+    ⬜ Correct  ⬜ Needs a fix  ⬜ Flag
+
+17. **[Palayan] Ano ang gamit ng kalabaw sa palayan?**
+    Answers: **Pag-araro ng lupa bago itanim ang bigas** / Pagbantay sa bukid sa gabi / Panggiling ng bigas
+    Why: "Ginagamit ang kalabaw para hilahin ang araro at lupain ang lupa bago magtanim ng palay."
+    ⬜ Correct  ⬜ Needs a fix  ⬜ Flag
+
+18. **[Palayan] Ano ang bayanihan?**
+    Answers: **Sama-samang pagtutulungan ng komunidad** / Opisyal na piyesta ng bayan / Uri ng sayawang pambansa
+    Why: "Ang bayanihan ay tradisyong Pilipino ng pagtutulungan, gaya ng sama-samang paglipat ng bahay, na nagmula sa salitang 'bayan.'"
     ⬜ Correct  ⬜ Needs a fix  ⬜ Flag
 
 ---
