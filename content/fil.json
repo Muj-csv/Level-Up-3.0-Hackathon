@@ -186,6 +186,7 @@
   "minigames": {
     "tumbang": {
       "title": "Tumbang Preso",
+      "short": "Patumbahin ang lata gamit ang tsinelas.",
       "aka": "Tinatawag ding presohan, tumba-lata, o tumba-patis sa Visayas",
       "chip": "4 na manlalaro · sabay-sabay",
       "unit": "tumba",
@@ -201,6 +202,7 @@
     },
     "patintero": {
       "title": "Patintero",
+      "short": "Tumawid sa mga linya nang hindi natataya.",
       "aka": "Tinatawag ding harang taga o tubigan",
       "chip": "1 laban sa 3 · tig-isang takbo",
       "unit": "puntos",
@@ -216,6 +218,7 @@
     },
     "sipa": {
       "title": "Sipa",
+      "short": "Sipain ang sipa nang hindi bumabagsak.",
       "aka": "Pambansang laro ng Pilipinas hanggang 2009",
       "chip": "4 na manlalaro · sabay-sabay",
       "unit": "sipa",
@@ -231,6 +234,7 @@
     },
     "palosebo": {
       "title": "Palosebo",
+      "short": "Akyatin ang madulas na kawayan.",
       "aka": "Galing sa Espanyol na palo ensebado: kawayang pinahiran ng grasa",
       "chip": "4 na manlalaro · sabay-sabay",
       "unit": "puntos",
@@ -246,6 +250,7 @@
     },
     "luksong": {
       "title": "Luksong Tinik",
+      "short": "Lundagin ang tumataas na tinik ng kamay.",
       "aka": "Laro ng lukso at lakas ng loob",
       "chip": "4 na manlalaro · sabay-sabay",
       "unit": "antas",
@@ -261,6 +266,7 @@
     },
     "palayok": {
       "title": "Pukpok Palayok",
+      "short": "Basagin ang palayok nang nakapiring.",
       "aka": "Tinatawag ding hampas-palayok o basag-palayok",
       "chip": "4 na manlalaro · sabay-sabay",
       "unit": "puntos",
@@ -276,6 +282,7 @@
     },
     "taguan": {
       "title": "Taguan",
+      "short": "Hanapin ang mga nagtatago sa bakuran.",
       "aka": "Tinatawag ding tagu-taguan",
       "chip": "4 na manlalaro · sabay-sabay",
       "unit": "puntos",
@@ -291,6 +298,7 @@
     },
     "piko": {
       "title": "Piko",
+      "short": "Lumukso sa mga kahong iginuhit sa lupa.",
       "aka": "Tinatawag ding piko-piko; hopscotch sa Ingles",
       "chip": "4 na manlalaro · sabay-sabay",
       "unit": "hakbang",

@@ -90,6 +90,8 @@ async function playUntil(page, fn, ms) {
   const page = await newPage('2d', '?debug', { hasTouch: true, isMobile: true });
   await page.evaluate(() => { const K = Object.keys(window.__lsu.MG); localStorage.setItem('lsu-pass', JSON.stringify({ played: Object.fromEntries(K.map(k => [k, 1])), labas: { tumbang: 1, palosebo: 1 } })); });
   await page.evaluate(() => document.querySelector('#mPass').click());
+  await page.waitForSelector('#card [data-det="palosebo"]');
+  await page.evaluate(() => document.querySelector('#card [data-det="palosebo"]').click());   // the gold button is in the game's details
   await page.waitForSelector('#card [data-v="labas:palosebo"]');
   await page.evaluate(() => document.querySelector('#card [data-v="labas:palosebo"]').scrollIntoView({ block: 'center' })); await page.waitForTimeout(300);
   const top0 = await page.evaluate(() => document.querySelector('#card').scrollTop);

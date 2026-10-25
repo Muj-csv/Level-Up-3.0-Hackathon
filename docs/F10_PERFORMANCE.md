@@ -76,7 +76,8 @@ built at 0.6 detail on Mababa (as phones had) and full detail otherwise.
 Katamtaman draws the islands exactly as phones did before, and the title and minigames
 lighter than before (1.5 and 1024 instead of 2 and 2048). Changing Kalidad mid-game takes
 effect at once; if the island's foliage changes, the island is built again in the
-background while the 2D board shows, and the game is not touched.
+background while the old island stays on screen (a chip shows the progress), then the
+two swap in one step; the game is not touched. See "Changing Kalidad" below.
 
 **Measurements** (`node tests/perf.mjs ab --ab`: 360×640 at 2× pixel density, Chromium with
 software WebGL; the same still frame drawn and waited for, settings taking turns, median
@@ -141,3 +142,30 @@ relevant), not on a phone. Headless timing numbers are a useful regression signa
 don't reflect a real phone's CPU, GPU, or real-world network RTT to a CDN — the
 BUILD_PLAN's actual fps targets (60 fps iPad, 30 fps mid-range Android) can only be
 confirmed on the real devices once named.
+
+## Changing Kalidad (Oct 25, 2026)
+
+Reported: the first change of Kalidad froze the screen for 5–10 s, then the map loaded.
+
+**Cause (from the code and a timing run in headless Chromium):** every level has its own leaf
+cards and grass layers, which are baked into the island's geometry, so any change rebuilds the
+island. The old code dropped the island at once (the flat 2D board showed), rebuilt it, and the
+first frame of the new island compiled every shader (and the new shadow setting recompiled the
+old island's materials too, a second time). In the timing run (Katamtaman → Mataas) that was
+2.4 s, then a 12.4 s stall on the first frame; the 2D board showed in between.
+
+**What changed:** the old island stays on screen while the new one is built; the new shadow
+setting is applied once, at the swap, so materials are compiled once; shaders are compiled with
+`compileAsync` (off the main thread where the browser has `KHR_parallel_shader_compile`), their
+links are waited for a few at a time with a frame in between, textures are uploaded in small
+batches and one frame is drawn before the island shows, with the 3D view held on its last frame
+meanwhile (the 2D overlay and the menus keep going). A build for an older setting stops when the
+setting changes again. A chip shows the progress. In the same run the main thread was blocked
+for one 1.3 s step (Katamtaman → Mataas) and the 2D board never showed.
+
+**What is left:** the headless browser used for the tests has no `KHR_parallel_shader_compile`,
+so there each heavy island shader still takes seconds to link (SwiftShader); that cannot be
+measured away here. On a phone the cost depends on its GPU driver: check Mababa ↔ Mataas on the
+demo devices (`docs/DEVICES.md`). If it is still slow there, the next step is fewer distinct
+shaders per island (shared materials in `maps/`) or keeping the high-quality foliage built and
+only hiding it for lower levels.
