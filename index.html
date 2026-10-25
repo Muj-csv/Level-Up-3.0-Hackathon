@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Taympers</title>
-<meta name="description" content="Taympers: isang party board game ng mga larong kalye ng Pilipinas para sa 1 hanggang 4 na manlalaro.">
+<meta name="description" content="Taympers: isang party board game ng mga larong kalye ng Pilipinas para sa 1 hanggang 4 na player.">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Taympers">
 <meta property="og:description" content="Board party ng larong kalye: Tumbang Preso, Patintero, Sipa, Palosebo at Luksong Tinik sa mga islang lumulutang sa ulap.">
@@ -1609,7 +1609,7 @@ function botUsesItem(p){const it=p.item;if(!it||ITEMS[it].passive)return false;c
 const SPACE_VAL={start:2,piso:2,swerte:3,sari:1,jack:1.5,kasama:2.5,tanong:2,utang:-2,tikbalang:-3,banda:2,kampana:3,munisipyo:2,rizal:2,tawad:2,timbangan:1.5,suki:2,basa:-1.5,ulan:0,alon:1.5,huli:2.5,taog:-1.5,buko:2,araw:-1.5,tanim:1.5,ani:3,balang:-2.5,bayanihan:1.5,kalesa:1,padyak:1,bangka:1,kalabaw:1};
 function botGintoPick(p){const d=koronaDist(p)-p.allies.length;if(d<=10&&p.piso>=KCOST)return Math.max(1,d);let best=10,bv=-9;for(let n=10;n>=1;n--){const v=SPACE_VAL[SP[walkMain(p.pos,n)].type]||0;if(v>bv){bv=v;best=n;}}return best;}
 function numberPick(p){const na=p.allies.length,d=Math.max(1,koronaDist(p)-na);let h='';for(let n=1;n<=10;n++){const i=walkMain(p.pos,n),k=korona.spots.includes(i);h+='<button type="button" class="btn" data-v="'+n+'"'+(n===Math.min(10,d)?' data-primary':'')+'><b>'+n+'</b><small>'+(n>=d?CROWN_SVG:'')+esc(k?'Korona':SPACE_SHORT[SP[i].type])+'</small></button>';}
-  const c=openCard('<span class="chip">Gintong dice</span><h2>Ilang hakbang?</h2><p>Pumili ng bilang. Nakasulat kung saan ka titigil'+(d<=10?'. Kapag may maliit na korona, madadaanan mo ang korona.':'.')+(na?' Dagdag pa ng '+na+' hanggang '+2*na+' ang '+(na>1?'mga kasama':'kasama')+' mo.':'')+'</p><div class="numgrid">'+h+'</div>');return cardChoice(c).then(v=>+v);}
+  const c=openCard('<span class="chip">Gintong dice</span><h2>Ilang hakbang?</h2><p>Pumili ng bilang. Nakasulat kung saan ka titigil'+(d<=10?'. Pag may maliit na korona, madadaanan mo ang korona.':'.')+(na?' Dagdag pa ng '+na+' hanggang '+2*na+' ang '+(na>1?'mga kasama':'kasama')+' mo.':'')+'</p><div class="numgrid">'+h+'</div>');return cardChoice(c).then(v=>+v);}
 async function rollDice(p){
   dice.on=true;dice.owner=p;dice.spin=true;dice.vals=[1];dice.bonus=0;dice.gold=false;dice.counter=null;
   const active=!!p.item&&!ITEMS[p.item].passive;
@@ -1653,8 +1653,8 @@ async function moveSteps(p,n){
 }
 async function koronaStop(p,kk){
   await wait(160);
-  if(p.piso<KCOST){dbg('short',{p:p.id,piso:p.piso});if(p.ctrl==='local')tip('kulang','Kailangan ng 10 piso para sa korona. Mag-ipon sa mga asul na espasyo at sa mga laro.');await say('Kulang ang piso ('+KCOST+')','#fff',1200);return;}
-  const v=await decide(p,()=>ask({title:isYou(p)?'Korona!':'Korona, '+p.name+'!',body:'Bilhin ang korona sa halagang '+KCOST+' piso? May '+p.piso+' piso '+(isYou(p)?'ka':'si '+p.name)+'.',buttons:[{label:'Bilhin · '+KCOST+' piso',value:'y',primary:true},{label:'Huwag muna',value:'n'}]}),
+  if(p.piso<KCOST){dbg('short',{p:p.id,piso:p.piso});if(p.ctrl==='local')tip('kulang','Kailangan mo ng 10 piso para sa korona. Mag-ipon sa mga asul na space at sa mga laro.');await say('Kulang ang piso ('+KCOST+')','#fff',1200);return;}
+  const v=await decide(p,()=>ask({title:isYou(p)?'Korona!':'Korona, '+p.name+'!',body:'Bilhin ang korona sa '+KCOST+' piso? May '+p.piso+' piso '+(isYou(p)?'ka':'si '+p.name)+'.',buttons:[{label:'Bilhin · '+KCOST+' piso',value:'y',primary:true},{label:'Huwag muna',value:'n'}]}),
     async()=>{await wait(450);return'y';},'y',40000);
   if(v!=='y')return;
   p.piso-=KCOST;p.korona++;dbg('korona',{p:p.id,piso:p.piso});Sfx.fanfare();setMood(p,'cheer',1.6);hitstop=.1;cam.shake=.2;if(p.ctrl==='local')buzz([30,40,70]);
@@ -1723,7 +1723,7 @@ async function ride(p){
   if(p.piso<r.cost){await say('Kulang ang piso ('+r.cost+')','#fff',1000);return;}
   const near=i=>Math.min(...korona.spots.map(k=>stepsTo(i,k)));
   const botYes=p.piso-r.cost>=(state.cfg.diff===0?0:KCOST)||near(r.to)<near(p.pos)-4;
-  const v=await decide(p,()=>ask({chip:name+' · '+r.cost+' piso',title:isYou(p)?'Sumakay ng '+name+'?':'Sasakay ba si '+p.name+'?',body:'Dadalhin ka nito sa malayong bahagi ng mapa. Pinakamalapit na korona mula roon: '+near(r.to)+' hakbang (mula rito: '+near(p.pos)+').',
+  const v=await decide(p,()=>ask({chip:name+' · '+r.cost+' piso',title:isYou(p)?'Sumakay ng '+name+'?':'Sasakay ba si '+p.name+'?',body:'Dadalhin ka nito sa malayong dulo ng mapa. Pinakamalapit na korona mula doon: '+near(r.to)+' hakbang (mula rito: '+near(p.pos)+').',
       buttons:[{label:'Sumakay · '+r.cost+' piso',value:'y',primary:true},{label:'Huwag na',value:'n'}]}),async()=>{await wait(450);return botYes?'y':'n';},'n',40000);
   if(v!=='y')return;
   p.piso-=r.cost;Sfx.coin();floatText('−'+r.cost,p.x,p.y-70,'#FF8A7A',20);dbg('ride',{p:p.id,to:r.to});
@@ -1731,9 +1731,9 @@ async function ride(p){
   await tween(RM?.4:1.3,(e,u)=>{p.x=lerp(A.x,B.x,e);p.y=lerp(A.y,B.y,e);p.lift=Math.sin(Math.PI*u)*70;},Ez.inOut);
   p.pos=r.to;p.trail=[];p.lift=0;p.hopping=false;SP[r.to].pulse=1;burst(B.x,B.y,8,'dust',{spd:70,life:.5,size:6,g:-20});
 }
-function itemTip(p){if(p.ctrl!=='local')return;if(p.item==='agimat')tip('agimat','May agimat ka: kusa itong sasalag sa susunod na Utang, Tikbalang o talo sa Jack en Poy.');else tip('item','May item ka na. Sa susunod mong turn, pindutin ang "Gamitin" bago gumulong.');}
+function itemTip(p){if(p.ctrl!=='local')return;if(p.item==='agimat')tip('agimat','May Agimat ka! Ligtas ka sa susunod na Utang, Tikbalang o talo sa Jack en Poy.');else tip('item','May item ka na. Sa susunod mong turn, pindutin ang "Gamitin" bago mag-roll.');}
 async function agimatSaves(p){if(p.item!=='agimat')return false;p.item=null;dbg('agimat',{p:p.id});Sfx.shield();if(p.ctrl==='local')buzz([20,30,20]);setMood(p,'happy',1.2);
-  burst(p.x,p.y-40,14,'star',{spd:140,size:5,color:'#BDE7A6',life:.7,g:60});floatText('Agimat!',p.x,p.y-80,'#BDE7A6',22);announce(p.name+': sinalag ng agimat.');await say('Sinalag ng agimat!','#BDE7A6',1100);return true;}
+  burst(p.x,p.y-40,14,'star',{spd:140,size:5,color:'#BDE7A6',life:.7,g:60});floatText('Agimat!',p.x,p.y-80,'#BDE7A6',22);announce(p.name+': niligtas ng Agimat.');await say('Niligtas ka ng Agimat!','#BDE7A6',1100);return true;}
 function botShop(p){const diff=state.cfg.diff;if(p.item)return'none';
   if(diff===0)return p.piso>=8?'doble':(p.piso>=3?'kendi':'none');
   const spare=p.piso-KCOST,d=koronaDist(p),lead=standings()[p.id]===1&&state.players.some(q=>q.korona<p.korona);
@@ -1744,7 +1744,7 @@ function botShop(p){const diff=state.cfg.diff;if(p.item)return'none';
   return'none';}
 async function shop(p,passing){
   await say(passing?'Dadaan sa Sari-sari':'Sari-sari store','#7FE3D9',passing?700:900);
-  const v=await decide(p,()=>{const c=openCard('<span class="chip">May '+p.piso+' piso '+(isYou(p)?'ka':'si '+esc(p.name))+'</span><h2>'+(isYou(p)?'Sari-sari store':'Sari-sari, '+esc(p.name))+'</h2><p>'+(p.item?'Isang item lang ang madadala: papalitan nito ang '+esc(ITEMS[p.item].name)+'.':(passing?'Dadaan ka sa tindahan. ':'')+'Ano ang bibilhin? Isang item lang ang madadala. Tandaan: 10 piso ang korona.')+'</p><div class="pgrid shop">'+
+  const v=await decide(p,()=>{const c=openCard('<span class="chip">May '+p.piso+' piso '+(isYou(p)?'ka':'si '+esc(p.name))+'</span><h2>'+(isYou(p)?'Sari-sari store':'Sari-sari, '+esc(p.name))+'</h2><p>'+(p.item?'Isang item lang ang madadala: papalitan nito ang '+esc(ITEMS[p.item].name)+'.':(passing?'Dadaan ka sa tindahan. ':'')+'Ano ang bibilhin mo? 1 item lang ang puwedeng dalhin. Tandaan: 10 piso ang korona.')+'</p><div class="pgrid shop">'+
         Object.keys(ITEMS).map(k=>{const it=ITEMS[k];return'<button type="button" class="btn" data-v="'+k+'"'+(p.piso<it.cost?' disabled':'')+'><span>'+esc(it.name)+' · '+it.cost+'</span><small>'+esc(it.desc)+'</small></button>';}).join('')+'</div><div class="row"><button type="button" class="btn primary" data-v="none" data-primary>'+(passing?'Tuloy lang':'Wala, salamat')+'</button></div>');return cardChoice(c);},
     async()=>{await wait(500);return botShop(p);},'none',40000);
   if(ITEMS[v]&&p.piso>=ITEMS[v].cost){p.piso-=ITEMS[v].cost;p.item=v;dbg('buy',{p:p.id,item:v});Sfx.coin();itemTip(p);setMood(p,'happy',1);floatText(ITEMS[v].name,p.x,p.y-70,'#fff',19);
@@ -1758,7 +1758,7 @@ async function kasama(p){
   const free=KASAMA.filter(k=>!state.players.some(q=>q.allies.some(a=>a.n===k.n)));const pool=free.length?free:KASAMA;const k=pool[Math.floor(G()*pool.length)];
   p.allies.push({n:k.n,look:k.look,x:p.x,y:p.y});dbg('kasama',{p:p.id,n:k.n});Sfx.fanfare();setMood(p,'cheer',1.3);if(p.ctrl==='local')buzz([20,30,20]);
   burst(p.x,p.y-40,10,'star',{spd:150,size:5,color:'#C9F2B4',g:150});
-  if(p.ctrl==='local')tip('kasama','May kasama ka na! Sa bawat gulong, magdadagdag ang bawat kasama ng 1 o 2 hakbang.');
+  if(p.ctrl==='local')tip('kasama','May kasama ka na! Bawat roll, dagdag na 1 o 2 hakbang ang bawat kasama.');
   await say(k.n+' ay '+(isYou(p)?'kasama mo na!':'kasama na ni '+p.name+'!'),'#C9F2B4',1400);
 }
 const TANONG=[
@@ -1777,7 +1777,7 @@ async function tanong(p){
   await say('Tanong ni Lola!','#F7A8CF',900);
   const T=TANONG[Math.floor(G()*TANONG.length)];const order=[0,1,2];for(let i=2;i>0;i--){const j=Math.floor(G()*(i+1));const t=order[i];order[i]=order[j];order[j]=t;}
   const botAns=G()<[.45,.6,.8][state.cfg.diff]?'0':String(1+Math.floor(G()*2));
-  const v=await decide(p,()=>ask({chip:'Tanong ni Lola · +5 piso kapag tama',title:T.q,buttons:order.map(k=>({label:T.a[k],value:String(k)}))}),async()=>{setHint('Nag-iisip si '+p.name+'…');await wait(900);setHint('');return botAns;},'1',40000);
+  const v=await decide(p,()=>ask({chip:'Tanong ni Lola · +5 piso pag tama',title:T.q,buttons:order.map(k=>({label:T.a[k],value:String(k)}))}),async()=>{setHint('Nag-iisip si '+p.name+'…');await wait(900);setHint('');return botAns;},'1',40000);
   const ok=v==='0';dbg('tanong',{p:p.id,ok});
   if(p.ctrl==='local'){if(ok)Sfx.fanfare();else Sfx.bad();await ask({title:ok?'Tama!':'Hindi iyon',body:'Ang sagot: '+T.a[0]+'. '+T.f,buttons:[{label:'Tuloy',value:'ok',primary:true}],autoMs:NET.on?6000:0});}
   else await say(p.name+': '+(ok?'tama!':'mali'),ok?'#BDE7A6':'#FF8A7A',1100);
@@ -1795,7 +1795,7 @@ async function passportFlow(){
   for(;;){const o=passGet();const done=MG_KEYS.filter(k=>o.played[k]).length,gold=MG_KEYS.filter(k=>o.labas[k]).length,tot=MG_KEYS.length*2;
     const rows=MG_KEYS.map(k=>{const d=MG[k],on=!!o.played[k],g=!!o.labas[k];return'<div class="stamp'+(g?' gold':(on?' on':''))+'"><span class="seal">'+(g?'GINTO':(on?'TATAK':'?'))+'</span><div><b>'+esc(d.title)+'</b><p>'+esc(on?d.labas:'Laruin ito sa board para makuha ang tatak.')+'</p>'+(on?'<button type="button" class="btn" data-v="labas:'+k+'">'+(g?'Nalaro ko na sa labas ✓':'Nalaro ko na ito sa labas')+'</button>':'')+'</div></div>';}).join('')
       +SOON.map(x=>'<div class="stamp lock"><span class="seal">SOON</span><div><b>'+esc(x.t)+'</b><p>'+esc(x.d)+'</p></div></div>').join('');
-    const c=openCard('<span class="chip">Pasaporte ng Laro</span><h2>'+(done+gold)+' sa '+tot+' na tatak</h2><div class="passbar"><i style="width:'+Math.round((done+gold)/tot*100)+'%"></i></div><p class="note">Pula ang tatak kapag nalaro mo sa app. Ginto kapag nalaro mo nang totoo kasama ang mga kaibigan.</p>'+rows+'<div class="row"><button type="button" class="btn primary" data-v="close" data-primary>Isara</button></div>');
+    const c=openCard('<span class="chip">Pasaporte ng Laro</span><h2>'+(done+gold)+' sa '+tot+' na tatak</h2><div class="passbar"><i style="width:'+Math.round((done+gold)/tot*100)+'%"></i></div><p class="note">Pula ang tatak pag nalaro mo sa app. Ginto pag nalaro mo nang totoo kasama ang barkada.</p>'+rows+'<div class="row"><button type="button" class="btn primary" data-v="close" data-primary>Isara</button></div>');
     const v=await cardChoice(c);
     if(v&&v.startsWith('labas:')){const k=v.slice(6);const o2=passGet();if(o2.labas[k])delete o2.labas[k];else{o2.labas[k]=1;Sfx.fanfare();}passSave(o2);continue;}
     return;}
@@ -1810,7 +1810,7 @@ function handPick(p){const c=openCard('<h2>'+(isYou(p)?'Jack en Poy!':esc(p.name
 function botRival(p,others){const diff=state.cfg.diff;if(diff===0)return gpick(others).id;
   if(diff===2){const lead=others.filter(q=>q.piso>0&&q.item!=='agimat').sort((a,b)=>b.korona-a.korona||b.piso-a.piso||a.id-b.id)[0];if(lead)return lead.id;}
   return[...others].sort((a,b)=>b.piso-a.piso||a.id-b.id)[0].id;}
-function rivalPick(p,others){const c=openCard('<span class="chip">Jack en Poy</span><h2>'+(isYou(p)?'Sino ang hahamunin mo?':esc(p.name)+', sino ang hahamunin?')+'</h2><p>Ang panalo ay kukuha ng hanggang 5 piso sa talo. Sasalagin ng agimat ang pagkatalo.</p><div class="pgrid">'+
+function rivalPick(p,others){const c=openCard('<span class="chip">Jack en Poy</span><h2>'+(isYou(p)?'Sino ang hahamunin mo?':esc(p.name)+', sino ang hahamunin?')+'</h2><p>Ang panalo, kukuha ng hanggang 5 piso sa talo. Hindi mababawasan ang may Agimat.</p><div class="pgrid">'+
     others.map((q,i)=>'<button type="button" class="btn" data-v="'+q.id+'"'+(i?'':' data-primary')+'><span><i class="sw" style="background:'+q.color+'"></i>'+esc(q.name)+'</span><small>'+q.korona+' korona · '+q.piso+' piso'+(q.item==='agimat'?' · may agimat':'')+'</small></button>').join('')+'</div>');return cardChoice(c);}
 async function jackEnPoy(p){
   const others=state.players.filter(q=>q!==p);
@@ -1851,7 +1851,7 @@ async function playTurn(p){
   await seatSync();
   state.fast=false;state.active=p;state.overview=false;mapBtn.setAttribute('aria-pressed','false');updateStatus();
   await wait(300);
-  if(p.ctrl==='local')tip('roll','Pindutin ang "Tamaan ang dice" para gumulong ng 1 hanggang 10. Ang mga espasyong may puting bilog ang maaabot mo.');
+  if(p.ctrl==='local')tip('roll','Pindutin ang "Tamaan ang dice" para mag-roll ng 1 hanggang 10. Maaabot mo ang mga space na may puting bilog.');
   else if(p.ctrl==='bot'&&locals().length&&!NET.on)tip('fast','Turn ng bot? I-tap ang board para bilisan.');
   await say(turnText(p),p.color,950);
   const steps=await rollDice(p);
@@ -2606,7 +2606,7 @@ async function runMinigame(kind,opt){
   await wait(300);
   for(const p of P){if(pay[p.id]>0){p.piso+=pay[p.id];coinFly(p,pay[p.id]);burst(p.x,p.y-30,8,'coin',{up:true,spd:220,g:520,size:5});floatText('+'+pay[p.id],p.x,p.y-70,'#FFE07A',22);setMood(p,'happy',1);}}
   if(isTorneo()&&top.length){for(const p of top){p.korona++;floatText('+1 korona',p.x,p.y-104,'#FFC93C',22);setMood(p,'cheer',1.4);burst(p.x,p.y-90,10,'star',{spd:160,size:6,color:'#FFC93C'});}Sfx.fanfare();}
-  tip('pay',isTorneo()?'Sa Torneo, may korona ang mananalo sa bawat laro. Piso ang batayan kapag tabla.':'Sa bawat laro: +10 piso sa una, +5 sa ikalawa, +3 sa ikatlo. Gamitin ang piso para sa korona.');
+  tip('pay',isTorneo()?'Sa Torneo, may korona ang panalo sa bawat laro. Pag tabla, ang may mas maraming piso ang panalo.':'Bawat laro: +10 piso sa una, +5 sa ikalawa, +3 sa ikatlo. Ipunin ang piso para sa korona.');
   Sfx.coin();await wait(1100);state.focus=null;
 }
 
@@ -2683,10 +2683,10 @@ async function gameLoop(startRound,startTurn,token){
   for(let r=startRound;r<=maxR();r++){
     if(token!==gameToken)return;state.round=r;updateStatus();
     if(isTorneo()){
-      if(r===1&&startTurn!==4)tip('torneo','Torneo: walang dice. Bawat panalo sa laro ay isang korona; piso ang batayan kapag tabla.');
+      if(r===1&&startTurn!==4)tip('torneo','Torneo: walang dice. Bawat panalo sa laro, 1 korona. Pag tabla, ang may mas maraming piso ang panalo.');
       await say(r===maxR()?'Huling laro!':'Laro '+r+' ng '+maxR(),'#FFC93C',1100);if(token!==gameToken)return;
       state.turn=4;checkpoint();await runMinigame(state.plan[r-1]);startTurn=0;continue;}
-    if(r===1&&startTurn===0){tip('goal','Layunin: pinakamaraming korona sa dulo ng laro. Dumaan sa korona na may 10 piso para bumili.');await say('Bunutan: una si '+state.players[state.order[0]].name+'!','#FFE07A',1300);if(token!==gameToken)return;}
+    if(r===1&&startTurn===0){tip('goal','Layunin: pinakamaraming korona sa dulo ng laro. Pag may 10 piso ka, dumaan sa korona para bilhin ito.');await say('Bunutan: una si '+state.players[state.order[0]].name+'!','#FFE07A',1300);if(token!==gameToken)return;}
     if(startTurn===0&&r>1)await say(r===maxR()?'Huling ikot!':'Ikot '+r,'#FFC93C',1100);
     if(startTurn===0&&r===maxR()&&maxR()>=3)await hulingHirit();
     for(let i=startTurn;i<4;i++){if(token!==gameToken)return;state.turn=i;checkpoint();await playTurn(state.players[state.order[i]]);}
@@ -2758,7 +2758,7 @@ function renderSettings(box,cfg,after,withMap){
 async function localFlow(){
   try{if(!localFlow.pre){localFlow.pre=new Image();localFlow.pre.src='maps/world/world.jpg';}}catch(e){}   // the map screen comes next
   const prev=state.setup&&state.setup.n?state.setup:{};let n=prev.n||1;const names=prev.names?prev.names.slice():CHARS.map(c=>c.name);const cfg=normCfg(prev.cfg);if(cfg.mode==='hamon')cfg.mode='party';
-  const render=c=>{const box=c.querySelector('#nmBox');box.innerHTML=CHARS.map((ch,i)=>i<n?'<div class="field"><span class="dot" style="background:'+ch.color+'"></span><input id="nm'+i+'" maxlength="12" autocomplete="off" aria-label="Pangalan ng manlalaro '+(i+1)+'" value="'+esc(names[i]||ch.name)+'"></div>':'<div class="field"><span class="dot" style="background:'+ch.color+'"></span><span class="bot">'+esc(ch.name)+' · bot</span></div>').join('');
+  const render=c=>{const box=c.querySelector('#nmBox');box.innerHTML=CHARS.map((ch,i)=>i<n?'<div class="field"><span class="dot" style="background:'+ch.color+'"></span><input id="nm'+i+'" maxlength="12" autocomplete="off" aria-label="Pangalan ng player '+(i+1)+'" value="'+esc(names[i]||ch.name)+'"></div>':'<div class="field"><span class="dot" style="background:'+ch.color+'"></span><span class="bot">'+esc(ch.name)+' · bot</span></div>').join('');
     c.querySelectorAll('#nSeg button').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.n===n)));};
   const c=openCard('<h2>Maglaro</h2><div id="setBox"></div><div class="setrow"><span class="setlbl">Ilang tao</span><div class="seg sm" id="nSeg" role="group" aria-label="Bilang ng tao">'+[1,2,3,4].map(k=>'<button type="button" data-n="'+k+'">'+k+'</button>').join('')+'</div></div><div id="nmBox"></div><p class="note">Lahat ng tao ay sa iisang phone o computer; bot ang iba. Sa laro, may sariling hanay ang bawat tao.</p><div class="row"><button type="button" class="btn" data-v="back">Balik</button><button type="button" class="btn primary" data-v="go" data-primary>Simulan</button></div>');
   renderSettings(c.querySelector('#setBox'),cfg);render(c);
@@ -2846,7 +2846,7 @@ async function onlineFlow(){
   if(!roomAvailable()){
     const c=openCard('<span class="chip">Online</span><h2>Wala pang online dito</h2><p>Sa ngayon, gumagana lang ang online room kapag binuksan ang laro sa claude.ai, naka-sign in, at naka-share sa mga kalaro.</p><p>Puwede pa rin kayong maglaro nang sabay sa iisang phone o computer: hanggang 4 na tao.</p><div class="row"><button type="button" class="btn" data-v="back">Balik</button><button type="button" class="btn primary" data-v="local" data-primary>Maglaro sa isang device</button></div>');
     if(await cardChoice(c)==='local')localFlow();return;}
-  const c=openCard('<span class="chip">Online</span><h2>Maglaro online</h2><p>Hanggang 4 na manlalaro, bawat isa sa sariling phone. Bot ang papalit sa kulang.</p><div class="pgrid"><button type="button" class="btn" data-v="host" data-primary><span>Gumawa ng room</span><small>Ikaw ang host: ipa-scan ang QR o ibigay ang code</small></button><button type="button" class="btn" data-v="join"><span>Sumali</span><small>Gamit ang 4-letrang code ng room</small></button></div><div class="row"><button type="button" class="btn" data-v="back">Balik</button></div>');
+  const c=openCard('<span class="chip">Online</span><h2>Maglaro online</h2><p>Hanggang 4 na player, tig-isang phone. Bot ang papalit sa kulang.</p><div class="pgrid"><button type="button" class="btn" data-v="host" data-primary><span>Gumawa ng room</span><small>Ikaw ang host: ipa-scan ang QR o ibigay ang code</small></button><button type="button" class="btn" data-v="join"><span>Sumali</span><small>Gamit ang 4-letrang code ng room</small></button></div><div class="row"><button type="button" class="btn" data-v="back">Balik</button></div>');
   const v=await cardChoice(c);if(v==='host')hostFlow();else if(v==='join')joinFlow('');
 }
 function netFail(){const c=openCard('<h2>Hindi makakonekta</h2><p>'+esc(netHelp())+'</p><div class="row"><button type="button" class="btn primary" data-v="ok" data-primary>Sige</button></div>');cardChoice(c);}
