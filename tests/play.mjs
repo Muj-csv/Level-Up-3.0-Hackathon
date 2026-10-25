@@ -53,6 +53,20 @@ for (const [label, w, h] of [['phone 360x740', 360, 740], ['phone landscape 740x
   await page.context().close();
 }
 
+// ---------- 1b. Taguan: four people on one 360 px phone each get a readable strip of the yard ----------
+{
+  const page = await newPage({ viewport: { width: 360, height: 740 }, isMobile: true, hasTouch: true }, '?debug&mg=taguan');
+  await lsu(page, () => window.__lsu.startLocal({ n: 4, names: ['Ana', 'Ben', 'Cel', 'Dan'], cfg: { mode: 'torneo', rounds: 3, diff: 1 } }));
+  await page.waitForSelector('#card [data-v="go"]', { timeout: 15000 }); await page.click('#card [data-v="go"]');
+  await page.waitForFunction(() => window.__lsu.scene && window.__lsu.scene.kind === 'taguan' && !(window.__lsu.scene.cd > 0), null, { timeout: 15000 });
+  const L = await page.evaluate(() => ({ strips: window.__lsu.scene.layout(), vh: innerHeight, vw: innerWidth, sw: document.documentElement.scrollWidth }));
+  const s = L.strips, apart = s.every((a, i) => i === 0 || a.y >= s[i - 1].y + s[i - 1].h - 0.5);
+  check(s.length === 4 && s.every(a => a.h >= 100 && a.scale >= 0.5 && a.y >= 0 && a.y + a.h <= L.vh && a.w <= L.vw) && apart && L.sw <= L.vw,
+    'Taguan: four stacked strips stay readable on a 360 px wide phone (each at least 100 px tall, yard at half size or more, no overlap)', s.map(a => Math.round(a.h) + 'px x' + a.scale.toFixed(2)).join(', '));
+  await page.screenshot({ path: 'test-results/play-taguan-4-strips.png' }).catch(() => {});
+  await page.context().close();
+}
+
 // ---------- 2. every title button does something ----------
 {
   const page = await newPage();
@@ -152,12 +166,12 @@ for (const [label, w, h] of [['phone', 390, 844], ['landscape phone', 844, 390]]
   await page.waitForTimeout(800); await page.click('#menuBtn');
   check((await small(page)).length === 0, 'pause menu: every button is at least 44 px tall', (await small(page)).join(', '));
   await page.context().close();
-  // a landscape phone: Pagsasanay's five games all sit above its closing buttons, none hidden behind them
+  // a landscape phone: every Pagsasanay game sits above its closing buttons, none hidden behind them
   const land = await newPage({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true });
   await land.click('#mHamon'); await land.click('#card [data-v="practice"]');
   const cover = await land.evaluate(() => { const row = document.querySelector('#card > .row:last-child').getBoundingClientRect(), card = document.querySelector('#card').getBoundingClientRect();
     return [...document.querySelectorAll('#card .pgrid .btn')].filter(b => { const r = b.getBoundingClientRect(); return r.bottom > row.top + 1 || r.bottom > card.bottom; }).map(b => b.dataset.v); });
-  check(cover.length === 0, 'landscape phone: all five Pagsasanay games are fully visible above Balik', cover.join(','));
+  check(cover.length === 0, 'landscape phone: every Pagsasanay game is fully visible above Balik', cover.join(','));
   await land.click('#card [data-v="patintero"]'); await land.click('#card [data-v="go"]');
   await land.waitForFunction(() => window.__lsu.scene && window.__lsu.scene.peek, null, { timeout: 10000 });
   check(await land.textContent('#roundPill') === 'Pagsasanay', 'Pagsasanay shows "Pagsasanay" in the top bar, not "Hamon"', await land.textContent('#roundPill'));
