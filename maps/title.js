@@ -9,7 +9,7 @@ import { build as buildPlaza } from './islands/plaza.js';
 import { polish } from './polish.js';
 import { addLife } from './life.js';
 import { addLiving } from './living.js';
-import { KIDS, buildKid, setExpression, applyPose, CLIPS } from '../kids/kids.js';
+import { KIDS, buildKid, setExpression, applyPose, CLIPS, castShadows } from '../kids/kids.js';
 
 const TAU = Math.PI * 2, LOOP = 12, CUES = { Breeze: 0, Streak: 4, Settle: 8 };
 const ss = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
@@ -90,7 +90,7 @@ export function create(canvas, { reduced = false, maxDpr = 2, shadow = 2048, isl
     const S = LAYOUT.kidH / 57, kids = {};
     KIDS.forEach(def => { const K = buildKid(T3, def), L = LAYOUT.kids[def.name]; K.base = { x: L[0], z: L[1], yaw: L[2], y: groundAt(L[0], L[1]) };
       K.group.position.set(K.base.x, K.base.y + .004, K.base.z); K.group.rotation.y = K.base.yaw; K.group.scale.setScalar(LAYOUT.kidScale);
-      K.group.traverse(m => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } }); scene.add(K.group); kids[def.name] = K; });
+      castShadows(K); K.group.traverse(m => { if (m.isMesh) m.receiveShadow = true; }); scene.add(K.group); kids[def.name] = K; });
     // where Bunso's kicking foot meets the sipa (from the model's own kick clip at contact)
     { const K = kids.Bunso; applyPose(K, CLIPS.kick.f(.5, CLIPS.kick.dur)); K.group.updateMatrixWorld(true); const v = new T3.Vector3(); K.joints.foot_R.localToWorld(v.set(0, -.03, .07)); kids.contact = v.clone(); applyPose(K, {}); }
     const sipa = sipaToy(); sipa.scale.setScalar(S * 1.35);

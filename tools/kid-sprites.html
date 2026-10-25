@@ -1,0 +1,53 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Taympers kid sprites renderer</title><style>html,body{margin:0;background:#888}canvas{display:block}</style></head><body>
+<script type="module">
+// Offline renderer for kids/sprites.png (not part of the game). Run: node tools/kid-sprites.mjs
+// Each row is one kid, rendered from the 3D models in kids/kids.js (the four players, then the four other kids);
+// each column is one pose. The game draws these pictures only when a device cannot show 3D (no WebGL), so even
+// that fallback shows the current kids. Columns and rows are listed in SPRITES (index.html) and sprites.json.
+import * as T3 from '../vendor/three-r184/three.module.min.js';
+import { KIDS, NPC_KIDS, buildKid, setExpression, applyPose, poseAt, CLIPS } from '../kids/kids.js';
+const FW = 96, FH = 120, SS = 2;                       // frame size in the sheet, supersampled 2x while rendering
+const FEET = 108, KID_PX = 80;                         // feet 108 px down the frame; a kid about 80 px tall (old 2D kids: 52.5 of 80 units)
+const POSES = [                                         // [name, yaw, clip, time in s (as the game poses them), expression, extra joint angles]
+  ['front', 0, 'idle', .7, 'happy'], ['front_walk_a', 0, 'walk', .2, 'happy'], ['front_walk_b', 0, 'walk', .65, 'happy'],
+  ['front_cheer', 0, 'victory', .7, 'excited'], ['front_sad', 0, 'idle', .7, 'sad', { 'head.x': .14, 'spine.x': .08, 'upperArm_L.z': -.12, 'upperArm_R.z': .12 }], ['front_hop', 0, 'jump', .56, 'excited', { rootY: 0 }],   // the game lifts the picture itself
+  ['back', Math.PI, 'idle', .7, 'happy'], ['back_walk_a', Math.PI, 'walk', .2, 'happy'], ['back_walk_b', Math.PI, 'walk', .65, 'happy'],
+  ['side', Math.PI / 2, 'idle', .7, 'happy'], ['side_walk_a', Math.PI / 2, 'walk', .2, 'happy'], ['side_walk_b', Math.PI / 2, 'walk', .65, 'happy'],
+  ['side_kick', Math.PI / 2, 'kick', .55, 'determined'], ['front_guard', 0, 'idle', .7, 'determined', { 'upperArm_L.z': 1.3, 'upperArm_R.z': -1.3, 'lowerArm_L.x': -.35, 'lowerArm_R.x': -.35 }],
+  ['front_kick', .35, 'kick', .55, 'determined']];
+const DEFS = [...KIDS, ...NPC_KIDS];
+try {
+  const ren = new T3.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+  ren.setPixelRatio(1); ren.setSize(FW * SS, FH * SS); ren.outputColorSpace = T3.SRGBColorSpace; ren.setClearColor(0x000000, 0);
+  const S = new T3.Scene();
+  S.add(new T3.HemisphereLight('#FFF4E2', '#BDE7A6', 1.5));
+  const key = new T3.DirectionalLight('#FFF1DC', 1.7); key.position.set(-.5, 1.4, .9); S.add(key);
+  const front = new T3.DirectionalLight('#FFFFFF', .7); front.position.set(0, .4, 1.2); S.add(front);
+  const u = .95 / KID_PX;                               // metres per sheet pixel
+  const cam = new T3.OrthographicCamera(-FW / 2 * u, FW / 2 * u, FEET * u, -(FH - FEET) * u, -10, 10);
+  const TILT = .2; cam.position.set(0, Math.sin(TILT) * 5, Math.cos(TILT) * 5); cam.lookAt(0, 0, 0);
+  cam.updateProjectionMatrix();
+  const sheet = document.createElement('canvas'); sheet.width = FW * POSES.length; sheet.height = FH * DEFS.length; const sg = sheet.getContext('2d');
+  const tmp = document.createElement('canvas'); tmp.width = FW; tmp.height = FH; const tg = tmp.getContext('2d');
+  const ol = document.createElement('canvas'); ol.width = FW; ol.height = FH; const og = ol.getContext('2d');
+  DEFS.forEach((def, r) => {
+    const K = buildKid(T3, def); S.add(K.group);
+    POSES.forEach(([name, yaw, clip, t, ex, extra], c) => {
+      K.group.rotation.y = yaw; setExpression(K, ex); applyPose(K, Object.assign({}, poseAt(K, clip, t), extra || {}));
+      ren.render(S, cam);
+      tg.clearRect(0, 0, FW, FH); tg.imageSmoothingQuality = 'high'; tg.drawImage(ren.domElement, 0, 0, FW, FH);
+      // a dark ink outline around the kid, like the hand-drawn board art it stands on
+      og.clearRect(0, 0, FW, FH); og.globalCompositeOperation = 'source-over';
+      for (let a = 0; a < 12; a++) og.drawImage(tmp, Math.round(Math.cos(a / 12 * Math.PI * 2) * 1.6), Math.round(Math.sin(a / 12 * Math.PI * 2) * 1.6));
+      og.globalCompositeOperation = 'source-in'; og.fillStyle = '#3B2316'; og.fillRect(0, 0, FW, FH);
+      og.globalCompositeOperation = 'source-over'; og.drawImage(tmp, 0, 0);
+      sg.drawImage(ol, c * FW, r * FH);
+    });
+    S.remove(K.group); K.group.traverse(o => { if (o.geometry) o.geometry.dispose(); });
+  });
+  window.__out = sheet.toDataURL('image/png');
+  window.__meta = { frame: [FW, FH], feet: FEET, poses: POSES.map(p => p[0]), kids: DEFS.map(d => d.id) };
+} catch (e) { window.__err = String(e && e.stack || e); }
+window.__done = true;
+</script>
+</body></html>
