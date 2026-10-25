@@ -230,7 +230,7 @@ body{background:var(--sky);color:var(--ink);font-family:var(--body);overflow:hid
 .legend b{white-space:normal;overflow-wrap:break-word;min-width:0}
 .legend .sw{flex:none;width:14px;height:14px;border-radius:50%;border:2px solid var(--ink);transform:translateY(2px)}
 .pgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
-@media (orientation:landscape) and (max-height:520px){.card{max-width:min(560px,100%)}.pgrid{grid-template-columns:repeat(3,minmax(0,1fr))}.pgrid .btn{font-size:16px;padding:9px 6px}}
+@media (orientation:landscape) and (max-height:520px){.card{max-width:min(680px,100%)}#card .pgrid{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:8px}#card .pgrid .btn{font-size:15px;padding:6px 4px;gap:1px;line-height:1.1;min-height:44px}}
 .pgrid .btn{display:flex;flex-direction:column;gap:3px;font-size:17px;padding:10px 8px}
 .pgrid small{font:800 11.5px var(--body);color:var(--muted)}
 .pgrid .btn span{display:inline-flex;align-items:center;justify-content:center;gap:6px}
