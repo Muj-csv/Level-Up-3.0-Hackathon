@@ -51,6 +51,9 @@ Do these the **day before** and again **on the morning** of the finals.
 - [ ] **Hotspot backup:** one phone with mobile data shares a hotspot; the others join it.
       Try one game on the hotspot before the event.
 - [ ] Phones charged; screen lock set to the longest time; the game link bookmarked.
+- [ ] **Offline copy on every device:** open the game once on each phone and tablet while online (the day before,
+      and again in the morning). After that, one-device games work even if the venue Wi-Fi goes down; online rooms
+      still need internet.
 
 ## Troubleshooting
 

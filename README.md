@@ -34,11 +34,15 @@ nothing to install.
   ```
 - **GitHub Pages:** every push to `main` republishes the site (Settings → Pages →
   Deploy from a branch → `main` / root). `.nojekyll` makes Pages serve the files as-is.
-- **itch.io:** zip `index.html` with the `vendor/`, `maps/` and `content/` folders and mark
+- **itch.io:** zip `index.html` and `sw.js` with the `vendor/`, `maps/`, `kids/` and `content/` folders and mark
   it "This file will be played in the browser".
 
-The only thing loaded from the internet is Google Fonts (Bagel Fat One, Nunito). Without
-a connection the game uses fallback fonts.
+**Offline:** after one visit online (on Vercel, GitHub Pages or a local server), the game
+opens and plays on one device with no internet: `sw.js` keeps a copy of every game file in
+the browser, and a new deploy still arrives as soon as the device is online again. Online
+rooms need internet. Open the game on each demo device in the days before an event, since
+iPhones and iPads can clear a site's saved copy after a few weeks without a visit. Nothing
+else is loaded from the internet: the fonts are in `vendor/fonts/`.
 
 ### Deploy on Vercel
 
@@ -49,11 +53,11 @@ The repo is ready to import as is:
    install, no build, output is the repo root) and press **Deploy**.
 3. Every push to `main` then redeploys; pushes to other branches get preview links.
 
-What gets deployed: `index.html`, `vendor/`, `maps/`, `kids/` and `content/` (`.vercelignore`
+What gets deployed: `index.html`, `sw.js`, `vendor/`, `maps/`, `kids/` and `content/` (`.vercelignore`
 leaves out the tests, docs, tools and `package.json`, so Vercel never installs the test
 tools). `vercel.json`
-caches `vendor/` for a year (the version is in each file name) and adds basic security
-headers. The settings were checked with `vercel build` (Vercel CLI 65).
+caches `vendor/` for a year (the version is in each file name), serves `sw.js` with
+`no-cache` so a new offline copy is always picked up, and adds basic security headers. The settings were checked with `vercel build` (Vercel CLI 65).
 
 ## Modes
 

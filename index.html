@@ -3812,6 +3812,13 @@ const fontsP=document.fonts&&document.fonts.load?Promise.race([Promise.all([docu
 fontsP.then(boot,boot);
 if(SPLASH.on)splashLoad(fontsP);
 
+/* F10 offline: on https (Vercel, GitHub Pages) or localhost, sw.js keeps a copy of every game file, so after one visit
+   online the game opens and plays on one device without internet. Not inside Claude, and under ?debug only with &sw
+   (the tests block files on purpose, which a worker would serve anyway). 10 s after the page loads, the worker checks
+   its copy against the server, away from the splash's own loading */
+const OFFLINE_OK='serviceWorker' in navigator&&!inClaude()&&(location.protocol==='https:'||/^(localhost|127\.0\.0\.1)$/.test(location.hostname))&&(!DEBUG||/[?&]sw\b/.test(location.search));
+if(OFFLINE_OK)addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').then(()=>navigator.serviceWorker.ready).then(r=>setTimeout(()=>{if(navigator.onLine&&r.active)r.active.postMessage('check');},10000)).catch(e=>console.warn('offline copy',e));});
+
 })();
 </script>
 
