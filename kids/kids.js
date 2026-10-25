@@ -12,6 +12,15 @@ export const KIDS = [
   { id: 'jun', name: 'Jun', face: { tilt: 0.14, lid: 0.82, brow: 0.2 }, color: '#E2452E', dark: '#A92A18', skin: '#C68A5B', hair: 'long', hat: 'capBack', top: 'tee', sleeve: 0.06, shorts: 0.1, smile: 'grin', cheekBandage: true, tempo: 1.05, posture: { 'hips.z': 0.03, 'head.z': -0.04 } },
 ];
 
+// The other kids of the barrio: minigame helpers, the cheering crowd and the Kasama allies (Lito, Mayumi, Boyet, Dodong).
+// Built with the same body, face and clothes as the four players; their shirt colours stay clear of the players' red, yellow, blue and green.
+export const NPC_KIDS = [
+  { id: 'lito', name: 'Lito', face: { tilt: 0.08, lid: 1, brow: 0.04 }, color: '#F7F4EE', dark: '#C9C2B4', skin: '#B57A4E', hair: 'bowl', top: 'tee', sleeve: 0.06, shorts: 0.11, smile: 'smile', tempo: 1 },
+  { id: 'mayumi', name: 'Mayumi', face: { tilt: 0.18, lid: 0.9, brow: 0.06 }, color: '#F28DB2', dark: '#C2577F', skin: '#D9A06F', hair: 'pigtails', top: 'tee', sleeve: 0.06, shorts: 0.1, smile: 'smile', tempo: 1.02 },
+  { id: 'boyet', name: 'Boyet', face: { tilt: 0.05, lid: 1, brow: 0.02 }, color: '#5BC0BE', dark: '#36908E', skin: '#A86F44', hair: 'curly', top: 'tank', shorts: 0.12, smile: 'grin', tempo: 0.95 },
+  { id: 'dodong', name: 'Dodong', face: { tilt: 0.12, lid: 0.85, brow: 0.12 }, color: '#8E6CC9', dark: '#5E4596', skin: '#C68A5B', hair: 'long', top: 'tee', sleeve: 0.06, shorts: 0.1, smile: 'grin', tempo: 1.04 },
+];
+
 // Shared proportions (kid space, zero pose). Measured: head+hair ≈ 43% of height, shirt ≈ 29.5%, lower body ≈ 27.5% (Reference A: 43 / 29 / 27).
 export const BODY = {
   hips: 0.315, armX: 0.16, legX: 0.075, skullY: 0.112,
@@ -236,9 +245,42 @@ export function buildKid(THREE, def) {
   for (const n of JOINTS) J[n].userData.rest = J[n].rotation.clone();
 
   const K = { def, group: kid, root: J.root, joints: J, face, mats };
+  const keep = new Set(); for (const m of Object.values(face.mouths)) m.traverse(o => keep.add(o)); for (const b of face.brows) b.traverse(o => keep.add(o));
+  mergeStatic(THREE, kid, keep);
   setExpression(K, 'happy');
   return K;
 }
+
+// Fewer draw calls: static parts with the same parent and material become one mesh (Bunso's curls, the sandal straps, petals,
+// each eye and its lid). The skinned body and the expression parts (mouths, brows) stay as they are.
+function mergeStatic(THREE, root, keep) {
+  const groups = new Map();
+  root.traverse(o => {
+    if (!o.isMesh || o.isSkinnedMesh || !o.visible || o.children.length || !o.parent || keep.has(o) || keep.has(o.parent)) return;
+    const k = o.parent.uuid + '|' + o.material.uuid; if (!groups.has(k)) groups.set(k, []); groups.get(k).push(o);
+  });
+  for (const list of groups.values()) {
+    if (list.length < 2) continue;
+    const geos = list.map(o => { o.updateMatrix(); const g = o.geometry.clone(); g.applyMatrix4(o.matrix); return g; });
+    const names = ['position', 'normal', 'uv'].filter(n => geos.every(g => g.attributes[n] && !g.attributes[n].isInterleavedBufferAttribute && g.attributes[n].itemSize === geos[0].attributes[n].itemSize));
+    if (names[0] !== 'position' || names[1] !== 'normal') { geos.forEach(g => g.dispose()); continue; }
+    let vc = 0, ic = 0; for (const g of geos) { vc += g.attributes.position.count; ic += g.index ? g.index.count : g.attributes.position.count; }
+    const out = new THREE.BufferGeometry(), idx = new (vc > 65535 ? Uint32Array : Uint16Array)(ic);
+    for (const n of names) {
+      const sz = geos[0].attributes[n].itemSize, arr = new Float32Array(vc * sz); let off = 0;
+      for (const g of geos) { const a = g.attributes[n]; for (let i = 0; i < a.count; i++) for (let c = 0; c < sz; c++) arr[(off + i) * sz + c] = a.getComponent(i, c); off += a.count; }
+      out.setAttribute(n, new THREE.BufferAttribute(arr, sz));
+    }
+    let vo = 0, io = 0;
+    for (const g of geos) { const n = g.attributes.position.count; if (g.index) { const s = g.index.array; for (let i = 0; i < s.length; i++) idx[io++] = s[i] + vo; } else for (let i = 0; i < n; i++) idx[io++] = vo + i; vo += n; g.dispose(); }
+    out.setIndex(new THREE.BufferAttribute(idx, 1)); out.computeBoundingSphere();
+    const first = list[0], m = new THREE.Mesh(out, first.material); m.name = first.name + '_x' + list.length; first.parent.add(m);
+    for (const o of list) { o.parent.remove(o); o.geometry.dispose(); }
+  }
+}
+// Only the big forms cast shadows (body, head, hair, sleeves, cap); eyes, mouths, straps and other small parts do not.
+const SMALL = /eye|lid|highlight|brow|nose|mouth|grin|tooth|teeth|bandage|thumb|strap|knot|post|sole|foot|petal|stem|flower|tirador|button|print/;
+export function castShadows(K, on = true) { K.group.traverse(o => { if (o.isMesh) o.castShadow = on && !SMALL.test(o.name); }); }
 
 export const EXPRESSIONS = ['neutral', 'happy', 'excited', 'surprised', 'sad', 'disappointed', 'determined', 'confused'];
 export function setExpression(K, name) {
