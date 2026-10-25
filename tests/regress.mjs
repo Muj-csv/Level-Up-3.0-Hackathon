@@ -1,7 +1,8 @@
 // Regression tests for the playtest bug reports of Oct 25, 2026:
 //  1. online HUD portraits: redrawn in 3D once the island is ready (each phone used to keep whatever it drew first)
 //  2. the island camera never aims past the island's edge, and the roll preview stays on the kid
-//  3. Torneo and Hamon ng Araw show an island like Party (they used the old cloud board), including an older Torneo save
+//  3. Torneo shows an island like Party (it used the old cloud board), including an older Torneo save; Hamon ng Araw
+//     (no board) starts at once with only the sky behind its cards in 3D
 //  4. the island loading bar keeps moving (a CSS sweep) while the island's shaders are compiled behind it
 //  5. Pasaporte: a double tap on a gold stamp's button doesn't take the gold back; removing it asks first
 // Run: node tests/regress.mjs
@@ -25,7 +26,7 @@ async function playUntil(page, fn, ms) {
   while (Date.now() - t0 < ms) {
     const stop = await page.evaluate(src => { const L = window.__lsu; if (eval(src)(L)) return true;
       if (!document.querySelector('#modal').hidden) { const b = document.querySelector('#card [data-primary]') || document.querySelector('#card .row button'); if (b) b.click(); }
-      else { const a = document.querySelector('#actionBtn'); if (!a.hidden) a.click(); }
+      else { const a = document.querySelector('#actionBtn'); if (L.state.reach && (window.__look = (window.__look || 0) + 1) < 4) return false; window.__look = 0; if (!a.hidden) a.click(); }   // look at the roll preview for a moment, like a person
       const sc = L.scene; if (sc && sc.action && Math.random() < .3) sc.action(); return false; }, fn.toString());
     if (stop) return true;
     await page.waitForTimeout(150);
@@ -80,8 +81,8 @@ async function playUntil(page, fn, ms) {
   await page.waitForSelector('#card [data-primary]');
   await page.evaluate(() => document.querySelector('#card [data-primary]').click());
   await page.waitForFunction(() => window.__lsu.screen === 'game', null, { timeout: 15000 });
-  const hb = await page.evaluate(() => window.__lsu.board.id);
-  check(hb === 'plaza', 'Hamon ng Araw shows an island (Plaza), not the old cloud board', hb);
+  const hb = await page.evaluate(() => ({ id: window.__lsu.board.id, loading: !document.querySelector('#loadIsl').hidden }));
+  check(!hb.loading, 'Hamon ng Araw starts at once (no island to load: it has no board)', JSON.stringify(hb));
   await page.context().close();
 }
 
@@ -123,6 +124,20 @@ async function playUntil(page, fn, ms) {
   const after = await page.evaluate(() => ({ url: document.querySelector('#hudTop canvas').toDataURL(), u3: window.__lsu.b3.u3 }));
   check(sweep === 'lbarSweep', 'the island loading bar has a moving sweep while the island is prepared', sweep);
   check(after.u3 === true && after.url !== before, 'HUD portraits are redrawn in 3D once the island is ready (the same on every phone)');
+  // Hamon ng Araw: behind its cards only the sky, not the old cloud board; back on a board the korona show again
+  await page.evaluate(() => window.__lsu.toTitle()); await page.waitForTimeout(500);
+  await page.evaluate(() => document.querySelector('#mHamon').click()); await page.waitForSelector('#card [data-primary]');
+  await page.evaluate(() => document.querySelector('#card [data-primary]').click());
+  await page.waitForFunction(() => window.__lsu.screen === 'game' && !document.querySelector('#modal').hidden, null, { timeout: 30000 });
+  await page.waitForTimeout(3000);
+  const h = await page.evaluate(() => { const B = window.__lsu.b3; return { env: B.envKey, kids: [...B.kids.values()].filter(K => K.g.visible).length, crowns: B.crowns.filter(c => c.visible).length, bare: B.bare }; });
+  check(h.env === 'mg' && h.kids === 0 && h.crowns === 0 && h.bare, 'Hamon ng Araw: only the sky behind its cards in 3D, no old cloud board, kids or korona', JSON.stringify(h));
+  await page.evaluate(() => window.__lsu.toTitle());
+  await page.evaluate(() => window.__lsu.startLocal({ n: 1, names: ['Ian'], cfg: { mode: 'party', rounds: 3, diff: 1, map: 'plaza' } }));
+  await page.waitForFunction(() => document.querySelector('#loadIsl').hidden && window.__lsu.b3.island && window.__lsu.screen === 'game', null, { timeout: 180000, polling: 500 });
+  await page.waitForTimeout(3000);
+  const back = await page.evaluate(() => { const B = window.__lsu.b3; return { crowns: B.crowns.filter(c => c.visible).length, kids: [...B.kids.values()].filter(K => K.g.visible).length }; });
+  check(back.crowns > 0 && back.kids === 4, 'after Hamon, a Party game shows its korona and kids again', JSON.stringify(back));
   await page.context().close();
   const rm = await newPage('2d', '?debug', { reducedMotion: 'reduce' });
   const off = await rm.evaluate(() => { const el = document.querySelector('#loadIsl'); el.hidden = false; const a = getComputedStyle(document.querySelector('#loadF'), '::after'); const r = [a.animationName, a.display]; el.hidden = true; return r; });

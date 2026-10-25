@@ -2716,9 +2716,10 @@ function beginGame(spec,seed,cp,cfg){
   state.cfg=normCfg(cfg);gs=seed|0;decK=0;mgSeq=0;state.ended=false;
   state.plan=isHamon()?[MG[state.cfg.mg]?state.cfg.mg:'tumbang']:mgPlan(seed|0,maxR());if(DEBUG_MG&&MG[DEBUG_MG]&&!isHamon())state.plan=state.plan.map(()=>DEBUG_MG);
   state.order=[0,1,2,3];if(!isHamon())for(let i=3;i>0;i--){const j=Math.floor(G()*(i+1)),t=state.order[i];state.order[i]=state.order[j];state.order[j]=t;}
-  /* every mode shows an island now (Torneo and Hamon used the old cloud board); a save names its board. Nobody moves in
-     Torneo, so an older Torneo save resumes on the island with everyone at the start */
-  setBoard(cp&&cp.board&&(MAPS[cp.board]||cp.board==='ulap')?cp.board:state.cfg.map);state.players=makePlayers(spec);state.players.forEach(p=>{p.pos=BOARD.start;});resetKorona();state.round=1;state.turn=0;state.overview=false;state.active=null;state.party=false;mapBtn.setAttribute('aria-pressed','false');
+  /* Party and Torneo show an island (Torneo used the old cloud board); a save names its board. Nobody moves in Torneo,
+     so an older Torneo save resumes on the island with everyone at the start */
+  /* Hamon ng Araw has no board: it starts at once, with only the sky behind its cards (B3.render) */
+  setBoard(isHamon()?'ulap':cp&&cp.board&&(MAPS[cp.board]||cp.board==='ulap')?cp.board:state.cfg.map);state.players=makePlayers(spec);state.players.forEach(p=>{p.pos=BOARD.start;});resetKorona();state.round=1;state.turn=0;state.overview=false;state.active=null;state.party=false;mapBtn.setAttribute('aria-pressed','false');
   let r0=1,t0=0;
   if(cp&&cp.players&&cp.players.length===4){cp.players.forEach((q,i)=>{const p=state.players[i];p.pos=clamp(q.pos|0,0,N-1);p.trail=Array.isArray(q.trail)?q.trail.map(v=>clamp(v|0,0,N-1)).slice(-16):[];p.piso=q.piso|0;p.korona=q.korona|0;p.item=q.item&&ITEMS[q.item]?q.item:null;if(q.ctrl==='bot'){if(q.away&&p.ctrl!=='bot')p.away=p.ctrl;p.ctrl='bot';}if(Array.isArray(q.allies))p.allies=q.allies.slice(0,2).map(a=>({n:cleanName(a.n)||'Kasama',look:clamp(a.look|0,0,3),x:0,y:0}));if(q.stats)p.stats={wins:q.stats.wins|0,steps:q.stats.steps|0,dice:q.stats.dice|0,dn:q.stats.dn|0};});
     if(Array.isArray(cp.korona)&&cp.korona.length===korona.spots.length)korona.spots=cp.korona.map(v=>clamp(v|0,0,N-1));r0=clamp(cp.round|0,1,maxR());t0=clamp(cp.turn|0,0,4);gs=cp.gs|0;decK=cp.decK|0;mgSeq=cp.mgSeq|0;
@@ -3645,13 +3646,16 @@ function init3D(){
     const mgS=scene&&APP.screen==='game'?scene:null;
     if(mgS!==B3.curMg){if(B3.mg){S.remove(B3.mg.root);freeTree(B3.mg.root);B3.mg=null;}B3.curMg=mgS;if(mgS){B3.mg=buildMg(mgS);S.add(B3.mg.root);}
       B3.crowns.forEach(c=>c.visible=!mgS);reachGrp.visible=!mgS;B3.rings.forEach(r=>r.visible=!mgS);B3.dice.forEach(d=>d.m.visible=false);for(const K of B3.kids.values())K.g.visible=!mgS;for(const K of B3.allies.values())K.g.visible=!mgS;}
-    syncWorld(!!B3.mg);
+    /* Hamon ng Araw (and Pagsasanay) has no board: behind its cards only the sky shows, not the old cloud board */
+    const bare=!B3.mg&&APP.screen==='game'&&isHamon();
+    if(bare!==!!B3.bare){B3.bare=bare;if(!bare&&!B3.mg){B3.crowns.forEach(c=>c.visible=true);reachGrp.visible=true;B3.rings.forEach(r=>r.visible=true);}}   // back to a board: show them again
+    syncWorld(!!B3.mg||bare);
     if(B3.mg){const c=B3.mg.cam;camera.position.set(c.x+sx,c.y+c.d*Math.sin(c.el),c.z+sz+c.d*Math.cos(c.el));camera.lookAt(c.x+sx,c.y,c.z+sz);}
     else if(APP.screen==='title'&&state.players.length){const p0=state.players.at(0),az=now*.12,d=(H/.95)/(2*fovT)*.62,el=.42;camera.position.set(p0.x+40+Math.sin(az)*d*Math.cos(el),d*Math.sin(el),p0.y+Math.cos(az)*d*Math.cos(el));camera.lookAt(p0.x+40,30,p0.y);}
     else{const far=state.overview||!state.active&&!korona.fly&&!state.focus,fit=!far&&state.reach&&!korona.fly;B3.vf=lerp(B3.vf||1,far?1.02:(fit?.9:.58),1-Math.exp(-dt*3));const d=(H/cam.z)/(2*fovT)*B3.vf,el=BOARD.map?lerp(1.12,1.22,(B3.vf-.58)/.44):lerp(.8,.95,(B3.vf-.58)/.44);/* the maps look down more steeply, over roofs and trees */const gy=BOARD.map?groundAt(cam.x,cam.y):0;B3.gy=lerp(B3.gy||0,gy,1-Math.exp(-dt*4));camera.position.set(cam.x+sx,B3.gy+d*Math.sin(el),cam.y+sz+d*Math.cos(el));camera.lookAt(cam.x+sx,B3.gy,cam.y+sz);}
     camera.setViewOffset(W,H,0,-camOffY(),W,H);camera.updateProjectionMatrix();
     if(B3.plRef!==state.players){for(const K of B3.kids.values()){S.remove(K.g);if(!K.nk)freeTree(K.g);}for(const K of B3.allies.values()){S.remove(K.g);freeTree(K.g);}B3.kids.clear();B3.allies.clear();B3.plRef=state.players;}
-    if(B3.mg){B3.mg.upd(dt);}else{
+    if(B3.mg){B3.mg.upd(dt);}else if(bare){B3.crowns.forEach(c=>c.visible=false);reachGrp.visible=false;B3.rings.forEach(r=>r.visible=false);for(const K of B3.kids.values())K.g.visible=false;for(const K of B3.allies.values())K.g.visible=false;}else{
     for(const p of state.players){const K=kidFor(p);
       const o=kidOpts(p),mp=!!BOARD.map;o.walk=p.hopping?now*16:null;o.y0=groundAt(p.x,p.y);pose(K,p.x,p.y,o,1.3);
       p.allies.forEach(a=>{let A=B3.allies.get(a);if(!A){A=extraKid(NPCS[a.look],{shadow:true});B3.allies.set(a,A);}pose(A,a.x,a.y,{dir:p.hopping?p.dir:'front',face:p.face,walk:p.hopping?now*14:null,mood:p.mood==='cheer'?'cheer':'happy',lift:p.hopping?Math.abs(Math.sin(now*12))*6:0,y0:mp?groundAt(a.x,a.y):0},mp?.85:.95);});}
