@@ -1,6 +1,7 @@
 // 3D play-test: the board and minigames drawn with Three.js (WebGL through SwiftShader, so no GPU is needed).
 // Checks the 3D title and board, reach rings, screen-to-board mapping, the 3D/2D setting, save and resume
-// with Kasama allies, every minigame's 3D arena, and the 2D fallback when Three.js cannot load.
+// with Kasama allies, every minigame's 3D arena, the 2D fallback when Three.js cannot load, the 3D gallery and result
+// picture, and a slow kids/kids.js (the board waits in 2D, never an older kid).
 // Screenshots go to test-results/3d-*.png. Run: node tests/3d.mjs
 import fs from 'fs';
 import path from 'path';
@@ -189,6 +190,40 @@ for (const kind of Object.keys(MASH)) {
   const t = await page.evaluate(() => ({ gone: !document.querySelector('#splash'), screen: window.__lsu.screen, live: document.getElementById('titleCv').classList.contains('on'), freed: !window.__lsu.hero.ctl }));
   check(t.gone && t.screen === 'title' && t.live && t.freed, 'splash: the tap opens the live main menu and frees the splash kids', JSON.stringify(t));
   await page.context().close();
+}
+// ---------- 5. one set of kids: the 3D gallery, the result picture, and a slow kids/kids.js ----------
+{
+  const page = await newPage('3d');
+  await page.click('#mSprites');
+  const g = await page.waitForFunction(() => window.__lsu.gal.ctl, null, { timeout: 120000 }).then(() => true, () => false);
+  check(g && await page.evaluate(() => !document.querySelector('#galDl')), 'gallery: the four 3D kids (kids/hero.js), no sprite-sheet download');
+  await page.click('#animChips button:nth-child(4)'); await page.waitForTimeout(3000); await shot(page, 'gallery');
+  await page.click('#galBack');
+  check(await page.evaluate(() => !window.__lsu.gal.ctl), 'gallery: its 3D kids are freed when it closes');
+  await page.evaluate(() => window.__lsu.startLocal({ n: 1, names: ['Ian'], cfg: { mode: 'party', rounds: 3, diff: 1, map: 'ulap' } }));
+  await page.waitForFunction(() => window.__lsu.b3.on, null, { timeout: 60000 });
+  const png = await page.evaluate(() => window.__lsu.resultPng());
+  fs.writeFileSync(path.join(OUT, '3d-result.png'), Buffer.from(png.split(',')[1], 'base64'));
+  check(png.length > 200000, 'result picture: drawn with the 3D kids', png.length + ' chars');
+  await page.context().close();
+}
+{
+  // kids/kids.js arrives 12 s late: the board waits in 2D with the kids' pictures and the HUD shows no old kid
+  const ctx = await browser.newContext({ viewport: { width: 640, height: 400 }, deviceScaleFactor: 1 });
+  await renderer(ctx, '3d');
+  await ctx.route('**/kids/kids.js', async r => { await new Promise(res => setTimeout(res, 12000)); await r.continue(); });
+  const page = await ctx.newPage(); allErrs.push(watchErrors(page, 'slow kids'));
+  await page.goto(srv.url + '?debug');
+  await page.waitForFunction(() => window.__lsu && window.__lsu.screen === 'title' && window.__lsu.b3.ok, null, { timeout: 60000 });
+  await page.evaluate(() => window.__lsu.startLocal({ n: 1, names: ['Ian'], cfg: { mode: 'party', rounds: 3, diff: 1, map: 'ulap' } }));
+  await page.waitForTimeout(1500);
+  const early = await page.evaluate(() => { const L = window.__lsu; const cvs = [...document.querySelectorAll('#players canvas')];
+    const inked = cvs.every(c => { const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let n = 0; for (let i = 3; i < d.length; i += 4) if (d[i]) n++; return n > 50; });
+    return { kids: !!L.b3.kidsMod, on: L.b3.on, inked }; });
+  check(!early.kids && !early.on && early.inked, 'slow kids: the board waits in 2D and every portrait shows a placeholder or the kid picture (no older kid)', JSON.stringify(early));
+  const later = await page.waitForFunction(() => window.__lsu.b3.kidsMod && window.__lsu.b3.on, null, { timeout: 90000 }).then(() => true, () => false);
+  check(later, 'slow kids: once kids/kids.js arrives the board switches to 3D');
+  await ctx.close();
 }
 check(allErrs.flat().length === 0, 'no script errors across all 3D runs', allErrs.flat().slice(0, 3).join(' | '));
 await browser.close(); srv.close(); done();

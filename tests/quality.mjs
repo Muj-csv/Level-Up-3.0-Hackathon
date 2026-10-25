@@ -2,7 +2,7 @@
 // Checks: the setting is saved next to the other settings and never changes them or the 3D/2D choice; old and broken
 // saved settings load safely; each quality reaches the renderer on the title, the board and a minigame; changing it
 // mid-game keeps the game as it was; an island built for another quality is built again; minigames played one after
-// another do not pile up GPU memory; the kids keep their outlines on Mababa. Run: node tests/quality.mjs
+// another do not pile up GPU memory; Mababa keeps the minigame outlines and kids. Run: node tests/quality.mjs
 import { chromium, serve, watchErrors, check, done, renderer } from './lib.mjs';
 
 const srv = await serve();
@@ -80,9 +80,13 @@ for (const q of ['low', 'mid', 'high']) {
   const m = await info(page);
   check(matches(m, q), `${q}: minigame drawn at its pixel ratio and shadow`, JSON.stringify(m));
   if (q === 'low') {
-    // the seated kids in Luksong Tinik are the drawn-outline kids: Mababa must not hide those outlines
-    const ol = await page.evaluate(() => { let n = 0; window.__lsu.b3.mg.root.traverse(o => { if (o.userData.ol && o.visible) n++; }); return n; });
-    check(ol > 100, 'low: the minigame kids keep their dark outlines', ol + ' outline meshes');
+    // Mababa must not hide the arena's dark outlines, nor the seated kids in Luksong Tinik: those are the barrio kids
+    // (NPC_KIDS in kids/kids.js, the same 3D rig as the players, which needs no drawn outline)
+    const o = await page.evaluate(() => { let ol = 0, shown = 0; const kids = new Set();
+      window.__lsu.b3.mg.root.traverse(m => { if (m.userData.ol) { ol++; if (m.visible) shown++; } if (m.isSkinnedMesh && m.visible && m.parent) kids.add(m.parent.name); });
+      return { ol, shown, kids: [...kids].sort().join() }; });
+    check(o.ol > 0 && o.shown === o.ol, 'low: the minigame keeps every dark outline', JSON.stringify(o));
+    check(['Boyet', 'Dodong', 'Lito', 'Mayumi'].some(n => o.kids.split(',').includes(n)), 'low: the seated Luksong Tinik kids are the 3D barrio kids', o.kids);
   }
   await page.context().close();
 }

@@ -1,0 +1,34 @@
+{
+ "frame": [
+  96,
+  120
+ ],
+ "feet": 108,
+ "poses": [
+  "front",
+  "front_walk_a",
+  "front_walk_b",
+  "front_cheer",
+  "front_sad",
+  "front_hop",
+  "back",
+  "back_walk_a",
+  "back_walk_b",
+  "side",
+  "side_walk_a",
+  "side_walk_b",
+  "side_kick",
+  "front_guard",
+  "front_kick"
+ ],
+ "kids": [
+  "bunso",
+  "neneng",
+  "totoy",
+  "jun",
+  "lito",
+  "mayumi",
+  "boyet",
+  "dodong"
+ ]
+}
