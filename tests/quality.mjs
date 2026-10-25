@@ -2,7 +2,7 @@
 // Checks: the setting is saved next to the other settings and never changes them or the 3D/2D choice; old and broken
 // saved settings load safely; each quality reaches the renderer on the title, the board and a minigame; changing it
 // mid-game keeps the game as it was; an island built for another quality is built again; minigames played one after
-// another do not pile up GPU memory; the kids keep their outlines on Mababa. Run: node tests/quality.mjs
+// another do not pile up GPU memory; Mababa keeps the minigame outlines and kids. Run: node tests/quality.mjs
 import { chromium, serve, watchErrors, check, done, renderer } from './lib.mjs';
 
 const srv = await serve();
@@ -37,10 +37,26 @@ const matches = (i, q) => i.pr === WANT[q].pr && i.shadow === WANT[q].shadow && 
 
 // ---------- 1. saved settings: old saves, broken values, and the new one next to the others ----------
 {
+  const page = await newPage(JSON.stringify({ music: true, sfx: true, vib: true, g3d: false }));
+  const i = await info(page), on3d = await page.evaluate(() => window.__lsu.b3.ok && !document.getElementById('titleCv').hidden);
+  check(i.q === 'low' && on3d, 'a device that had picked 2D (Grapiko, now gone) starts in 3D on Mababa', JSON.stringify({ q: i.q, on3d }));
+  await page.context().close();
+}
+{
+  const page = await newPage(JSON.stringify({ g3d: false, gq: 'high' }));
+  check((await info(page)).q === 'high', 'a quality the player picked is kept even if 2D had been picked too');
+  await page.context().close();
+}
+{
   const page = await newPage(JSON.stringify({ music: false, sfx: true, vib: false, g3d: true }));
   check((await info(page)).q === 'mid', 'a save from before Kalidad loads with Katamtaman (the default)');
   await page.evaluate(() => window.__lsu.startLocal({ n: 1, names: ['Ian'], cfg: { mode: 'party', rounds: 3, diff: 1, map: 'ulap' } }));
-  await page.waitForTimeout(1200);
+  // the game saves at the start of each turn, after the opening draw (Bunutan); software WebGL is slow to get there, so the
+  // opening runs sped up until that first save exists
+  await page.evaluate(() => window.__lsu.setSpeed(8));
+  const firstSave = await page.waitForFunction(() => !!localStorage.getItem('lsu-save'), null, { timeout: 120000, polling: 250 }).then(() => true, () => false);
+  await page.evaluate(() => window.__lsu.setSpeed(1));
+  check(firstSave, 'the game saves when the first turn starts');
   await page.click('#menuBtn');
   const row = await page.evaluate(() => [...document.querySelectorAll('#menuCard button[data-k="gq"]')].map(b => b.textContent + ':' + b.getAttribute('aria-pressed')));
   check(row.join() === 'Mababa:false,Katamtaman:true,Mataas:false', 'pause menu has Kalidad with three choices, Katamtaman picked', row.join());
@@ -48,10 +64,11 @@ const matches = (i, q) => i.pr === WANT[q].pr && i.shadow === WANT[q].shadow && 
   const r = await pick(page, 'low'), pressed = r.pressed;
   const p = await prefs(page);
   check(pressed.join() === 'low' && p.gq === 'low', 'picking Mababa marks it and saves it', JSON.stringify(p));
-  check(p.music === false && p.sfx === true && p.vib === false && p.g3d === true, 'the other settings and the 3D/2D choice stay as they were', JSON.stringify(p));
+  check(p.music === false && p.sfx === true && p.vib === false, 'the other settings stay as they were', JSON.stringify(p));
+  check(p.g3d === undefined, 'the old Grapiko 3D/2D choice is not saved any more', JSON.stringify(p));
   check(await page.evaluate(() => window.__lsu.b3.on), 'Mababa keeps the game in 3D (it is not the 2D setting)');
   check(r.same, 'changing the quality mid-game keeps the round, turn, korona, piso and items');
-  check(await page.evaluate(() => !!localStorage.getItem('lsu-save')), 'the saved game is still there');
+  check(await page.evaluate(() => !!localStorage.getItem('lsu-save')), 'the saved game is still there after changing the quality');
   await page.reload(); await page.waitForFunction(() => window.__lsu && window.__lsu.b3 && window.__lsu.b3.ok, null, { timeout: 30000 }); await page.waitForTimeout(600);
   check((await info(page)).q === 'low', 'Mababa is still picked after a reload');
   await page.evaluate(() => localStorage.setItem('lsu-prefs', JSON.stringify({ music: 'yes', gq: 'ultra' })));
@@ -80,9 +97,13 @@ for (const q of ['low', 'mid', 'high']) {
   const m = await info(page);
   check(matches(m, q), `${q}: minigame drawn at its pixel ratio and shadow`, JSON.stringify(m));
   if (q === 'low') {
-    // the seated kids in Luksong Tinik are the drawn-outline kids: Mababa must not hide those outlines
-    const ol = await page.evaluate(() => { let n = 0; window.__lsu.b3.mg.root.traverse(o => { if (o.userData.ol && o.visible) n++; }); return n; });
-    check(ol > 100, 'low: the minigame kids keep their dark outlines', ol + ' outline meshes');
+    // Mababa must not hide the arena's dark outlines, nor the seated kids in Luksong Tinik: those are the barrio kids
+    // (NPC_KIDS in kids/kids.js, the same 3D rig as the players, which needs no drawn outline)
+    const o = await page.evaluate(() => { let ol = 0, shown = 0; const kids = new Set();
+      window.__lsu.b3.mg.root.traverse(m => { if (m.userData.ol) { ol++; if (m.visible) shown++; } if (m.isSkinnedMesh && m.visible && m.parent) kids.add(m.parent.name); });
+      return { ol, shown, kids: [...kids].sort().join() }; });
+    check(o.ol > 0 && o.shown === o.ol, 'low: the minigame keeps every dark outline', JSON.stringify(o));
+    check(['Boyet', 'Dodong', 'Lito', 'Mayumi'].some(n => o.kids.split(',').includes(n)), 'low: the seated Luksong Tinik kids are the 3D barrio kids', o.kids);
   }
   await page.context().close();
 }
