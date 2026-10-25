@@ -120,6 +120,22 @@ for (const [label, w, h] of [['phone', 390, 844], ['desktop', 1440, 900]]) {
   await page.context().close();
 }
 
+// ---------- 2c. splash: logo, a bar that follows the real loading, then the tap (2D kids here: Three.js is blocked) ----------
+for (const [label, w, h] of [['phone', 390, 844], ['landscape phone', 844, 390]]) {
+  const page = await newPage({ viewport: { width: w, height: h }, isMobile: true, hasTouch: true }, '?debug&splash');
+  const s0 = await page.evaluate(() => ({ on: !!document.querySelector('#splash'), logo: document.querySelector('#spLogo').textContent, bar: !document.querySelector('#spBar').hidden }));
+  check(s0.on && s0.logo === 'Taympers' && s0.bar, `${label} splash: the logo and a loading bar show first`, JSON.stringify(s0));
+  await page.waitForFunction(() => !document.querySelector('#spGo').hidden, null, { timeout: 30000 }).catch(() => {});
+  const s1 = await page.evaluate(() => { const b = document.querySelector('#spGo').getBoundingClientRect(); return { ready: !document.querySelector('#spGo').hidden, pct: document.querySelector('#spBar').getAttribute('aria-valuenow'), h: Math.round(b.height), fits: b.top >= 0 && b.bottom <= innerHeight, flat: document.querySelector('#spRow').classList.contains('flat'), focus: document.activeElement && document.activeElement.id }; });
+  check(s1.ready && s1.pct === '100' && s1.focus === 'spGo', `${label} splash: the bar fills, then "Pindutin para magsimula" shows with the focus`, JSON.stringify(s1));
+  check(s1.h >= 44 && s1.fits, `${label} splash: the start button is at least 44 px tall and on screen`);
+  check(s1.flat, `${label} splash: without 3D the four kids are drawn in 2D`);
+  await page.keyboard.press('Enter'); await page.waitForTimeout(800);
+  const s2 = await page.evaluate(() => ({ gone: !document.querySelector('#splash'), screen: window.__lsu.screen, focus: document.activeElement && document.activeElement.id, still: !document.querySelector('#titleBg').hidden }));
+  check(s2.gone && s2.screen === 'title' && s2.focus === 'mLocal' && s2.still, `${label} splash: Enter opens the main menu (Plaza picture) with the focus on Maglaro`, JSON.stringify(s2));
+  await page.context().close();
+}
+
 // ---------- 3. full Party match: bookkeeping ----------
 {
   const page = await newPage({}, '?debug&speed=4');
