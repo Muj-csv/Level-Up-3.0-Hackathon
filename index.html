@@ -203,7 +203,7 @@ body{background:var(--sky);color:var(--ink);font-family:var(--body);overflow:hid
 .labas{background:#E3F3D6;border:2px solid #7CB55A;border-radius:12px;padding:8px 11px;margin:10px 0 4px}
 .labas b{display:block;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:#3D6E25}
 .labas p{font-size:13.5px;line-height:1.45;margin:3px 0 0}
-.modal.top{z-index:7}
+.modal.top{z-index:7;flex-direction:row;align-items:center;justify-content:center;gap:0}   /* not the HUD's .top column: in a column the card did not shrink and ran past the screen on phones */
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
 .btn.sky{background:#BFE3F2}
 .menurow{display:flex;gap:10px;width:100%}
@@ -473,9 +473,11 @@ function savePrefs(){try{localStorage.setItem('lsu-prefs',JSON.stringify(PREFS))
 /* audio graph: effects and music buses -> master -> limiter, so stacked sounds never clip */
 const Sfx={ac:null,out:null,fx:null,lastTick:0,
   get on(){return PREFS.music||PREFS.sfx;},
-  init(){if(!this.ac){try{const ac=new (window.AudioContext||window.webkitAudioContext)(),lim=ac.createDynamicsCompressor();lim.threshold.value=-10;lim.knee.value=6;lim.ratio.value=8;lim.attack.value=.003;lim.release.value=.2;lim.connect(ac.destination);
-      this.out=ac.createGain();this.out.connect(lim);this.fx=ac.createGain();this.fx.connect(this.out);this.ac=ac;}catch(e){this.ac=null;}}
-    if(this.ac&&this.ac.state==='suspended'&&!document.hidden)this.ac.resume().catch(()=>{});},
+  /* making the audio context opens the sound device (over 100 ms on some machines), so the splash makes it while it
+     loads; it starts paused, and init() on the first tap resumes it */
+  make(){if(!this.ac){try{const ac=new (window.AudioContext||window.webkitAudioContext)(),lim=ac.createDynamicsCompressor();lim.threshold.value=-10;lim.knee.value=6;lim.ratio.value=8;lim.attack.value=.003;lim.release.value=.2;lim.connect(ac.destination);
+      this.out=ac.createGain();this.out.connect(lim);this.fx=ac.createGain();this.fx.connect(this.out);this.ac=ac;}catch(e){this.ac=null;}}},
+  init(){this.make();if(this.ac&&this.ac.state==='suspended'&&!document.hidden)this.ac.resume().catch(()=>{});},
   tone(f,d,type,v,f2,delay){if(!PREFS.sfx||!this.ac)return;try{const t=this.ac.currentTime+(delay||0);const o=this.ac.createOscillator(),gn=this.ac.createGain();o.type=type||'square';o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+d);gn.gain.setValueAtTime(v||.04,t);gn.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(gn).connect(this.fx);o.start(t);o.stop(t+d+.03);}catch(e){}},
   hop(b){this.tone(b?440:540,.08,'square',.025,b?300:780);},
   coin(){this.tone(988,.07,'square',.03);this.tone(1319,.15,'square',.03,null,.07);},
@@ -2715,7 +2717,7 @@ async function localFlow(){
 }
 /* ================= map select: the world picture of all four islands zooms to the one being picked =================
    maps/world/world.jpg is a still render of the four islands; <id>.jpg is the sharp close-up of each island's box in it */
-const WORLD={W:2048,H:1280,islands:{plaza:{x:.0217,y:.4831,w:.5038,h:.5038},palengke:{x:.5212,y:.5563,w:.4058,h:.4058},aplaya:{x:.4975,y:.0942,w:.3875,h:.3875},palayan:{x:.1217,y:.124,w:.3723,h:.3723}}};
+const WORLD={W:2048,H:1280,islands:{plaza:{x:.0218,y:.4828,w:.5037,h:.5037},palengke:{x:.5211,y:.556,w:.4058,h:.4058},aplaya:{x:.4977,y:.0944,w:.387,h:.387},palayan:{x:.1218,y:.1238,w:.3723,h:.3723}}};
 /* the world picture behind the map screen: one element, moved with CSS transforms */
 const WV={cur:null,close:{}};
 function wvSetup(){const wd=$('#mapWorld'),img=$('#mapImg');wd.style.width=WORLD.W+'px';wd.style.height=WORLD.H+'px';if(!img.getAttribute('src'))img.src='maps/world/world.jpg';
@@ -3485,8 +3487,10 @@ function init3D(){
   B3.unproj=(sx,sy)=>{const rc=new T3.Raycaster(),ndc=new T3.Vector2(sx/W*2-1,-(sy/H)*2+1);rc.setFromCamera(ndc,camera);const pl=new T3.Plane(new T3.Vector3(0,1,0),B3.mg?0:-(B3.gy||0)),pt=new T3.Vector3();return rc.ray.intersectPlane(pl,pt)?{x:pt.x,y:pt.z}:null;};
   /* frees what a removed minigame, kid or portrait built on the GPU. The shared pieces stay: the cached toon colours (M),
      the outline, the arena island and the world's textured materials */
-  function freeTree(o){const keep=new Set([...MC.values(),OUT,WHITE,blob,kidBlobM,grassM,sandM,dirtM,stoneM,cliffM,rockM,waterM,woodM,ropeM,cloudM]);
-    const free=n=>{if(n===arena)return;n.children.forEach(free);if(n.geometry&&n.geometry!==blobGeo)n.geometry.dispose();
+  /* a rigged kid's skeleton holds its own bone texture, freed only by skeleton.dispose(); the players' cached kids (B3.nk) stay */
+  function freeTree(o){const keep=new Set([...MC.values(),OUT,WHITE,blob,kidBlobM,grassM,sandM,dirtM,stoneM,cliffM,rockM,waterM,woodM,ropeM,cloudM]),keepSk=new Set();
+    for(const w of Object.values(B3.nk||{}))w.g.traverse(x=>{if(x.skeleton)keepSk.add(x.skeleton);});
+    const free=n=>{if(n===arena)return;n.children.forEach(free);if(n.skeleton&&!keepSk.has(n.skeleton))n.skeleton.dispose();if(n.geometry&&n.geometry!==blobGeo)n.geometry.dispose();
       for(const m of [].concat(n.material||[]))if(!keep.has(m)){for(const k in m){const t=m[k];if(t&&t.isTexture&&t!==gm)t.dispose();}m.dispose();}};
     free(o);}
   /* the graphics quality: shadows, the kids' round shadows and texture sharpness change at once; the pixel ratio is read every frame;
@@ -3659,7 +3663,8 @@ function frame(t){if((PERF||DEBUG)&&t>last){FT.push(t-last);if(FT.length>600)FT.
 /* ================= boot ================= */
 function start(data){
   resize();
-  ISL.forEach(isl=>renderIsland(isl,false));renderIsland(ARENA,true);loadThree().then(()=>{init3D();refreshPortraits();}).catch(()=>{});
+  /* behind the splash the board's 3D is set up later, as one of its loading steps, so it does not hold up the kids' entrance */
+  ISL.forEach(isl=>renderIsland(isl,false));renderIsland(ARENA,true);loadThree().then(()=>{if(SPLASH.on)return;init3D();refreshPortraits();}).catch(()=>{});
   try{if(window.claude&&window.claude.use)window.claude.use('downloads').then(d=>{DL=d||null;}).catch(()=>{});}catch(e){}
   const cp=data&&data.checkpoint;
   if(cp&&cp.mode==='local'&&cp.setup){startLocal(cp.setup,cp);}
@@ -3679,16 +3684,21 @@ try{window.claude&&window.claude.hot&&window.claude.hot.snapshot&&window.claude.
    The still picture (maps/world/title*.jpg) shows at once and stands in without 3D; the live scene fades in over it
    once built. It is dropped while a game runs (the game's island needs the memory) and built again on the way back,
    with the graphics quality (Kalidad) set at that time. */
-const TS={ctl:null,mk:null,tok:0,on:false,bg:$('#titleBg'),cv:$('#titleCv')};
+const TS={ctl:null,mk:null,tok:0,on:false,lay:'',bg:$('#titleBg'),cv:$('#titleCv')};
 async function titleBuild(){const tok=++TS.tok;try{await loadThree();
     const [geo,m]=await Promise.all([import('./kids/kidgeo.js'),import('./maps/title.js')]);if(tok!==TS.tok)return;const Q=gq();if(geo.LOD)geo.LOD.k=Q.kid;
     const ctl=TS.mk=m.create(TS.cv,{reduced:RM,maxDpr:Q.pr,shadow:Q.shadow,islShadow:Q.isl,leaf:Math.min(2500,Q.leaf),grass:Math.min(6,Q.grass)});await ctl.ready;if(tok!==TS.tok)return;
-    TS.ctl=ctl;if(TS.on)titleShow();}catch(e){if(tok===TS.tok){TS.mk=null;console.warn('title scene',e);}}}
-function titleDrop(){TS.tok++;const c=TS.mk;TS.mk=TS.ctl=null;TS.cv.classList.remove('on');if(c)c.dispose();}
+    TS.ctl=ctl;if(TS.on)(SPLASH.on&&!SPLASH.started?titlePrime():titleShow());}catch(e){if(tok===TS.tok){TS.mk=null;console.warn('title scene',e);}}}
+function titleDrop(){TS.tok++;const c=TS.mk;TS.mk=TS.ctl=null;TS.lay='';TS.cv.classList.remove('on');if(c)c.dispose();}
 function titleShow(){titleLayout();TS.ctl.show(true);requestAnimationFrame(()=>requestAnimationFrame(()=>{if(TS.ctl&&TS.on)TS.cv.classList.add('on');}));}
-/* where the kids stand: on portrait screens between the logo and the buttons, otherwise in the area left of the buttons */
+/* under the splash the menu scene is laid out and its opening frame drawn, but it only runs from the tap: the splash
+   keeps the machine to itself, and the menu opens on that same first frame */
+function titlePrime(){titleLayout();TS.ctl.still(0);TS.cv.classList.add('on');}
+/* where the kids stand: on portrait screens between the logo and the buttons, otherwise in the area left of the buttons.
+   An unchanged layout is not applied again (resizing the canvas would blank the frame already drawn) */
 function titleLayout(){if(!TS.ctl||!TS.on)return;const w=innerWidth,h=innerHeight,b=$('#scrTitle .brand').getBoundingClientRect(),m=$('#scrTitle .menu').getBoundingClientRect();
-  TS.ctl.layout(w,h,matchMedia('(max-aspect-ratio:4/5)').matches?{x:.5,y:clamp((b.bottom+m.top)/2/h,.25,.6),fw:1}:{x:clamp(m.left/2/w,.25,.5),y:.74,fw:clamp(m.left/w,.4,1)});}
+  const f=matchMedia('(max-aspect-ratio:4/5)').matches?{x:.5,y:clamp((b.bottom+m.top)/2/h,.25,.6),fw:1}:{x:clamp(m.left/2/w,.25,.5),y:.74,fw:clamp(m.left/w,.4,1)},k=w+'x'+h+JSON.stringify(f);
+  if(k===TS.lay)return;TS.lay=k;TS.ctl.layout(w,h,f);}
 /* the backdrop follows the screen: live on the title, paused on the map and gallery screens, dropped in a game */
 function titleScene(s){TS.on=s==='title';TS.bg.hidden=!TS.on;
   if(s==='game'){titleDrop();return;}
@@ -3701,13 +3711,13 @@ if(window.ResizeObserver)new ResizeObserver(titleLayout).observe($('#scrTitle .m
    It opens the game over everything. Its steps are real loading: fonts, Three.js, its own kids (kids/hero.js), the game
    text, and the main menu's Plaza scene (maps/title.js), so the menu is live when the splash fades into it. */
 const HERO={ctl:null,cv:$('#heroCv')};
-const SPLASH={on:!!$('#splash'),hold:false,done:0,total:5,ready:false,started:false,t0:performance.now(),flank:false,flat:false};
+const SPLASH={on:!!$('#splash'),hold:false,done:0,total:5,ready:false,started:false,t0:performance.now(),flank:false,flat:false,art:[]};
 /* the tests open the game with ?debug and skip the splash; ?debug&splash shows it */
 if(SPLASH.on&&DEBUG&&!/[?&]splash/.test(location.search)){$('#splash').remove();SPLASH.on=false;}
 SPLASH.hold=SPLASH.on;
 async function heroInit(){try{await loadThree();
     const [geo,m]=await Promise.all([import('./kids/kidgeo.js'),import('./kids/hero.js')]);const Q=gq();if(geo.LOD)geo.LOD.k=Q.kid;
-    HERO.ctl=m.create(HERO.cv,{reduced:RM,maxDpr:Q.pr});return true;}catch(e){console.warn('splash kids',e);HERO.ctl=null;return false;}}
+    HERO.ctl=m.create(HERO.cv,{reduced:RM,maxDpr:Q.pr,wait:true});return true;}catch(e){console.warn('splash kids',e);HERO.ctl=null;return false;}}
 function splashMeasure(){if(!SPLASH.on)return;const el=$('#splash'),lg=$('#spLogo'),tg=$('#spTag'),row=$('#spRow'),W=el.clientWidth,H=el.clientHeight;
   const block=tg.getBoundingClientRect().bottom-lg.getBoundingClientRect().top,avail=H-150-24-block-40;
   SPLASH.flank=(W>H*1.3&&avail<120)||avail<80;row.style.height=(SPLASH.flank?0:Math.round(Math.max(0,Math.min(avail,H*.42,360))))+'px';
@@ -3726,20 +3736,26 @@ function splashFlatKids(){const moods=['cheer','happy','hop','cheer'];$('#spRow'
 function splashIntro(){const el=$('#splash'),E='cubic-bezier(.2,.8,.3,1)',q=x=>el.querySelectorAll(x);if(RM||!el.animate)return;
   q('[data-l]').forEach((n,i)=>n.animate([{transform:'translateY(.35em) scale(.9,1.1)',opacity:0},{transform:'translateY(-.06em) scale(1.04,.96)',opacity:1,offset:.6},{transform:'none',opacity:1}],{duration:560,delay:250+i*70,easing:E,fill:'backwards'}));
   $('#spTag').animate([{opacity:0,transform:'translateY(8px)'},{opacity:1,transform:'none'}],{duration:420,delay:900,easing:E,fill:'backwards'});
-  const p=el.querySelector('[data-a="path"]');if(p)p.animate([{strokeDashoffset:600,opacity:0},{strokeDashoffset:0,opacity:.55}],{duration:1200,delay:900,easing:E,fill:'backwards'});
-  q('[data-a="piko"]').forEach(n=>n.animate([{opacity:0},{opacity:.95}],{duration:500,delay:1300,easing:E,fill:'backwards'}));
-  const sp=el.querySelector('[data-a="sipa"]');if(sp)sp.animate([{transform:'translateY(20px) rotate(-14deg)',opacity:0},{transform:'translateY(-10px) rotate(-6deg)',opacity:1,offset:.55},{transform:'rotate(-14deg)'}],{duration:700,delay:1700,easing:E,fill:'backwards'});}
+  /* the path, piko and sipa wait (hidden) for the kids' entrance and draw in with it: splashArt() */
+  const art=SPLASH.art,p=el.querySelector('[data-a="path"]');if(p)art.push(p.animate([{strokeDashoffset:600,opacity:0},{strokeDashoffset:0,opacity:.55}],{duration:1200,delay:900,easing:E,fill:'backwards'}));
+  q('[data-a="piko"]').forEach(n=>art.push(n.animate([{opacity:0},{opacity:.95}],{duration:500,delay:1300,easing:E,fill:'backwards'})));
+  const sp=el.querySelector('[data-a="sipa"]');if(sp)art.push(sp.animate([{transform:'translateY(20px) rotate(-14deg)',opacity:0},{transform:'translateY(-10px) rotate(-6deg)',opacity:1,offset:.55},{transform:'rotate(-14deg)'}],{duration:700,delay:1700,easing:E,fill:'backwards'}));
+  art.forEach(a=>a.pause());}
+const SPLASH_INTRO_MS=1320,SPLASH_ART_MS=2400;   // the tagline is in 1.32 s after the page opens; the sipa, last of the art, lands 2.4 s into the entrance
+function splashArt(finish){SPLASH.art.forEach(a=>{try{finish?a.finish():a.play();}catch(e){}});if(finish)SPLASH.art=[];}
 function splashReport(done,label){if(!SPLASH.on||SPLASH.ready)return;SPLASH.done=Math.max(SPLASH.done,done);const pct=Math.round(100*SPLASH.done/SPLASH.total);
   $('#spFill').style.width=pct+'%';$('#spBar').setAttribute('aria-valuenow',String(pct));if(label!=null)$('#spStatus').textContent=label;
   if(SPLASH.done>=SPLASH.total){const wait=Math.max(0,(RM?0:1100)-(performance.now()-SPLASH.t0));setTimeout(splashReady,wait);}}
-function splashReady(){if(SPLASH.ready||!SPLASH.on)return;SPLASH.ready=true;$('#splash').classList.add('ready');$('#spBar').hidden=true;$('#spStatus').hidden=true;
+function splashReady(){if(SPLASH.ready||!SPLASH.on)return;SPLASH.ready=true;splashArt(true);$('#splash').classList.add('ready');$('#spBar').hidden=true;$('#spStatus').hidden=true;
   const b=$('#spGo');b.hidden=false;try{b.focus({preventScroll:true});}catch(e){}if(HERO.ctl)HERO.ctl.cheer();}
 /* the tap: sound starts (browsers need a tap first), the splash fades into the main menu, whose kids cheer as it opens */
 function splashStart(){if(!SPLASH.ready||SPLASH.started)return;SPLASH.started=true;
   Sfx.init();[523,659,784].forEach((f,i)=>Sfx.tone(f,.35,'triangle',.06,null,i*.09));
   const el=$('#splash');el.classList.add('go');SPLASH.hold=false;
   if(APP.screen==='title'){titleScene('title');if(TS.ctl)TS.ctl.cheer();}
-  setTimeout(()=>{SPLASH.on=false;if(HERO.ctl){HERO.ctl.dispose();HERO.ctl=null;}el.remove();   /* the splash's kids are freed; the menu has its own */
+  /* the splash's kids stop with the fade and are freed once the menu is running (the menu has its own) */
+  setTimeout(()=>{SPLASH.on=false;const h=HERO.ctl;HERO.ctl=null;if(h){h.show(false);(window.requestIdleCallback||setTimeout)(()=>h.dispose(),{timeout:2000});}el.remove();
+    if(window.THREE&&!B3.ok){init3D();refreshPortraits();}   // the splash was let go before its loading reached the board
     if(APP.screen==='title')try{($('#mResume').hidden?$('#mLocal'):$('#mResume')).focus({preventScroll:true});}catch(e){}},RM?0:340);}
 /* the menu's Plaza scene, built now (the step the bar waits longest on); ends early if it fails or takes too long */
 function splashMenuScene(){if(TS.ctl)return Promise.resolve();SPLASH.hold=false;
@@ -3749,10 +3765,17 @@ async function splashLoad(fontsP){const N=SPLASH.total,raf=()=>new Promise(r=>re
   splashReport(0,'Kinukuha ang mga font…');await fontsP;splashMeasure();
   splashReport(1,'Kinukuha ang 3D engine…');await loadThree().catch(()=>null);
   splashReport(2,'Binubuo sina Bunso, Neneng, Totoy at Jun…');await raf();
-  if(await heroInit())HERO.ctl.play(true);else{SPLASH.flat=true;$('#spRow').classList.add('flat');SPR.load();   /* no 3D: the kids' pictures (kids/sprites.png) */
+  if(!RM)await new Promise(r=>setTimeout(r,SPLASH_INTRO_MS-(performance.now()-SPLASH.t0)));   // the logo and tagline finish first
+  if(!await heroInit()){SPLASH.flat=true;$('#spRow').classList.add('flat');SPR.load();   /* no 3D: the kids' pictures (kids/sprites.png) */
     if(!SPR.ok)await new Promise(r=>{SPR.img.addEventListener('load',r,{once:true});SPR.img.addEventListener('error',r,{once:true});setTimeout(r,5000);});}
   splashMeasure();
-  splashReport(3,'Inihahanda ang Plaza…');
+  /* the entrance: the kids hop onto their tiles, Neneng waves, the path, piko and sipa draw in. Nothing heavy runs next
+     to it (only the menu's files are fetched), so every frame of it shows; the board and the Plaza are built after */
+  if(HERO.ctl){await HERO.ctl.prepare();HERO.ctl.play(true);}
+  splashArt();import('./maps/title.js').catch(()=>{});
+  if(!RM)await new Promise(r=>setTimeout(r,Math.max(HERO.ctl?HERO.ctl.entranceMs():0,SPLASH_ART_MS)+150));
+  splashReport(3,'Inihahanda ang Plaza…');await raf();
+  if(window.THREE){init3D();refreshPortraits();}Sfx.make();
   const still=new Image();still.src=matchMedia('(max-aspect-ratio:4/5)').matches?'maps/world/title-tall.jpg':'maps/world/title.jpg';
   await Promise.all([splashMenuScene(),Promise.race([Promise.all([CONTENT_P,still.decode?still.decode().catch(()=>{}):Promise.resolve()]),new Promise(r=>setTimeout(r,5000))])]);
   splashReport(4,'Inihahanda ang eksena…');if(HERO.ctl)HERO.ctl.renderOnce();await raf();

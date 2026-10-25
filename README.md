@@ -73,9 +73,12 @@ reserve when shopping, and pick their Jack en Poy rivals (Mahirap goes after the
 
 The game opens on a splash: the Taympers logo, the four 3D kids hopping onto their tiles,
 and a loading bar that follows the real loading (fonts, Three.js, the kids, the game text
-and the main menu's Plaza scene). When it is full, **Pindutin para magsimula** starts the
-sound (browsers need a first tap for it) and the splash fades into the main menu, already
-live, as its kids cheer. On devices without 3D the splash shows pictures of the kids and the
+and the main menu's Plaza scene). The heavy loading waits until the kids' entrance (the hop,
+Neneng's wave, the path, piko and sipa drawing in) has played, so it never stutters or
+skips; the menu's scene is then built and its first frame drawn, but it only starts moving
+at the tap. When the bar is full, **Pindutin para magsimula** starts the sound (browsers
+need a first tap for it) and the splash fades into the main menu, already live, as its kids
+cheer. On devices without 3D the splash shows pictures of the kids and the
 menu shows its picture. The tests skip the splash (`?debug`); add `&splash` to see it with the test
 hook on.
 
