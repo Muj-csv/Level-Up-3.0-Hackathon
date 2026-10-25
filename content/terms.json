@@ -1,0 +1,18 @@
+{
+  "meta": {
+    "note": "Protected terms (PRD: Simpler Filipino and English, Section 2). These words are part of what Taympers teaches: never reworded, respelled, shortened or translated, in Filipino or English. A rewrite changes only the words around them. English may add a short meaning in brackets after the first one on a screen, e.g. \"Agimat (lucky charm)\", never in its place. The team leader checks this list before Phase 1; add new terms here, and the checks read them from this file.",
+    "added_at": "2026-10-25",
+    "added_by": "Jace Matthew M. Catriz"
+  },
+  "terms": {
+    "title": ["Taympers", "Ang mga laro sa kalye, nasa ulap na."],
+    "minigames": ["Tumbang Preso", "Patintero", "Sipa", "Palosebo", "Luksong Tinik", "Piko", "Pukpok Palayok", "Saranggola", "Hilahang Lubid", "Taguan", "Tag-tagan", "Agawan Base", "Sungka", "Holen"],
+    "modes": ["Maglaro", "Torneo", "Hamon ng Araw", "Pagsasanay", "Huling Hirit", "Pasaporte ng Laro", "Tanong ni Lola", "Sa totoong kalye", "Subukan sa labas"],
+    "board": ["korona", "piso", "Swerte", "Utang", "Tikbalang", "Sari-sari", "Jack en Poy", "Kasama"],
+    "islandSpaces": ["Banda", "Kampana", "Munisipyo", "Rizal", "Tawad", "Timbangan", "Suki", "Basa", "Ulan", "Alon", "Huli", "Buko", "Taog", "Araw", "Tanim", "Ani", "Bayanihan", "Balang", "Kalesa", "Padyak", "Bangka", "Kariton ng kalabaw"],
+    "items": ["Dobleng dice", "Kendi", "Gintong dice", "Agimat", "Hari ng Laro", "Mayaman", "Malas sa Dice"],
+    "people": ["Plaza", "Palengke", "Aplaya", "Palayan", "Jun", "Neneng", "Totoy", "Bunso", "Lito", "Mayumi", "Boyet", "Dodong", "Lola"],
+    "botLevels": ["Madali", "Sakto", "Mahirap"],
+    "streetWords": ["taya", "pamato", "tsinelas", "tinik", "sipa", "palayok", "panyo", "pista", "barangay"]
+  }
+}
