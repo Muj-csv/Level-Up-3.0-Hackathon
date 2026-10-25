@@ -5,7 +5,12 @@ Taympers, per the PRD's F9.2 requirement ("Every fact is reviewed by a PE teache
 cultural expert; keep the reviewer's name and date in the file").
 
 **Source file:** `content/fil.json` — this packet is a reviewer-friendly copy of
-exactly what's in there now. Nothing in the game or this file is marked reviewed yet
+exactly what's in there now.
+
+*Oct 25, 2026: the wording was simplified to everyday Filipino (Simpler Filipino PRD,
+Phase 1; rules in `docs/WRITING.md`). Only the words changed: every fact, answer and number
+is the same. Part 1 shows the new Filipino wording; Part 2 sums up the facts in English,
+which did not change.* Nothing in the game or this file is marked reviewed yet
 (`reviewed_by`/`reviewed_at` are all `null`).
 
 ## Instructions for the reviewer
@@ -28,109 +33,109 @@ game marks correct**. The "why" line is the explanation shown after answering.
 
 1. **Ano ang ibinabato sa lata sa Tumbang Preso?**
    Answers: **Tsinelas** / Bola / Holen
-   Why: "Tsinelas ang pamato, kaya kailangang mabilis ka ring kunin ito bago ka mataya."
+   Why: "Tsinelas ang pamato. Kunin mo ito agad para hindi ka mataya."
    ⬜ Correct  ⬜ Needs a fix  ⬜ Flag
 
-2. **Alin ang pambansang laro ng Pilipinas hanggang 2009?**
+2. **Ano ang pambansang laro hanggang 2009?**
    Answers: **Sipa** / Patintero / Piko
-   Why: "Noong 2009, idineklara ang arnis bilang pambansang sining ng pakikipaglaban at isport."
+   Why: "Noong 2009, ginawang pambansang martial art at sport natin ang arnis."
    ⬜ Correct  ⬜ Needs a fix  ⬜ Flag
 
 3. **Ano ang isa pang tawag sa Patintero?**
    Answers: **Tubigan** / Presohan / Sungka
-   Why: "Minsan tubig ang ginagamit pang-guhit ng mga linya, kaya tubigan."
+   Why: "Minsan, tubig ang gamit sa pagguhit ng mga linya. Kaya tubigan!"
    ⬜ Correct  ⬜ Needs a fix  ⬜ Flag
 
-4. **Ano ang ipinapahid sa kawayan ng Palosebo?**
+4. **Ano ang pinapahid sa kawayan sa Palosebo?**
    Answers: **Grasa o mantika** / Pandikit / Pulot
-   Why: "Galing sa Espanyol na palo ensebado: kawayang may grasa."
+   Why: "Galing ang pangalan sa Espanyol na palo ensebado. Ibig sabihin: kawayang may grasa."
    ⬜ Correct  ⬜ Needs a fix  ⬜ Flag
 
 5. **Sa Jack en Poy, ano ang tumatalo sa bato?**
    Answers: **Papel** / Gunting / Tsinelas
-   Why: "Binabalot ng papel ang bato. Ang bato naman ang tumatalo sa gunting."
+   Why: "Binabalot ng papel ang bato. Ang bato naman, panalo sa gunting."
    ⬜ Correct  ⬜ Needs a fix  ⬜ Flag
 
 6. **Sa Luksong Tinik, ano ang "tinik"?**
    Answers: **Mga kamay at paang pinagpapatong** / Halamang may tinik / Mahabang lubid
-   Why: "Patataas nang patataas ang tinik habang dinadagdagan ng kamay at paa."
+   Why: "Bawat dagdag na kamay o paa, tumataas ang tinik."
    ⬜ Correct  ⬜ Needs a fix  ⬜ Flag
 
-7. **Sa Piko, ano ang inihahagis sa mga kahon?**
+7. **Sa Piko, ano ang hinahagis sa mga kahon?**
    Answers: **Pamato, gaya ng patag na bato** / Barya / Bola
-   Why: "Lumulukso ka sa isang paa at nilalampasan ang kahong may pamato."
+   Why: "Lulukso ka sa isang paa. Lampasan mo ang kahong may pamato."
    ⬜ Correct  ⬜ Needs a fix  ⬜ Flag
 
 8. **Ano ang holen?**
    Answers: **Maliit na bolang salamin** / Laruang trumpo / Saranggola
-   Why: "Pinipitik ang holen gamit ang hinlalaki para tamaan ang holen ng kalaro."
+   Why: "Pinipitik mo ang holen gamit ang hinlalaki. Tamaan mo ang holen ng kalaro!"
    ⬜ Correct  ⬜ Needs a fix  ⬜ Flag
 
 9. **Ano ang ginagamit sa Sungka?**
    Answers: **Tablang may butas at mga sigay** / Baraha / Dice
-   Why: "Mga sigay o maliliit na kabibe ang inilalagay sa mga butas ng tabla."
+   Why: "Sigay, o maliliit na kabibe, ang nilalagay sa mga butas ng tabla."
    ⬜ Correct  ⬜ Needs a fix  ⬜ Flag
 
-10. **Sa Agawan Base, paano nananalo?**
-    Answers: **Mahawakan ang base ng kalaban** / Makakuha ng pinakamaraming bola / Matapos ang takbo nang una
-    Why: "May dalawang base at dalawang koponan. Kapag nataya ka, bihag ka ng kalaban."
+10. **Sa Agawan Base, paano ka mananalo?**
+    Answers: **Mahawakan ang base ng kalaban** / Makuha ang pinakamaraming bola / Maunang matapos tumakbo
+    Why: "May 2 base at 2 team. Pag nataya ka, bihag ka na ng kalaban."
     ⬜ Correct  ⬜ Needs a fix  ⬜ Flag
 
 **New for F5.4 (8 questions, 2 per island map — Plaza, Palengke, Aplaya, Palayan):**
 
-11. **[Plaza] Ano ang kiosko na madalas makikita sa gitna ng plaza ng bayan?**
-    Answers: **Tambayan ng banda tuwing may pista** / Palengke ng bayan / Himpilan ng pulis
-    Why: "Ang kiosko ay istrukturang parang maliit na tanghalan, kinatatayuan ng banda ng bayan tuwing may pista o pagdiriwang sa plaza."
+11. **[Plaza] Ano ang kiosko sa gitna ng plaza ng bayan?**
+    Answers: **Tambayan ng banda tuwing may pista** / Palengke ng bayan / Istasyon ng pulis
+    Why: "Parang maliit na stage ang kiosko. Dito tumutugtog ang banda ng bayan tuwing may pista o handaan sa plaza."
     ⬜ Correct  ⬜ Needs a fix  ⬜ Flag
 
 12. **[Plaza] Ano ang kalesa?**
     Answers: **Karwaheng hila ng kabayo** / Bangkang de-layag / Traysikel na pedal
-    Why: "Ang kalesa ay tradisyonal na sasakyang hila ng kabayo, ginamit noon bilang pangunahing transportasyon at makikita pa rin ngayon sa ilang lugar tulad ng Intramuros."
+    Why: "Hila ng kabayo ang kalesa, madalas na sakayan noon. May kalesa pa rin ngayon, gaya sa Intramuros."
     ⬜ Correct  ⬜ Needs a fix  ⬜ Flag
 
 13. **[Palengke] Ano ang tawad sa palengke?**
-    Answers: **Paghingi na babaan ang presyo** / Pagtitimbang ng paninda / Pagbalot ng isda
-    Why: "Karaniwan sa palengke ang pagtawad, kung saan hinihingi ng mamimili na babaan ng tindera ang presyo ng paninda."
+    Answers: **Paghingi ng mas mababang presyo** / Pagtimbang ng paninda / Pagbalot ng isda
+    Why: "Madalas tumawad ang mga mamimili sa palengke. Hinihingi nila sa tindera na babaan ang presyo."
     ⬜ Correct  ⬜ Needs a fix  ⬜ Flag
 
 14. **[Palengke] Ano ang padyak?**
     Answers: **Sasakyang pedal, walang motor** / Bangkang de-layag / Karwaheng hila ng kabayo
-    Why: "Ang padyak ay sasakyang pedal na walang makina, karaniwang ginagamit para sa maikling biyahe malapit sa palengke o sa kalapit baranggay."
+    Why: "Pedal ang padyak, walang makina. Pang-maikling biyahe ito: sa palengke o sa kalapit na barangay."
     ⬜ Correct  ⬜ Needs a fix  ⬜ Flag
 
 15. **[Aplaya] Ano ang bangka?**
-    Answers: **Sasakyang-tubig na gawa sa kahoy para mangisda** / Karwaheng hila ng kabayo / Kariton na hila ng kalabaw
-    Why: "Ang bangka ay tradisyonal na sasakyang-tubig na ginagamit ng mga mangingisda sa pangingisda malapit sa baybayin."
+    Answers: **Sasakyang-tubig na kahoy, pang-isda** / Karwaheng hila ng kabayo / Kariton na hila ng kalabaw
+    Why: "Sasakyang-tubig ang bangka. Gamit ito ng mga mangingisda sa pangingisda malapit sa tabing-dagat."
     ⬜ Correct  ⬜ Needs a fix  ⬜ Flag
 
-16. **[Aplaya] Bakit ipinapatuyo sa araw ang isda sa mga baybaying bayan?**
+16. **[Aplaya] Bakit pinapatuyo sa araw ang isda?**
     Answers: **Para hindi masira at tumagal** / Para lumambot / Para lumaki
-    Why: "Pinapatuyo ang isda sa init ng araw bilang tradisyonal na paraan ng pangangalaga nito, lalo na sa mga lugar na walang palamig."
+    Why: "Pinapatuyo ang isda sa init ng araw para hindi ito masira. Lumang paraan ito, lalo na sa mga lugar na walang ref."
     ⬜ Correct  ⬜ Needs a fix  ⬜ Flag
 
 17. **[Palayan] Ano ang gamit ng kalabaw sa palayan?**
     Answers: **Pag-araro ng lupa bago itanim ang bigas** / Pagbantay sa bukid sa gabi / Panggiling ng bigas
-    Why: "Ginagamit ang kalabaw para hilahin ang araro at lupain ang lupa bago magtanim ng palay."
+    Why: "Hinihila ng kalabaw ang araro. Inaararo nila ang lupa bago magtanim ng palay."
     ⬜ Correct  ⬜ Needs a fix  ⬜ Flag
 
 18. **[Palayan] Ano ang bayanihan?**
-    Answers: **Sama-samang pagtutulungan ng komunidad** / Opisyal na piyesta ng bayan / Uri ng sayawang pambansa
-    Why: "Ang bayanihan ay tradisyong Pilipino ng pagtutulungan, gaya ng sama-samang paglipat ng bahay, na nagmula sa salitang 'bayan.'"
+    Answers: **Tulong-tulong ng buong komunidad** / Opisyal na pista ng bayan / Isang uri ng pambansang sayaw
+    Why: "Bayanihan ang tulong-tulong ng mga Pilipino, gaya ng paglipat ng bahay. Galing ito sa salitang 'bayan.'"
     ⬜ Correct  ⬜ Needs a fix  ⬜ Flag
 
-19. **[Pukpok Palayok] Sa Pukpok Palayok, ano ang karaniwang laman ng palayok?**
+19. **[Pukpok Palayok] Sa Pukpok Palayok, ano ang madalas na laman ng palayok?**
     Answers: **Kendi, barya o maliliit na laruan** / Tubig / Bigas
-    Why: "Kapag nabasag ang palayok, nag-aagawan ang mga bata sa kendi at baryang nalalaglag."
+    Why: "Pag nabasag ang palayok, nag-aagawan ang mga bata sa kendi at baryang nahulog."
     ⬜ Correct  ⬜ Needs a fix  ⬜ Flag
 
-20. **[Taguan] Anong awit ang kinakanta habang nagbibilang ang taya sa Taguan?**
+20. **[Taguan] Ano ang kinakanta ng taya sa Taguan?**
     Answers: **Tagu-taguan, maliwanag ang buwan** / Bahay Kubo / Leron, Leron Sinta
-    Why: "Kinakanta ito ng taya habang nakapikit at nagbibilang, para may oras magtago ang iba."
+    Why: "Kinakanta ito ng taya habang nakapikit at nagbibilang. Para may oras magtago ang iba."
     ⬜ Correct  ⬜ Needs a fix  ⬜ Flag
 
 21. **[Piko] Sa Piko, ano ang ginagawa sa kahong may pamato?**
     Answers: **Nilalaktawan ito** / Tinatapakan ito nang dalawang paa / Doon nagpapahinga
-    Why: "Hindi tinatapakan ang kahong may pamato; pupulutin lang ito pagbalik, nang hindi natutumba."
+    Why: "Hindi tinatapakan ang kahong may pamato. Pupulutin mo lang ito pagbalik, nang hindi natutumba."
     ⬜ Correct  ⬜ Needs a fix  ⬜ Flag
 
 ---

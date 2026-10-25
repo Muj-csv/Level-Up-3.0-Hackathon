@@ -31,8 +31,8 @@ meaning sits next to the term, never in its place.
 
 ## Filipino
 
-1. **Short sentences, one idea each.** Aim for 8–12 words, and no more than 3 short lines on a card.
-2. **Talk to the player.** Use "ka" and "mo", and start with the action: "I-tap…", "Takbo!", "Kunin mo…".
+1. **Short sentences, one idea each.** Aim for 8â€“12 words, and no more than 3 short lines on a card.
+2. **Talk to the player.** Use "ka" and "mo", and start with the action: "I-tapâ€¦", "Takbo!", "Kunin moâ€¦".
 3. **Use the English words kids already say:** level, score, team, player, bonus, tap, item.
 4. **Swap deep words for everyday ones** (table below).
 5. **Keep the protected terms.** Every term above stays exactly as written. Explain a term the
@@ -66,7 +66,7 @@ meaning sits next to the term, never in its place.
 | Now | Simpler Filipino | English |
 | --- | --- | --- |
 | Kapag tumumba ito, kukunin nila ang tsinelas habang itinatayo ng taya ang lata, at ang mataya habang kumukuha ang bagong taya. | Pag natumba ang lata, kunin agad ang tsinelas mo habang itinatayo ng taya ang lata. Pag nataya ka, ikaw na ang taya! | When the can falls, grab your tsinelas (slippers) while the taya stands the can up again. If you get tagged, you're the new taya! |
-| …nang ideklara ang arnis bilang pambansang sining ng pakikipaglaban at isport. | Ngayon, arnis na ang pambansang sport natin. | Today, arnis is our national sport. |
+| â€¦nang ideklara ang arnis bilang pambansang sining ng pakikipaglaban at isport. | Ngayon, arnis na ang pambansang sport natin. | Today, arnis is our national sport. |
 | Tataas at bibilis ang tinik bawat antas. Pinakamataas na antas ang panalo. | Bawat level, tataas at bibilis ang tinik. Pinakamataas na level, panalo! | Every level, the tinik gets higher and faster. Highest level wins! |
 
 ## The check
@@ -75,3 +75,9 @@ Read the card out loud to a 7-year-old. If they can't say it back in their own w
 
 The full list of text to rewrite is in [`TEXT_INVENTORY.md`](TEXT_INVENTORY.md)
 (`node tools/text-scan.mjs` makes it again after a change).
+
+After a rewrite, `node tools/text-check.mjs` compares the text with `lang/testing`: every id
+and key is still there, each minigame still has 3 rule lines, every protected term in an old
+entry is still in the new one (spelled the same), and no word from the swap list is left.
+Built-in copies in `index.html` (the `TANONG`, `SOON` and `MG` text used when the content file
+doesn't load) must stay word for word the same as `content/fil.json`.
