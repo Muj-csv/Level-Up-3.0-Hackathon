@@ -15,7 +15,9 @@ const lf = s => s.split('\r\n').join('\n');
 const now = f => lf(fs.readFileSync(path.join(ROOT, f), 'utf8')), then = f => lf(execFileSync('git', ['show', `${REF}:${f}`], { cwd: ROOT, encoding: 'utf8', maxBuffer: 1 << 26 }));
 const TERMS = Object.values(JSON.parse(now('content/terms.json')).terms).flat();
 const SWAP = /\b(koponan|manlalaro|antas|kalahok|ideklara|idineklara|sumasagi|pinababagsak|sasalag\w*|sinalag|upang|subalit)\b/gi;
-const termsIn = s => TERMS.filter(t => new RegExp('(^|[^\\p{L}])(' + t[0].toUpperCase() + '|' + t[0].toLowerCase() + ')' + t.slice(1).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '($|[^\\p{L}])', 'u').test(s));
+// a lowercase term may start a sentence with a capital ("Tsinelas ang pamato"); a capitalized term is a name and must
+// match exactly, so the everyday words "araw" (sun) or "basa" (wet) are not taken for the spaces Araw and Basa
+const termsIn = s => TERMS.filter(t => new RegExp('(^|[^\\p{L}])' + (t[0] === t[0].toLowerCase() ? '[' + t[0] + t[0].toUpperCase() + ']' : t[0]) + t.slice(1).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '($|[^\\p{L}])', 'u').test(s));
 const problems = [];
 
 // content/fil.json: same keys, 3 rules each, protected terms kept per entry

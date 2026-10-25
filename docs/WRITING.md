@@ -61,6 +61,13 @@ meaning sits next to the term, never in its place.
    brackets: "tsinelas (slippers)", "taya (the one who chases)".
 4. **American spelling** (color, favorite), as in Philippine schools.
 
+`content/en.json` has the same entries as `content/fil.json`, with the same ids, in the same order,
+and the Tanong ni Lola answers in the same order (the right one first). When you add or move an
+entry in one file, do the same in the other: `node tests/content.mjs` fails until both match, and
+checks that every protected term in a Filipino entry is in its English twin. An English entry left
+out or blank shows the Filipino one. Players pick the language with **Wika** (title screen and the
+in-game menu); `?lang=en` opens English for testers without saving it.
+
 ## Examples
 
 | Now | Simpler Filipino | English |
