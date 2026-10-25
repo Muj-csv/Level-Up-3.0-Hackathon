@@ -146,7 +146,10 @@ body{background:var(--sky);color:var(--ink);font-family:var(--body);overflow:hid
 .mapbtns button[aria-checked="true"]{background:var(--mc);color:#fff;text-shadow:0 2px 0 var(--ink)}
 .mapbtns button:focus-visible{outline:3px solid var(--sun);outline-offset:2px}
 @media (min-width:640px) and (orientation:landscape){.mappanel{left:auto;right:max(12px,env(safe-area-inset-right,0px));top:8px;bottom:8px;margin:auto 0;height:max-content;width:min(340px,42vw);max-height:calc(100% - 16px);overflow:auto}.mapbtns{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media (max-height:500px) and (orientation:landscape){.mappanel .chip{display:none}.mappanel h2{font-size:22px;margin:0 0 6px}.mappanel .note{min-height:0;margin:6px 0 8px;font-size:13px}}.lbar{height:16px;border:3px solid var(--ink);border-radius:999px;background:#fff;overflow:hidden;margin-top:12px}.lbar i{display:block;height:100%;width:0;background:#FFC93C;transition:width .3s}
+@media (max-height:500px) and (orientation:landscape){.mappanel .chip{display:none}.mappanel h2{font-size:22px;margin:0 0 6px}.mappanel .note{min-height:0;margin:6px 0 8px;font-size:13px}}.lbar{height:16px;border:3px solid var(--ink);border-radius:999px;background:#fff;overflow:hidden;margin-top:12px}.lbar i{display:block;height:100%;width:0;background:#FFC93C;transition:width .3s;position:relative;overflow:hidden}
+/* a light sweep across the bar, moved with transform so it keeps going on the compositor while the island's shaders compile */
+.lbar i::after{content:'';position:absolute;inset:0;width:60%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.75),transparent);transform:translateX(-120%);animation:lbarSweep 1.1s linear infinite;will-change:transform}
+@keyframes lbarSweep{to{transform:translateX(220%)}}
 .card .chip{display:inline-block;font-weight:900;font-size:12px;background:var(--ink);color:var(--paper);border-radius:999px;padding:3px 10px;margin-bottom:6px}
 .card p{font-weight:700;font-size:15px;line-height:1.45;margin:6px 0}
 .card ul{margin:8px 0 6px;padding-left:20px;font-weight:700;font-size:15px;line-height:1.45}
@@ -322,6 +325,7 @@ body{background:var(--sky);color:var(--ink);font-family:var(--body);overflow:hid
 .sp-go:focus-visible{outline:3px dashed #2E6FD8;outline-offset:5px}
 .sp-credit{font-weight:700;font-size:12px;color:#7A5A44;letter-spacing:.04em}
 @keyframes sp-breathe{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@media (prefers-reduced-motion: reduce){.lbar i::after{animation:none;display:none}}
 @media (prefers-reduced-motion: reduce){
   .sp-go{animation:none}.splash{transition:none}
 }
@@ -1255,6 +1259,8 @@ function drawFX(g){
 /* ================= camera ================= */
 const cam={x:860,y:780,z:.6,tx:860,ty:780,tz:.6,shake:0};
 function fitZoom(w,h){return clamp(Math.min(W/w,(H-topH-botH)/h),.16,1.5);}
+/* where the board camera starts after a minigame: the cloud board's middle, or on an island the middle of the kids */
+function boardFocus(){if(!BOARD.map||!state.players.length)return{x:860,y:780};let x=0,y=0;for(const p of state.players){x+=p.x;y+=p.y;}return{x:x/state.players.length,y:y/state.players.length-30};}
 function boardZoom(){return clamp(Math.min(W/760,(H-topH-botH)/620),.45,.82);}
 function updCam(dt){
   if(APP.screen==='title'){const a=now*.07;cam.tx=870+Math.cos(a)*260;cam.ty=780+Math.sin(a)*190;cam.tz=fitZoom(1150,1000)*1.15;}
@@ -1263,8 +1269,13 @@ function updCam(dt){
   else if(state.overview){const bb=boardBox();cam.tx=bb.cx;cam.ty=bb.cy;cam.tz=fitZoom(bb.w,bb.h);}
   /* while a human decides a roll, frame every space the roll can reach */
   else if(state.reach&&!korona.fly){const rc=state.reach;let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;for(const i of [rc.from,...rc.all]){const q=spacePos(i);x0=Math.min(x0,q.x);x1=Math.max(x1,q.x);y0=Math.min(y0,q.y);y1=Math.max(y1,q.y);}
-    cam.tx=(x0+x1)/2;cam.ty=(y0+y1)/2-24;cam.tz=Math.min(boardZoom(),fitZoom(x1-x0+260,y1-y0+270));}
-  else{let t;if(korona.fly)t=B3.on&&korona.fly.gx!=null?{x:korona.fly.gx,y:korona.fly.gy}:korona.fly;else if(state.focus)t=state.focus;else if(state.active)t={x:state.active.x,y:state.active.y-30};else t={x:870,y:800};cam.tx=t.x;cam.ty=t.y;cam.tz=boardZoom();}
+    /* on an island the path winds, so the middle of the reachable spaces can be off to the side or over the water: stay on
+       the kid and zoom out just enough to show where the roll can land */
+    if(BOARD.map&&state.active){const a=state.active,hx=Math.max(a.x-x0,x1-a.x),hy=Math.max(a.y-y0,y1-a.y);cam.tx=a.x;cam.ty=a.y-30;cam.tz=Math.min(boardZoom(),Math.max(boardZoom()*.5,fitZoom(2*hx+260,2*hy+270)));}
+    else{cam.tx=(x0+x1)/2;cam.ty=(y0+y1)/2-24;cam.tz=Math.min(boardZoom(),fitZoom(x1-x0+260,y1-y0+270));}}
+  else{let t;if(korona.fly)t=B3.on&&korona.fly.gx!=null?{x:korona.fly.gx,y:korona.fly.gy}:korona.fly;else if(state.focus)t=state.focus;else if(state.active)t={x:state.active.x,y:state.active.y-30};else t=BOARD.map?{x:cam.tx,y:cam.ty}:{x:870,y:800};cam.tx=t.x;cam.ty=t.y;cam.tz=boardZoom();}
+  /* an island's camera never aims past the island's edge (the cloud board's centre, 870,800, is out in the water there) */
+  if(BOARD.map&&APP.screen==='game'&&!scene&&!state.overview){const b=BOARD.bounds;cam.tx=clamp(cam.tx,b.x0,b.x1);cam.ty=clamp(cam.ty,b.y0,b.y1);}
   const k=1-Math.exp(-dt*4.5);cam.x+=(cam.tx-cam.x)*k;cam.y+=(cam.ty-cam.y)*k;cam.z+=(cam.tz-cam.z)*(1-Math.exp(-dt*3.5));cam.shake=Math.max(0,cam.shake-dt*2.2);
 }
 function applyCam(g){const sh=RM?0:cam.shake*12;g.translate(W/2+(R()-.5)*sh,H/2+camOffY()+(R()-.5)*sh);g.scale(cam.z,cam.z);g.translate(-cam.x,-cam.y);}
@@ -1583,7 +1594,7 @@ async function seatSync(){
 }
 
 /* ================= board flow ================= */
-function checkpoint(){if(isHamon()){state.checkpoint=null;return;}const cp={mode:NET.on?'online':'local',setup:state.setup,order:state.order.slice(),round:state.round,turn:state.turn,korona:korona.spots.slice(),gs,decK,mgSeq,plan:state.plan.slice(),players:state.players.map(p=>({pos:p.pos,trail:p.trail.slice(),piso:p.piso,korona:p.korona,item:p.item,ctrl:p.ctrl,away:p.away?1:0,stats:Object.assign({},p.stats),allies:p.allies.map(a=>({n:a.n,look:a.look}))}))};
+function checkpoint(){if(isHamon()){state.checkpoint=null;return;}const cp={mode:NET.on?'online':'local',board:BOARD.id,setup:state.setup,order:state.order.slice(),round:state.round,turn:state.turn,korona:korona.spots.slice(),gs,decK,mgSeq,plan:state.plan.slice(),players:state.players.map(p=>({pos:p.pos,trail:p.trail.slice(),piso:p.piso,korona:p.korona,item:p.item,ctrl:p.ctrl,away:p.away?1:0,stats:Object.assign({},p.stats),allies:p.allies.map(a=>({n:a.n,look:a.look}))}))};
   if(NET.on){state.checkpoint=null;netCheckpoint(cp);return;}state.checkpoint=cp;saveGame(cp);}
 async function hop(p,to,back){
   const from=p.pos;p.hopping=true;const A0=spacePos(from),B0=spacePos(to);const dx=B0.x-A0.x,dy=B0.y-A0.y;
@@ -1796,8 +1807,15 @@ async function passportFlow(){
     const rows=MG_KEYS.map(k=>{const d=MG[k],on=!!o.played[k],g=!!o.labas[k];return'<div class="stamp'+(g?' gold':(on?' on':''))+'"><span class="seal">'+(g?'GINTO':(on?'TATAK':'?'))+'</span><div><b>'+esc(d.title)+'</b><p>'+esc(on?d.labas:'Laruin ito sa board para makuha ang tatak.')+'</p>'+(on?'<button type="button" class="btn" data-v="labas:'+k+'">'+(g?'Nalaro ko na sa labas ✓':'Nalaro ko na ito sa labas')+'</button>':'')+'</div></div>';}).join('')
       +SOON.map(x=>'<div class="stamp lock"><span class="seal">SOON</span><div><b>'+esc(x.t)+'</b><p>'+esc(x.d)+'</p></div></div>').join('');
     const c=openCard('<span class="chip">Pasaporte ng Laro</span><h2>'+(done+gold)+' sa '+tot+' na tatak</h2><div class="passbar"><i style="width:'+Math.round((done+gold)/tot*100)+'%"></i></div><p class="note">Pula ang tatak kapag nalaro mo sa app. Ginto kapag nalaro mo nang totoo kasama ang mga kaibigan.</p>'+rows+'<div class="row"><button type="button" class="btn primary" data-v="close" data-primary>Isara</button></div>');
-    const v=await cardChoice(c);
-    if(v&&v.startsWith('labas:')){const k=v.slice(6);const o2=passGet();if(o2.labas[k])delete o2.labas[k];else{o2.labas[k]=1;Sfx.fanfare();}passSave(o2);continue;}
+    let top=passportFlow.top||0;if(top)c.scrollTop=top;passportFlow.top=null;const onScroll=()=>{top=c.scrollTop;};c.addEventListener('scroll',onScroll,{passive:true});   // kept, so the card reopens where it was
+    const v=await cardChoice(c);c.removeEventListener('scroll',onScroll);
+    /* a gold stamp is only taken back after asking: the button reads like a tick, so a second tap (or a double tap) used to
+       remove the gold the first tap had just given */
+    if(v&&v.startsWith('labas:')){const k=v.slice(6);const o2=passGet();
+      if(o2.labas[k]){const ok=await ask({title:'Alisin ang ginto?',html:'<p>Aalisin ang gintong tatak ng '+esc(MG[k].title)+'. Mananatili ang pulang tatak.</p>',buttons:[{label:'Huwag',value:'no',primary:true},{label:'Alisin',value:'yes'}]});
+        if(ok==='yes'){const o3=passGet();delete o3.labas[k];passSave(o3);}}
+      else{o2.labas[k]=1;passSave(o2);Sfx.fanfare();}
+      passportFlow.top=top;continue;}
     return;}
 }
 const HAND={
@@ -2101,7 +2119,7 @@ const MG_KEYS=Object.keys(MG).filter(k=>!MG[k].off);
 /* online needs every phone on the same build: the round plan comes from the seed and MG_KEYS, so a phone on an older
    cached copy would pick other minigames and fall out of step. Change BUILD_VER whenever a game's rules change; the
    list of minigames (with any switched off) is part of the id. window.LSU_NET.build overrides it (tests) */
-const BUILD_VER='2026-10-25',BUILD=(window.LSU_NET&&window.LSU_NET.build)||BUILD_VER+'/'+MG_KEYS.join('.');
+const BUILD_VER='2026-10-25b',BUILD=(window.LSU_NET&&window.LSU_NET.build)||BUILD_VER+'/'+MG_KEYS.join('.');
 /* F9.1: trivia, real-street rules and Subukan sa labas text live in content/fil.json so
    writers edit that file, not this one. The arrays above stay as a built-in fallback if
    the fetch fails (offline first load, file:// preview, etc.); whichever resolves first wins. */
@@ -2602,7 +2620,7 @@ async function runMinigame(kind,opt){
   const newStamp=locals().length?stampGame(kind):false;
   await ask({title,html:rankRows(rows)+note+labasBox(def)+(newStamp?'<p class="note">Bagong tatak sa Pasaporte: '+esc(def.title)+'!</p>':''),buttons:[{label:'Tuloy',value:'ok',primary:true}],autoMs:NET.on?8000:0});
   if(tok!==gameToken)await HALT;
-  await iris(()=>{state.players.forEach(p=>{p.mood='idle';p.moodT=0;});scene=null;parts.length=0;floats.length=0;mapBtn.hidden=false;state.overview=false;state.focus={x:860,y:780};cam.x=860;cam.y=780;cam.z=boardZoom()*.8;setHint('');Music.play('board');});
+  await iris(()=>{state.players.forEach(p=>{p.mood='idle';p.moodT=0;});scene=null;parts.length=0;floats.length=0;mapBtn.hidden=false;state.overview=false;state.focus=boardFocus();cam.x=state.focus.x;cam.y=state.focus.y;cam.z=boardZoom()*.8;setHint('');Music.play('board');});
   await wait(300);
   for(const p of P){if(pay[p.id]>0){p.piso+=pay[p.id];coinFly(p,pay[p.id]);burst(p.x,p.y-30,8,'coin',{up:true,spd:220,g:520,size:5});floatText('+'+pay[p.id],p.x,p.y-70,'#FFE07A',22);setMood(p,'happy',1);}}
   if(isTorneo()&&top.length){for(const p of top){p.korona++;floatText('+1 korona',p.x,p.y-104,'#FFC93C',22);setMood(p,'cheer',1.4);burst(p.x,p.y-90,10,'star',{spd:160,size:6,color:'#FFC93C'});}Sfx.fanfare();}
@@ -2706,16 +2724,18 @@ function beginGame(spec,seed,cp,cfg){
   state.cfg=normCfg(cfg);gs=seed|0;decK=0;mgSeq=0;state.ended=false;
   state.plan=isHamon()?[MG[state.cfg.mg]?state.cfg.mg:'tumbang']:mgPlan(seed|0,maxR());if(DEBUG_MG&&MG[DEBUG_MG]&&!isHamon())state.plan=state.plan.map(()=>DEBUG_MG);
   state.order=[0,1,2,3];if(!isHamon())for(let i=3;i>0;i--){const j=Math.floor(G()*(i+1)),t=state.order[i];state.order[i]=state.order[j];state.order[j]=t;}
-  setBoard(isParty()?state.cfg.map:'ulap');state.players=makePlayers(spec);state.players.forEach(p=>{p.pos=BOARD.start;});resetKorona();state.round=1;state.turn=0;state.overview=false;state.active=null;state.party=false;mapBtn.setAttribute('aria-pressed','false');
+  /* every mode shows an island now (Torneo and Hamon used the old cloud board); a save names its board. Nobody moves in
+     Torneo, so an older Torneo save resumes on the island with everyone at the start */
+  setBoard(cp&&cp.board&&(MAPS[cp.board]||cp.board==='ulap')?cp.board:state.cfg.map);state.players=makePlayers(spec);state.players.forEach(p=>{p.pos=BOARD.start;});resetKorona();state.round=1;state.turn=0;state.overview=false;state.active=null;state.party=false;mapBtn.setAttribute('aria-pressed','false');
   let r0=1,t0=0;
   if(cp&&cp.players&&cp.players.length===4){cp.players.forEach((q,i)=>{const p=state.players[i];p.pos=clamp(q.pos|0,0,N-1);p.trail=Array.isArray(q.trail)?q.trail.map(v=>clamp(v|0,0,N-1)).slice(-16):[];p.piso=q.piso|0;p.korona=q.korona|0;p.item=q.item&&ITEMS[q.item]?q.item:null;if(q.ctrl==='bot'){if(q.away&&p.ctrl!=='bot')p.away=p.ctrl;p.ctrl='bot';}if(Array.isArray(q.allies))p.allies=q.allies.slice(0,2).map(a=>({n:cleanName(a.n)||'Kasama',look:clamp(a.look|0,0,3),x:0,y:0}));if(q.stats)p.stats={wins:q.stats.wins|0,steps:q.stats.steps|0,dice:q.stats.dice|0,dn:q.stats.dn|0};});
     if(Array.isArray(cp.korona)&&cp.korona.length===korona.spots.length)korona.spots=cp.korona.map(v=>clamp(v|0,0,N-1));r0=clamp(cp.round|0,1,maxR());t0=clamp(cp.turn|0,0,4);gs=cp.gs|0;decK=cp.decK|0;mgSeq=cp.mgSeq|0;
     if(Array.isArray(cp.plan)&&cp.plan.length===maxR()&&cp.plan.every(k=>MG[k]))state.plan=cp.plan.slice();
-    if(Array.isArray(cp.order)&&[...cp.order].sort().join()==='0,1,2,3')state.order=cp.order.map(Number);}
+    if(Array.isArray(cp.order)&&[...cp.order].sort().join()==='0,1,2,3')state.order=cp.order.map(Number);
+    if(isTorneo())state.players.forEach(p=>{p.pos=BOARD.start;p.trail=[];});}
   setScreen('game');state.active=state.players[state.order[t0<4?t0:0]];updPlayers(0);buildHUD();
   const a=state.active;cam.x=cam.tx=a.x;cam.y=cam.ty=a.y-30;cam.z=cam.tz=boardZoom();
-  if(isHamon()){(async()=>{const res=await runMinigame(state.plan[0],{hamon:true});if(tok===gameToken)await hamonResult(res);})();return;}
-  const go=()=>{if(tok!==gameToken)return;loadBar(-1);if(t0===4){(async()=>{state.round=r0;await runMinigame(state.plan[r0-1]);if(tok===gameToken)await gameLoop(r0+1,0,tok);})();}else gameLoop(r0,t0,tok);};
+  const go=()=>{if(tok!==gameToken)return;loadBar(-1);if(isHamon()){(async()=>{const res=await runMinigame(state.plan[0],{hamon:true});if(tok===gameToken)await hamonResult(res);})();return;}if(t0===4){(async()=>{state.round=r0;await runMinigame(state.plan[r0-1]);if(tok===gameToken)await gameLoop(r0+1,0,tok);})();}else gameLoop(r0,t0,tok);};
   /* a local game waits for its 3D island (a loading card shows); an online game starts at once and switches to 3D when the island is ready */
   if(BOARD.map&&B3.ok&&PREFS.g3d&&!(B3.island&&B3.island.id===BOARD.id)&&!B3.failed[BOARD.id]){const pr=B3.loadIsland(BOARD.id,(f,t)=>{if(tok===gameToken&&!NET.on)loadBar(f,t);});
     if(!NET.on){loadBar(0,'Inihahanda ang '+BOARD.map.name+'…');pr.then(go,()=>{B3.failed[BOARD.id]=1;go();});return;}}
@@ -2999,7 +3019,7 @@ const SAVE_KEY='lsu-save',SAVE_V=4;
 function saveGame(cp){try{localStorage.setItem(SAVE_KEY,JSON.stringify({v:SAVE_V,n:N,at:Date.now(),cp}));}catch(e){}}
 function clearSave(){try{localStorage.removeItem(SAVE_KEY);}catch(e){}}
 function loadSave(){try{const o=JSON.parse(localStorage.getItem(SAVE_KEY)||'null'),cp=o&&o.cp;
-  if(!o||o.v!==SAVE_V||o.n!==boardSizeOf(normCfg(cp&&cp.setup&&cp.setup.cfg).mode==='party'?normCfg(cp.setup.cfg).map:'ulap')||!cp||cp.mode!=='local'||!cp.setup||!Array.isArray(cp.setup.names)||!Array.isArray(cp.players)||cp.players.length!==4)return null;return o;}catch(e){return null;}}
+  if(!o||o.v!==SAVE_V||o.n!==boardSizeOf(cp&&cp.board&&(MAPS[cp.board]||cp.board==='ulap')?cp.board:normCfg(cp&&cp.setup&&cp.setup.cfg).mode==='party'?normCfg(cp.setup.cfg).map:'ulap')||!cp||cp.mode!=='local'||!cp.setup||!Array.isArray(cp.setup.names)||!Array.isArray(cp.players)||cp.players.length!==4)return null;return o;}catch(e){return null;}}
 function refreshPass(){try{const o=passGet(),n=MG_KEYS.filter(k=>o.played[k]).length+MG_KEYS.filter(k=>o.labas[k]).length,t=MG_KEYS.length*2;$('#mPassSub').textContent=n+'/'+t;$('#mPass').setAttribute('aria-label','Pasaporte, '+n+' sa '+t+' na tatak');}catch(e){}}
 function refreshResume(){refreshPass();const o=loadSave(),b=$('#mResume');b.hidden=!o;if(!o)return;const cp=o.cp,c=normCfg(cp.setup.cfg),who=cp.setup.names.slice(0,cp.setup.n|0).map(cleanName).filter(Boolean);
   $('#mResumeSub').textContent=(c.mode==='party'&&MAPS[c.map]?MAPS[c.map].name:MODES[c.mode])+' · '+(c.mode==='torneo'?'Laro ':'Ikot ')+clamp(cp.round|0,1,c.rounds)+'/'+c.rounds+(who.length?' · '+who.join(', '):'');}
@@ -3325,8 +3345,18 @@ function init3D(){
       const f=isc.fog;B3.island={id,grp,root,stop,q:qk,tiles:new Map(),
         env:{bg:isc.background||ENV.classic.bg,fog:f?new T3.Fog(f.color.getHex(),f.near*UPM,f.far*UPM):null,env:isc.environment||null,envI:isc.environmentIntensity==null?1:isc.environmentIntensity}};
       const bs=root.getObjectByName('board_spaces'),bx=new T3.Box3();if(bs)bs.children.forEach(g=>{if(g.userData&&g.userData.id)B3.island.tiles.set(g.userData.id,{g,y:g.position.y,top:bx.setFromObject(g).max.y*UPM});});
-      B3.envKey='';fitTops();say(1,'');return true;})();
+      B3.envKey='';fitTops();
+      /* the first frame of a new island used to freeze the screen for seconds (shader compiles and texture uploads); do
+         that work now, behind the loading card: shaders through compileAsync, then the textures a few at a time */
+      say(.94,'Halos tapos na…');await warmIsland(grp,stop);say(1,'');return true;})();
     B3.loading={id,p};p.then(()=>{if(B3.loading&&B3.loading.p===p)B3.loading=null;},e=>{console.warn(e);if(B3.loading&&B3.loading.p===p)B3.loading=null;});return p;};
+  async function warmIsland(grp,stop){try{
+      if(!B3.mg&&BOARD.map&&B3.island&&B3.island.grp===grp)syncWorld(false);   // compile with the island's own fog and light
+      await ren.compileAsync(S,camera);if(stop.v)return;
+      const tex=new Set();grp.traverse(o=>{const ms=o.material?(Array.isArray(o.material)?o.material:[o.material]):[];for(const m of ms)for(const k in m){const v=m[k];if(v&&v.isTexture&&!v.isRenderTargetTexture)tex.add(v);}});
+      let t0=performance.now();for(const t of tex){if(stop.v)return;ren.initTexture(t);if(performance.now()-t0>40){await nextFrame();t0=performance.now();}}
+      await nextFrame();if(!stop.v&&!B3.mg&&APP.screen==='game')B3.render(0);   // one whole board frame (kids, korona, shadows) while the card still shows
+    }catch(e){console.warn('island warm-up',e);}}
   /* which world is showing: the cloud board (title, minigames) or the loaded island */
   B3.envKey='';
   function syncWorld(mg){const isl=!mg&&BOARD.map&&B3.island&&B3.island.id===BOARD.id?B3.island:null,key=mg?'mg':(isl?'isl:'+isl.id:'classic');if(key===B3.envKey)return;B3.envKey=key;
@@ -3699,6 +3729,9 @@ function draw(){const g=ctx;g.setTransform(DPR,0,0,DPR,0,0);
   const tn=performance.now(),dt3=Math.min(.05,(tn-lastDraw)/1000);lastDraw=tn;
   if(B3.ok&&PREFS.g3d&&BOARD.map&&APP.screen==='game'&&!B3.loading&&!(B3.island&&B3.island.id===BOARD.id)&&!B3.failed[BOARD.id]){const id=BOARD.id;B3.loadIsland(id).catch(()=>{B3.failed[id]=1;});}
   B3.on=use3D()&&APP.screen==='game';if(cv3.hidden===B3.on)cv3.hidden=!B3.on;
+  /* the HUD portraits are drawn in 3D or 2D by use3D(): an island game builds its HUD before the island is ready (an online
+     one even starts playing), so redraw them when that changes, or each phone keeps whichever style it happened to start with */
+  {const u=use3D();if(u!==B3.u3){B3.u3=u;refreshPortraits();}}
   if(B3.on){g.clearRect(0,0,W,H);try{B3.render(dt3);}catch(e){console.error(e);B3.ok=false;refreshPortraits();}if(scene){try{B3.mg&&B3.mg.over(g);}catch(e){}if(scene.drawScreen)scene.drawScreen(g);drawFX3(g);drawCountdown(g,scene);}else drawOverlay3(g);}
   else if(APP.screen==='title'||APP.screen==='maps')g.clearRect(0,0,W,H);   /* the world picture shows through */
   else{drawSky(g);if(APP.screen==='gallery')drawGallery(g);else if(scene)drawScene(g);else drawBoard(g);}
@@ -3721,7 +3754,7 @@ function start(data){
     setInterval(()=>{const s=perfStats();d.textContent=s.fps+' fps  p50 '+s.p50+'  p95 '+s.p95+' ms\n'+s.mode+(s.mode==='3d'?' '+s.q+'  pr '+s.pr+'  calls '+s.calls+'  tris '+s.tris+'\ngeo '+s.geo+'  tex '+s.tex+'  shadow '+s.shadow:'');},500);}
 }
 if(DEBUG){const m=/[?&]speed=(\d+)/.exec(location.search);if(m)SPEED=clamp(+m[1],1,60);
-  window.__lsu={get title(){return TS;},get hero(){return HERO;},get splash(){return SPLASH;},state,NET,MG,get SP(){return SP;},get N(){return N;},get board(){return BOARD;},korona,DBG,get scene(){return scene;},get screen(){return APP.screen;},setSpeed:v=>{SPEED=clamp(v|0,1,60);},startLocal:(s,cp)=>startLocal(s,cp),toTitle:()=>toTitle(),bot:{usesItem:botUsesItem,shop:botShop,rival:botRival,ginto:botGintoPick},hamon:{fetchTop:fetchDailyTop,sync:syncDailyScore,dayKey,dailyKind,on:HAMON_ONLINE},b3:B3,toWorld:(x,y)=>toWorld(x,y),toScreen:(x,y)=>worldToScreen(x,y),spacePos:i=>spacePos(i),bench:n=>{const t=performance.now();for(let i=0;i<n;i++){draw();if(B3.on&&B3.finish)B3.finish();}return(performance.now()-t)/n;},perf:()=>perfStats(),perfReset:()=>{FT.length=0;},
+  window.__lsu={get title(){return TS;},get cam(){return cam;},get hero(){return HERO;},get splash(){return SPLASH;},state,NET,MG,get SP(){return SP;},get N(){return N;},get board(){return BOARD;},korona,DBG,get scene(){return scene;},get screen(){return APP.screen;},setSpeed:v=>{SPEED=clamp(v|0,1,60);},startLocal:(s,cp)=>startLocal(s,cp),toTitle:()=>toTitle(),bot:{usesItem:botUsesItem,shop:botShop,rival:botRival,ginto:botGintoPick},hamon:{fetchTop:fetchDailyTop,sync:syncDailyScore,dayKey,dailyKind,on:HAMON_ONLINE},b3:B3,toWorld:(x,y)=>toWorld(x,y),toScreen:(x,y)=>worldToScreen(x,y),spacePos:i=>spacePos(i),bench:n=>{const t=performance.now();for(let i=0;i<n;i++){draw();if(B3.on&&B3.finish)B3.finish();}return(performance.now()-t)/n;},perf:()=>perfStats(),perfReset:()=>{FT.length=0;},
     GQ,setQ:q=>{PREFS.gq=q;}};}
 try{window.claude&&window.claude.hot&&window.claude.hot.snapshot&&window.claude.hot.snapshot(()=>({checkpoint:NET.on?null:state.checkpoint}));}catch(e){}
 /* ================= title scene: the Plaza at golden hour behind the main menu (maps/title.js) =================
