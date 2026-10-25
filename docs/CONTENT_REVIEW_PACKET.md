@@ -24,6 +24,27 @@ For each item below, mark one of:
 When you're done, sign and date at the bottom. Whoever updates `content/fil.json` will
 copy your name and the date into each item's `reviewed_by`/`reviewed_at` fields.
 
+## Pre-screen notes (not a review — read before you start)
+
+An AI pass over this packet (25 Oct 2026) flagged two items worth your extra attention.
+This is not a substitute for the PE teacher/cultural expert review above — nothing here
+is signed off, and nothing in `content/fil.json` has changed because of it.
+
+- **Q2 (Sipa as "national game until 2009")** — RA 9850 (2009) is solid: it declared
+  Arnis the national martial art and sport. The "Sipa was the national game before
+  that" half is widely repeated as trivia, but no prior law formally designating Sipa
+  as a national sport could be confirmed here — it may be popular/traditional usage
+  rather than a legal designation. Worth the reviewer double-checking the wording.
+- **Q12 (Kalesa under the Plaza island)** — the kalesa is more closely associated with
+  the heritage-street setting (Intramuros) than a fiesta plaza. Not factually wrong,
+  just worth the reviewer's opinion on whether it fits better in a future "heritage
+  street" island — a thematic-placement question for the team, not a correction to the
+  fact itself.
+
+Everything else in this packet reads as consistent with commonly published accounts of
+each game to the depth an AI pass can check — which is exactly why the human review below
+is still required before anything here can be marked reviewed.
+
 ---
 
 ## Part 1 — Tanong ni Lola trivia (21 questions)
