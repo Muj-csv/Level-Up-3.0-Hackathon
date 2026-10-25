@@ -395,10 +395,13 @@ function tileTex(type) { const ev = EVENTS[type]; return tex(C(256, 256, (g, s) 
   else if (type === 'padyak') { g.strokeStyle = '#3B2316'; g.lineWidth = 12; g.beginPath(); g.arc(128, 128, 62, 0, TAU); g.stroke(); g.lineWidth = 8; for (let i = 0; i < 8; i++) { const a = i * PI / 4; g.beginPath(); g.moveTo(128, 128); g.lineTo(128 + Math.cos(a) * 62, 128 + Math.sin(a) * 62); g.stroke(); } g.beginPath(); g.arc(128, 128, 14, 0, TAU); g.fill(); }
 }), 0, 'tile_' + type); }
 const tileMats = Object.fromEntries(Object.keys(TYPES).map(t => [t, own(std('tile_' + t, { map: tileTex(t), roughness: .45 }))]));
-const SPM = { 0: 'simula', 2: 'tanong', 4: 'tawad', 6: 'utang', 7: 'kasama', 8: 'sarisari', 10: 'swerte', 12: 'utang', 13: 'jackenpoy', 16: 'tikbalang', 18: 'tanong', 19: 'utang', 22: 'basa', 23: 'swerte', 25: 'utang', 26: 'suki', 28: 'kasama', 30: 'basa', 31: 'utang', 33: 'jackenpoy', 34: 'swerte', 36: 'sarisari', 38: 'suki', 39: 'utang',
-  41: 'basa', 42: 'tanong', 44: 'tikbalang', 46: 'utang', 47: 'swerte', 49: 'kasama', 51: 'utang', 53: 'jackenpoy', 55: 'tanong', 57: 'tikbalang', 59: 'utang', 62: 'tawad', 64: 'utang', 65: 'padyak', 67: 'tikbalang', 69: 'sarisari', 71: 'tanong', 72: 'utang', 74: 'tawad', 76: 'swerte', 77: 'suki' };
+const SPM = { 0: 'simula', 2: 'tanong', 4: 'tawad', 5: 'sarisari', 6: 'utang', 7: 'kasama', 8: 'sarisari', 10: 'swerte', 12: 'utang', 13: 'jackenpoy', 14: 'tawad', 15: 'padyak', 16: 'tikbalang', 18: 'tanong',
+  19: 'utang', 21: 'swerte', 22: 'basa', 23: 'swerte', 25: 'utang', 26: 'suki', 28: 'kasama', 29: 'kasama', 30: 'basa', 31: 'utang', 33: 'jackenpoy', 34: 'swerte', 36: 'sarisari', 37: 'suki', 38: 'suki',
+  39: 'utang', 41: 'basa', 42: 'tanong', 44: 'tikbalang', 45: 'tanong', 46: 'utang', 47: 'swerte', 49: 'kasama', 51: 'utang', 52: 'timbangan', 53: 'jackenpoy', 55: 'tanong', 57: 'tikbalang',
+  58: 'jackenpoy', 59: 'utang', 62: 'tawad', 63: 'sarisari', 64: 'utang', 67: 'tikbalang', 68: 'tawad', 69: 'sarisari', 71: 'tanong', 72: 'utang', 74: 'tawad', 75: 'swerte', 76: 'swerte', 77: 'suki' };
 const MAIN = Array.from({ length: NM }, (_, i) => SPM[i] || 'piso');
-const SPC = { 2: 'utang', 3: 'basa', 6: 'ulan', 8: 'utang', 10: 'timbangan', 12: 'swerte', 14: 'timbangan', 16: 'utang', 18: 'ulan', 20: 'jackenpoy', 21: 'suki', 23: 'tanong' };
+const SPC = { 2: 'utang', 3: 'basa', 5: 'kasama', 6: 'ulan', 8: 'utang', 10: 'timbangan', 11: 'suki', 12: 'swerte', 14: 'timbangan', 16: 'utang', 17: 'tanong', 18: 'ulan', 20: 'jackenpoy', 21: 'suki', 23: 'tanong',
+  24: 'timbangan' };
 const CENTER = Array.from({ length: NC }, (_, j) => SPC[j] || 'piso');
 const KOR = new Set(['M05', 'M17', 'M27', 'M35', 'M45', 'M54', 'M63', 'M75', 'C04', 'C17']);
 const pad = n => String(n).padStart(2, '0');
@@ -409,8 +412,8 @@ const pad = n => String(n).padStart(2, '0');
     const node = { id, type, x: +p.x.toFixed(2), z: +p.z.toFixed(2), next: [], koronaSpot: KOR.has(id) }; g.userData = node; graph.push(node); spaces.add(g); };
   MAIN.forEach((t, i) => addSpace('M' + pad(i), t, M(i))); CENTER.forEach((t, j) => addSpace('C' + pad(j), t, Cp(j)));
   graph.forEach(n => { const k = +n.id.slice(1); n.next.push(n.id[0] === 'M' ? 'M' + pad((k + 1) % NM) : (k === NC - 1 ? 'M' + pad(MERGE) : 'C' + pad(k + 1))); });
-  graph.find(n => n.id === 'M' + pad(FORK)).next.push('C00'); Object.assign(graph.find(n => n.id === 'M' + pad(PAD_A)), { padyakTo: 'M' + pad(PAD_B), padyakCost: 6 });
-  spaces.userData = { board: 'palengke', start: 'M00', mainLoop: NM, centerAisle: NC, fork: 'M' + pad(FORK), merge: 'M' + pad(MERGE), padyak: { from: 'M' + pad(PAD_A), to: 'M' + pad(PAD_B), cost: 6 }, koronaSpots: [...KOR], activeKoronaRange: [1, 5], nodes: graph };
+  graph.find(n => n.id === 'M' + pad(FORK)).next.push('C00'); Object.assign(graph.find(n => n.id === 'M' + pad(PAD_B)), { padyakTo: 'M' + pad(PAD_A), padyakCost: 8 });   // the padyak leaves from M15 for M65 (along its street)
+  spaces.userData = { board: 'palengke', start: 'M00', mainLoop: NM, centerAisle: NC, fork: 'M' + pad(FORK), merge: 'M' + pad(MERGE), padyak: { from: 'M' + pad(PAD_B), to: 'M' + pad(PAD_A), cost: 8 }, koronaSpots: [...KOR], activeKoronaRange: [1, 5], nodes: graph };
   window.__palengkeBoard = spaces.userData; root.add(spaces); }
 
 let tris = 0; root.traverse(o => { if (o.isMesh) tris += (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3; });

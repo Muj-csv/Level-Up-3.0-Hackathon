@@ -9,6 +9,9 @@ export async function addLiving(THREE, stage, root, o = {}) {
   const scene = stage._scene, renderer = stage._renderer, isl = { name: o.name || 'island', agents: [], tick: [], season: {}, emissive: [], wet: [] };
   const life = new THREE.Group(); life.name = 'living_' + isl.name; scene.add(life); S.islands.push(isl);
   root.updateMatrixWorld(true);
+  // uLW: from where the island is drawn now back to the space it was built in (metres). Identity where it is not moved (title,
+  // renders); in the game the island is scaled 33x, and without this the masks, blades and cloud shadows would land 33x too small
+  const UW = { value: new THREE.Matrix4() }, MB0 = root.matrixWorld.clone(); isl.tick.push(() => { UW.value.copy(root.matrixWorld).invert().premultiply(MB0); });
   const mn = m => (m && m.name) || '';
   const RX_WATER = /water|lagoon|channel|pool|puddle|wallow/i, RX_FALL = /waterfall|falls|mist/i;
   const RX_GROUND = o.ground || /^grass$|^white_sand$|sand_dunes|ground_terraces|^soil$|^rock$/;
@@ -66,7 +69,7 @@ export async function addLiving(THREE, stage, root, o = {}) {
   const NOISE = 'float lv_h(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }\nfloat lv_n(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3. - 2. * f); return mix(mix(lv_h(i), lv_h(i + vec2(1., 0.)), f.x), mix(lv_h(i + vec2(0., 1.)), lv_h(i + vec2(1., 1.)), f.x), f.y); }\nfloat lv_f(vec2 p){ return lv_n(p) * .55 + lv_n(p * 2.03 + 7.1) * .3 + lv_n(p * 4.1 + 3.7) * .15; }\n';
   const CLOUD = '{ float lvc = smoothstep(.42, .72, lv_f(vLWP.xz * .016 + vec2(uLT * .011, uLT * .006))); gl_FragColor.rgb *= 1. - lvc * .2; }';
   const chain = (m, key, fn) => { if (m.userData['lv_' + key]) return; m.userData['lv_' + key] = 1; const prev = m.onBeforeCompile, pk = m.customProgramCacheKey ? m.customProgramCacheKey.bind(m) : () => ''; m.onBeforeCompile = (sh, r) => { prev.call(m, sh, r); fn(sh); }; m.customProgramCacheKey = () => pk() + '|' + key; m.needsUpdate = true; };
-  const WATER_V = 'vW = aW; if (aW.x >= 0.0) { float wk = smoothstep(0.0, 1.2, aW.x); transformed.y += (sin(lw.x * .55 + uLT * 1.1) * .6 + sin(lw.z * .8 - uLT * 1.45 + lw.x * .3) * .4) * aW.w * wk; lw = modelMatrix * vec4(transformed, 1.0); }';
+  const WATER_V = 'vW = aW; if (aW.x >= 0.0) { float wk = smoothstep(0.0, 1.2, aW.x); transformed.y += (sin(lw.x * .55 + uLT * 1.1) * .6 + sin(lw.z * .8 - uLT * 1.45 + lw.x * .3) * .4) * aW.w * wk; lw = uLW * modelMatrix * vec4(transformed, 1.0); }';
   const WATER_F = `{ float dep = vW.x >= 0. ? clamp(vW.x / max(vW.z, .6), 0., 1.) : 1. - abs(vW.y); vec3 bc = diffuseColor.rgb;
     diffuseColor.rgb = mix(mix(bc, vec3(.45, .82, .78), .3), bc * vec3(.42, .70, .86), smoothstep(0., 1., dep)); diffuseColor.a *= mix(.7, 1., dep); float fo = 0.;
     if (vW.x >= 0.) { float bnd = .3 + .17 * sin(uLT * 1.4 + lv_n(vLWP.xz * .5) * 6.2832); fo = smoothstep(bnd, bnd * .3, vW.x) * smoothstep(.25, .6, lv_n(vLWP.xz * 3. + uLT * .3)); }
@@ -79,9 +82,9 @@ export async function addLiving(THREE, stage, root, o = {}) {
     float cr = abs(lv_n((vLWP.xz + vLWP.y) * 1.7) - .5); diffuseColor.rgb *= 1. - (1. - smoothstep(0., .02, cr)) * .3 * smoothstep(.5, .7, lv_n(vLWP.xz * .35 + 4.)); }`;
   const AO = wear => `{ vec4 mk = texture2D(uLMask, (vLWP.xz - uLMB.xy) * uLMB.zw); diffuseColor.rgb *= 1. - mk.g * .42 - mk.b * .2; ${wear ? 'diffuseColor.rgb = mix(diffuseColor.rgb, vec3(.33, .24, .14), mk.a * .45 * (1. - mk.r));' : ''} }`;
   function applyChain(m, f = {}) { if (!m.isMeshStandardMaterial) return; const key = 'lv' + (f.water ? 'w' : '') + (f.ao ? 'a' : '') + (f.wear ? 'r' : '') + (f.weather ? 't' : '') + (f.sway ? 's' : '');
-    chain(m, key, sh => { sh.uniforms.uLT = U; sh.uniforms.uLMask = { value: maskTex }; sh.uniforms.uLMB = { value: MB };
-      sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nuniform float uLT; varying vec3 vLWP;' + (f.water ? '\nattribute vec4 aW; varying vec4 vW;' : ''))
-        .replace('#include <project_vertex>', `{ vec4 lw = modelMatrix * vec4(transformed, 1.0);\n#ifdef USE_INSTANCING\nlw = modelMatrix * instanceMatrix * vec4(transformed, 1.0);\n#endif\n${f.sway ? 'transformed.x += sin(uLT * 1.8 + lw.x * .4 + lw.z * .3) * .07 * uv.y; transformed.z += cos(uLT * 1.5 + lw.z * .35) * .05 * uv.y;' : ''}${f.water ? WATER_V : ''}\nvLWP = lw.xyz; }\n#include <project_vertex>`);
+    chain(m, key, sh => { sh.uniforms.uLT = U; sh.uniforms.uLMask = { value: maskTex }; sh.uniforms.uLMB = { value: MB }; sh.uniforms.uLW = UW;
+      sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nuniform float uLT; uniform mat4 uLW; varying vec3 vLWP;' + (f.water ? '\nattribute vec4 aW; varying vec4 vW;' : ''))
+        .replace('#include <project_vertex>', `{ vec4 lw = uLW * modelMatrix * vec4(transformed, 1.0);\n#ifdef USE_INSTANCING\nlw = uLW * modelMatrix * instanceMatrix * vec4(transformed, 1.0);\n#endif\n${f.sway ? 'transformed.x += sin(uLT * 1.8 + lw.x * .4 + lw.z * .3) * .07 * uv.y; transformed.z += cos(uLT * 1.5 + lw.z * .35) * .05 * uv.y;' : ''}${f.water ? WATER_V : ''}\nvLWP = lw.xyz; }\n#include <project_vertex>`);
       sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform float uLT; uniform sampler2D uLMask; uniform vec4 uLMB; varying vec3 vLWP;' + (f.water ? '\nvarying vec4 vW;' : '') + '\n' + NOISE)
         .replace('#include <color_fragment>', '#include <color_fragment>\n' + (f.water ? WATER_F : '') + (f.weather ? WEATHER : '') + (f.ao ? AO(f.wear) : ''))
         .replace('#include <dithering_fragment>', '#include <dithering_fragment>\n' + CLOUD + (f.water ? SPARK : '')); }); }
@@ -156,22 +159,22 @@ export async function addLiving(THREE, stage, root, o = {}) {
         const fl = (nn.y > 0) && ((b.x - a.x) * (c.z - a.z) - (b.z - a.z) * (c.x - a.x)) > 0; const order = fl ? [a, c, b] : [a, b, c], ids = fl ? [ia, ic, ib] : [ia, ib, ic];
         order.forEach((p, k) => { pos.push(p.x, p.y, p.z); nor.push(nn.x, nn.y, nn.z); if (hasCol) col.push(Cl.getX(ids[k]), Cl.getY(ids[k]), Cl.getZ(ids[k])); }); } });
     if (pos.length) { const sg = new THREE.BufferGeometry(); sg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); sg.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3)); if (hasCol) sg.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
-      const SHV = 'uniform float uLT; uniform float uLL; uniform float uLH; varying vec3 vSW;';
+      const SHV = 'uniform float uLT; uniform float uLL; uniform float uLH; uniform mat4 uLW; varying vec3 vSW;';
       const SHF = `{ vec4 mk = texture2D(uLMask, (vSW.xz - uLMB.xy) * uLMB.zw); if (mk.r > .5) discard; float gm = 1.;
         #ifdef USE_COLOR
         gm = smoothstep(.0, .03, vColor.g - max(vColor.r, vColor.b * 1.05));
         #endif
         float hMul = gm * (1. - mk.a * .85); vec2 gp = vSW.xz * 9.; vec2 id = floor(gp); vec2 f = fract(gp) - .5; float h1 = lv_h(id), h2 = lv_h(id + 17.31), h3 = lv_h(id + 41.7), h4 = lv_h(id + 7.9);
-        vec2 off = (vec2(h2, h4) - .5) * .4; float r = length(f - off); float farK = smoothstep(45., 120., length(vViewPosition)); vec3 col; float L = uLL;
+        vec2 off = (vec2(h2, h4) - .5) * .4; float r = length(f - off); float farK = smoothstep(45., 120., length(vViewPosition) * length(uLW[0].xyz)); vec3 col; float L = uLL;
         if (h3 < .022) { float hh = .95 * hMul; if (L > hh) discard; if (L < hh * .72) { if (r > .07 + farK * .3) discard; col = vec3(.12, .32, .07); } else { if (r > .34 + farK * .2) discard; float fl = lv_h(id + 3.3); col = fl < .35 ? vec3(.95, .22, .05) : fl < .7 ? vec3(.8, .03, .08) : vec3(1.); if (fl >= .7 && r < .12) col = vec3(1., .75, .05); } }
         else if (h2 < .09) { float hh = .34 * hMul; if (L > hh || r > .46 + farK * .1) discard; col = mix(vec3(.05, .17, .03), vec3(.1, .3, .05), L / max(hh, .01)); }
         else { float hh = (.42 + .5 * h1) * hMul; if (L > hh) discard; float th = .36 * (1. - L / hh) + .05 + farK * .35; if (r > th) discard; vec3 base = mix(vec3(.05, .16, .025), vec3(.08, .22, .03), h4), tip = mix(vec3(.2, .42, .06), vec3(.3, .5, .08), h1); col = mix(base, tip, L / hh); }
         float dry = smoothstep(.55, .78, lv_f(vSW.xz * .07 + 3.1)); col = mix(col, vec3(.34, .27, .08) * (.6 + .5 * L), dry * .7); col *= 1. - mk.g * .45 * (1. - L * .4) - mk.b * .3; diffuseColor.rgb = col; }`;
       for (let l = 1; l <= NL; l++) { const mat = new THREE.MeshStandardMaterial({ name: 'grass_shell', roughness: .95, vertexColors: hasCol }); const L = l / NL;
-        mat.onBeforeCompile = sh => { sh.uniforms.uLT = U; sh.uniforms.uLL = { value: L }; sh.uniforms.uLH = { value: GH }; sh.uniforms.uLMask = { value: maskTex }; sh.uniforms.uLMB = { value: MB };
+        mat.onBeforeCompile = sh => { sh.uniforms.uLT = U; sh.uniforms.uLL = { value: L }; sh.uniforms.uLH = { value: GH }; sh.uniforms.uLMask = { value: maskTex }; sh.uniforms.uLMB = { value: MB }; sh.uniforms.uLW = UW;
           sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\n' + SHV).replace('#include <begin_vertex>', '#include <begin_vertex>\ntransformed += objectNormal * uLH * uLL;')
-            .replace('#include <project_vertex>', '{ vec4 sw = modelMatrix * vec4(transformed, 1.0); float k = uLL * uLL; transformed.x += sin(uLT * 1.6 + sw.x * .35 + sw.z * .21) * .035 * k; transformed.z += cos(uLT * 1.25 + sw.z * .31 + sw.x * .17) * .025 * k; vSW = (modelMatrix * vec4(transformed, 1.0)).xyz; }\n#include <project_vertex>');
-          sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform float uLT; uniform float uLL; uniform sampler2D uLMask; uniform vec4 uLMB; varying vec3 vSW;\n' + NOISE).replace('#include <color_fragment>', '#include <color_fragment>\n' + SHF)
+            .replace('#include <project_vertex>', '{ vec4 sw = uLW * modelMatrix * vec4(transformed, 1.0); float k = uLL * uLL; transformed.x += sin(uLT * 1.6 + sw.x * .35 + sw.z * .21) * .035 * k; transformed.z += cos(uLT * 1.25 + sw.z * .31 + sw.x * .17) * .025 * k; vSW = (uLW * modelMatrix * vec4(transformed, 1.0)).xyz; }\n#include <project_vertex>');
+          sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform float uLT; uniform float uLL; uniform sampler2D uLMask; uniform vec4 uLMB; uniform mat4 uLW; varying vec3 vSW;\n' + NOISE).replace('#include <color_fragment>', '#include <color_fragment>\n' + SHF)
             .replace('#include <dithering_fragment>', '#include <dithering_fragment>\n{ float lvc = smoothstep(.42, .72, lv_f(vSW.xz * .016 + vec2(uLT * .011, uLT * .006))); gl_FragColor.rgb *= 1. - lvc * .2; }'); };
         mat.customProgramCacheKey = () => 'lv_shell'; const sm = new THREE.Mesh(sg, mat); sm.name = 'grass_shell_' + l; sm.receiveShadow = true; sm.castShadow = false; sm.renderOrder = 1; life.add(sm); } } }
 

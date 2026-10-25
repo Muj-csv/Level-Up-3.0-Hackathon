@@ -1,0 +1,13 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Taympers board export</title></head><body>
+<script type="module">
+// Builds each island (maps/islands/*.js) and collects the board graph it publishes (window.__<id>Board): the game reads
+// these from maps/boards.js, while the 3D spaces come from the island itself. Run: node tools/boards-export.mjs
+import * as THREE from '../vendor/three-r184/three.module.min.js';
+const IDS = ['plaza', 'palengke', 'aplaya', 'palayan'], out = {};
+try {
+  for (const id of IDS) { const m = await import('../maps/islands/' + id + '.js'); await m.build(THREE); const b = window['__' + id + 'Board']; if (!b) throw new Error('no board from ' + id); out[id] = JSON.parse(JSON.stringify(b)); }
+  window.__out = out;
+} catch (e) { window.__err = String(e && e.stack || e); }
+window.__done = true;
+</script>
+</body></html>
