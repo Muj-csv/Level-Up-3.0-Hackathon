@@ -21,7 +21,7 @@ copy your name and the date into each item's `reviewed_by`/`reviewed_at` fields.
 
 ---
 
-## Part 1 — Tanong ni Lola trivia (20 questions)
+## Part 1 — Tanong ni Lola trivia (21 questions)
 
 Each question is multiple choice; the **first (bolded) answer is always the one the
 game marks correct**. The "why" line is the explanation shown after answering.
@@ -128,9 +128,14 @@ game marks correct**. The "why" line is the explanation shown after answering.
     Why: "Kinakanta ito ng taya habang nakapikit at nagbibilang, para may oras magtago ang iba."
     ⬜ Correct  ⬜ Needs a fix  ⬜ Flag
 
+21. **[Piko] Sa Piko, ano ang ginagawa sa kahong may pamato?**
+    Answers: **Nilalaktawan ito** / Tinatapakan ito nang dalawang paa / Doon nagpapahinga
+    Why: "Hindi tinatapakan ang kahong may pamato; pupulutin lang ito pagbalik, nang hindi natutumba."
+    ⬜ Correct  ⬜ Needs a fix  ⬜ Flag
+
 ---
 
-## Part 2 — Minigame facts (7 games currently in the app)
+## Part 2 — Minigame facts (8 games currently in the app)
 
 For each game: the in-app name, other names it's known by, what you need to play it
 for real ("Subukan sa labas"), the simplified in-app rules, and how it's really played
@@ -245,6 +250,25 @@ none of the animal clues could be mistaken for a kid's clue.
 | Aso | a whole brown dog head with floppy ears and a snout, and "aw aw!" in italics (no bubble) |
 
 ⬜ No fake clue looks like a kid's clue  ⬜ Needs a fix
+
+### Piko
+*Also known as:* piko-piko; hopscotch in English
+*To play for real:* draw the court with chalk or charcoal on safe concrete or ground and
+find a flat pamato (marker stone); even two players are enough.
+*In-app rules:* a quick press is one foot in a single box, a press held a little longer is
+two feet in a side-by-side pair; skip the box with the pamato, and if it is in a pair, step
+with one foot into the other box; a wrong hop is "Patay!", back to the start and that
+court's steps are lost; +2 per finished court, 20 seconds. Three courts take turns:
+Klasiko (1·1·1·2·1·2), Eroplano (1·2·1·2·1) and Hagdan (1·1·2·1·1·2), with the pamato
+in box 1 on the first court, box 2 on the second, and so on.
+*How it's really played:* the court is drawn with chalk or charcoal. The player tosses the
+pamato (a flat stone or a piece of broken pot) into the first box, hops on one foot in
+single boxes and two feet in pairs, and skips the box with the pamato. On the way back
+they pick it up without falling. A player is out ("patay") for stepping on a line,
+falling, or landing in the wrong box.
+*Also for the reviewer (PRD N6):* when the pamato is in one box of a pair, do kids in your
+region step into the other box with one foot (as the game does), or hop over the whole row?
+⬜ Correct  ⬜ Needs a fix  ⬜ Flag
 
 ---
 
