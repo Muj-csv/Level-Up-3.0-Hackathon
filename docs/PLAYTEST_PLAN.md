@@ -54,7 +54,12 @@ yet) or online play (F7, separate test).
    - For one or two of the minigames played: "Alam mo ba kung paano ito laruin sa
      totoong buhay?" (do you know how to play this for real) — early signal for the
      learning layer, not a hard F9 metric yet
-6. Thank them; no scores or names recorded publicly.
+6. **Read-aloud check (Simpler Filipino PRD, L1.6):** open one minigame's rules card
+   (Hamon ng Araw → Pagsasanay, or the card before a minigame) and ask the kid to read it
+   out loud, then: **"Paano laruin ito? Sabihin mo sa sarili mong salita."** (How do you
+   play this? Say it in your own words.) Mark explained / partly / couldn't, and note any
+   word they stumbled on. Target: at least 4 of 5 kids explain it.
+7. Thank them; no scores or names recorded publicly.
 
 ## What to record (per kid)
 
@@ -71,6 +76,7 @@ repo — may include a parent's contact for follow-up).
 | Could explain last turn? | Y / vague / N, plus their exact words if useful |
 | Visible confusion moments | what happened, which screen/space, estimate when (round/turn) |
 | Minigame reactions | which they liked, which they struggled with |
+| Read-aloud rules card | which game; explained / partly / couldn't; words they stumbled on |
 | Finished a game? | Y/N, how many rounds |
 | Free notes | anything else worth remembering |
 
