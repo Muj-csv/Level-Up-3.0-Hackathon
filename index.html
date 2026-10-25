@@ -635,6 +635,7 @@ const CHARS=[
   {name:'Totoy',key:'totoy',color:'#2E6FD8',dark:'#1C4A9A',skin:'#A86F44'},
   {name:'Bunso',key:'bunso',color:'#2FA35A',dark:'#1D703C',skin:'#B57A4E'}
 ];
+const HAIR='#2A1A12';   // hair colour in drawn details (Taguan's braid clue)
 const NPCS=[{key:'lito',npc:0,color:'#F7F4EE',dark:'#C9C2B4',skin:'#B57A4E'},{key:'mayumi',npc:1,color:'#F28DB2',dark:'#C2577F',skin:'#D9A06F'},{key:'boyet',npc:2,color:'#5BC0BE',dark:'#36908E',skin:'#A86F44'},{key:'dodong',npc:3,color:'#8E6CC9',dark:'#5E4596',skin:'#C68A5B'}];
 function shade(hex,k){const n=parseInt(hex.slice(1),16);const f=c=>Math.round(c*k);return'rgb('+f(n>>16)+','+f(n>>8&255)+','+f(n&255)+')';}
 /* kids/sprites.png: one row per kid (order of sprites.json), one 96x120 picture per pose, feet at 108 px */
@@ -1225,6 +1226,8 @@ let scene=null,gameToken=0,hitstop=0,decK=0,mgSeq=0;
 const HALT=new Promise(()=>{});
 /* test hook: "?debug" logs game events and allows "&speed=N" (N simulation steps per frame) for automated play-tests; inert otherwise */
 const DEBUG=/[?&]debug\b/.test(location.search),DBG=[];let SPEED=1;
+/* test hook: "?debug&mg=<key>" plays that minigame every round (both phones of an online test load the same address) */
+const DEBUG_MG=DEBUG&&(/[?&]mg=([a-z]+)/.exec(location.search)||[])[1]||null;
 /* F10 developer readout: ?perf shows frame rate, frame times and 3D renderer counts in a corner; players never see it.
    Frame times are the gaps between animation frames, so they include the GPU when it holds the page back */
 const PERF=/[?&]perf\b/.test(location.search),FT=[];
@@ -1331,6 +1334,10 @@ let actionResolver=null;
 let actionAt=0;
 function waitAction(label){actionBtn.textContent=label;actionBtn.hidden=false;setHint('');actionAt=performance.now();return new Promise(res=>{actionResolver=()=>{actionResolver=null;actionBtn.hidden=true;itemBtn.hidden=true;res();};});}
 actionBtn.addEventListener('click',()=>{Sfx.init();if(scene&&scene.action)scene.action();else if(actionResolver)actionResolver();});
+/* hold scenes (Piko) also hear the button's press and release; each finger is its own pointer, and a cancelled or
+   lost touch counts as a release. Taps still reach scene.action through click */
+actionBtn.addEventListener('pointerdown',e=>{if(!scene||!scene.actionDown)return;Sfx.init();try{actionBtn.setPointerCapture(e.pointerId);}catch(_){}scene.actionDown(e.pointerId);});
+for(const ev of ['pointerup','pointercancel','lostpointercapture'])actionBtn.addEventListener(ev,e=>{if(scene&&scene.actionUp)scene.actionUp(e.pointerId);});
 itemBtn.addEventListener('click',()=>{const on=itemBtn.getAttribute('aria-pressed')!=='true';itemBtn.setAttribute('aria-pressed',String(on));applyItemPreview(on);});
 mapBtn.addEventListener('click',()=>{state.overview=!state.overview;mapBtn.setAttribute('aria-pressed',String(state.overview));});
 /* the speaker button mutes or restores music and effects together; the menu sets them one by one */
@@ -1408,14 +1415,18 @@ function netTerminal(){if(APP.screen==='game'&&NET.on&&!NET.gone){NET.gone=true;
 function onNetPeers(ch){
   NET.peers=ch.peers;const me=ch.peers.find(q=>q.sameTab);if(me)NET.my=me.peer;const t=Date.now();for(const q of ch.peers)if(!NET.seen.has(q.peer))NET.seen.set(q.peer,t);
   if(NET.host){if(!NET.on)hostRoster();}
-  else{const h=netHost();if(h){NET.hostPeer=h.peer;NET.hostSeenAt=t;const pr=h.presence;
+  else{const h=netHost();if(h&&h.presence.build!==BUILD){netWrongBuild();return;}if(h){NET.hostPeer=h.peer;NET.hostSeenAt=t;const pr=h.presence;
       if(pr.log&&NET.gid&&pr.gid===NET.gid)mergeLog(pr.log);
       if(pr.st==='play'&&pr.gid&&pr.gid!==NET.started&&(APP.screen!=='game'||state.ended)){NET.started=pr.gid;const mine=(pr.roster||[]).some(e=>e.p===NET.my);if(mine)startOnline(pr);else joinFull();}}}
   if(NET.onUpdate)NET.onUpdate();
 }
+/* a guest on another build can't join: the host never seats it, and the guest is told to reload and leaves the room */
+function netWrongBuild(){if(NET.badBuild)return;NET.badBuild=true;NET.onUpdate=null;NET.rejoin='';netLeave();netUnsave();dbg('build',{mine:BUILD});
+  const c=openCard('<h2>Ibang bersiyon</h2><p>Iba ang bersiyon ng laro mo. I-refresh para makasali.</p><div class="row"><button type="button" class="btn" data-v="back">Balik</button><button type="button" class="btn primary" data-v="reload" data-primary>I-refresh</button></div>');
+  cardChoice(c).then(v=>{NET.badBuild=false;if(v==='reload')location.reload();else toTitle();});}
 function mergeLog(lg){for(const key in lg){const k=+key.slice(1);if(k&&NET.log[k]===undefined){NET.log[k]=lg[key];if(k>NET.logMax)NET.logMax=k;}}}
 function hostRoster(){
-  const guests=NET.peers.filter(q=>!q.sameTab&&q.presence&&q.presence.app===APPID&&q.presence.role==='guest'&&!q.presence.gid).sort((a,b)=>(NET.seen.get(a.peer)||0)-(NET.seen.get(b.peer)||0)).slice(0,3);
+  const guests=NET.peers.filter(q=>!q.sameTab&&q.presence&&q.presence.app===APPID&&q.presence.role==='guest'&&q.presence.build===BUILD&&!q.presence.gid).sort((a,b)=>(NET.seen.get(a.peer)||0)-(NET.seen.get(b.peer)||0)).slice(0,3);
   const roster=[{n:NET.name,p:myPeer()}].concat(guests.map(q=>({n:cleanName(q.presence.name)||'Kalaro',p:q.peer})));
   const key=JSON.stringify(roster);if(key!==NET.rosterKey){NET.rosterKey=key;NET.roster=roster;netPres({roster});}
 }
@@ -1435,10 +1446,10 @@ function netCheckpoint(cp){if(NET.host){NET.cp=cp;netPres({cp});}netSave();}
 async function netResume(o){
   showMsg('Bumabalik sa online na laro…','Room '+o.code+'.');
   try{NET.host=!!o.host;NET.name=o.name;await netJoin(o.code);NET.host=!!o.host;NET.name=o.name;}catch(e){netLeave();return netFail();}
-  if(o.host){NET.roster=o.roster;NET.cfg=o.cfg;netPres({app:APPID,role:'host',name:o.name,st:'play',gid:o.gid,seed:o.seed,roster:o.roster,cfg:o.cfg,cp:o.cp||null,inp:null,mg:null});
+  if(o.host){NET.roster=o.roster;NET.cfg=o.cfg;netPres({app:APPID,role:'host',build:BUILD,name:o.name,st:'play',gid:o.gid,seed:o.seed,roster:o.roster,cfg:o.cfg,cp:o.cp||null,inp:null,mg:null});
     startOnline(o,o.cp,o.log);netPubLog();return;}
   /* a guest waits for the host's presence: onNetPeers then starts the game from the host's checkpoint (see startOnline) */
-  NET.rejoin=o.gid;netPres({app:APPID,role:'guest',name:o.name,gid:''});NET.hostSeenAt=Date.now();
+  NET.rejoin=o.gid;netPres({app:APPID,role:'guest',build:BUILD,name:o.name,gid:''});NET.hostSeenAt=Date.now();
   setTimeout(()=>{if(NET.rejoin!==o.gid||APP.screen==='game')return;NET.rejoin='';netLeave();
     const c=openCard('<h2>Hindi na makabalik</h2><p>Wala na ang larong ito sa room '+esc(o.code)+'.</p><div class="row"><button type="button" class="btn primary" data-v="ok" data-primary>Sige</button></div>');cardChoice(c).then(()=>toTitle());},20000);
 }
@@ -1700,7 +1711,7 @@ const PASS_KEY='lsu-pass';let PASS_MEM=null;
 function passGet(){if(PASS_MEM)return PASS_MEM;try{const o=JSON.parse(localStorage.getItem(PASS_KEY)||'{}');return{played:o.played||{},labas:o.labas||{}};}catch(e){return{played:{},labas:{}};}}
 function passSave(o){PASS_MEM=null;try{localStorage.setItem(PASS_KEY,JSON.stringify(o));}catch(e){PASS_MEM=o;}}
 function stampGame(kind){const o=passGet();const first=!o.played[kind];o.played[kind]=(o.played[kind]|0)+1;passSave(o);return first;}
-const SOON=[{t:'Piko',d:'Lukso sa isang paa sa mga kahong iginuhit.'},{t:'Agawan Base',d:'Dalawang koponan, dalawang base, maraming takbuhan.'},{t:'Sungka',d:'Tablang may butas at mga sigay. Laro ng diskarte.'}];
+const SOON=[{t:'Agawan Base',d:'Dalawang koponan, dalawang base, maraming takbuhan.'},{t:'Sungka',d:'Tablang may butas at mga sigay. Laro ng diskarte.'}];
 function labasBox(def){return def.labas?'<div class="labas"><b>Subukan sa labas</b><p>'+esc(def.labas)+'</p></div>':'';}
 async function passportFlow(){
   for(;;){const o=passGet();const done=MG_KEYS.filter(k=>o.played[k]).length,gold=MG_KEYS.filter(k=>o.labas[k]).length,tot=MG_KEYS.length*2;
@@ -1993,9 +2004,26 @@ const MG={
   luksong:{labas:'Dalawang kalaro ang uupo nang magkaharap sa damuhan. Magpapatong sila ng paa, tapos kamay, para maging tinik. Lalaktawan ito ng iba; ang sumabit ang papalit sa nakaupo.',title:'Luksong Tinik',aka:'Laro ng lukso at lakas ng loob',chip:'4 na manlalaro · sabay-sabay',unit:'antas',make:(pre,mgi)=>mkLuksong(pre,mgi),
     preroll:d=>Math.min(8,[1,2,4][d]+Math.floor(G()*[4,5,5][d])),botScore:pre=>pre,
     rules:['Tatakbo ka papunta sa tinik. I-tap para lumukso kapag nasa dilaw na guhit ang paa mo.','Masyadong maaga o huli, sasabit ka at tapos ang laro mo.','Tataas at bibilis ang tinik bawat antas. Pinakamataas na antas ang panalo.'],
-    real:'Dalawang manlalaro ang nakaupo sa lupa at pinagpapatong ang kanilang mga paa, tapos ang mga kamay, para tumaas ang tinik. Lumulukso ang iba nang hindi sumasagi. Kapag may sumabit, siya ang papalit sa nakaupo.'}
+    real:'Dalawang manlalaro ang nakaupo sa lupa at pinagpapatong ang kanilang mga paa, tapos ang mga kamay, para tumaas ang tinik. Lumulukso ang iba nang hindi sumasagi. Kapag may sumabit, siya ang papalit sa nakaupo.'},
+  /* new minigames go at the end (saves keep their round plans by key); off:true drops one from MG_KEYS without deleting it */
+  palayok:{labas:'Gumamit ng lumang kahon o supot na papel sa halip na palayok para ligtas, at lagyan ng kendi. Isabit ito sa lubid, piringan ang kalaro at paikutin nang tatlong beses bago pumalo. Lumayo ang mga nanonood sa pumapalo!',title:'Pukpok Palayok',aka:'Tinatawag ding hampas-palayok o basag-palayok',chip:'4 na manlalaro · sabay-sabay',unit:'puntos',make:(pre,mgi)=>mkPalayok(pre,mgi),
+    preroll:d=>palayokPre(d),botScore:pre=>pre.reduce((a,b)=>a+b,0),
+    rules:['Tingnan kung ilang hakbang ang palayok bago ka piringan.','Bilangin sa isip ang bawat hakbang, tapos pindutin para pumalo.','Basag: 10, sagi: 6, malapit: 3. Tatlong subok. Huwag maniwala sa sigaw ng mga nanonood!'],
+    real:'Laro ito tuwing pista at kaarawan. Isinasabit ang palayok na may kendi, barya o laruan sa lubid sa pagitan ng dalawang poste. Pipiringan ang manlalaro, paiikutin nang ilang beses at bibigyan ng patpat. Sumisigaw ang mga nanonood ng direksiyon, minsan tama, minsan panloloko. Kapag nabasag ang palayok, nag-aagawan ang lahat sa kendi.'},
+  taguan:{labas:'Kailangan ng 3 o higit pang kalaro at isang ligtas na bakuran. Pumili ng base, magbilang ang taya hanggang 20 nang nakapikit, at magtago ang iba sa lugar na kita pa ng matatanda.',title:'Taguan',aka:'Tinatawag ding tagu-taguan',chip:'4 na manlalaro · sabay-sabay',unit:'puntos',make:(pre,mgi)=>mkTaguan(pre,mgi),
+    preroll:d=>({f:[3,5,7][d]+Math.floor(G()*3),w:d>=2?0:Math.floor(G()*(d?2:3))}),botScore:pre=>Math.max(0,Math.min(100,pre.f*10-pre.w*2)),
+    rules:['Kusang naglalakad ang taya at tumitigil sa bawat taguan.','I-tap kapag may palatandaan ng bata: tsinelas, buhok, mata, anino, hagikgik, kaluskos o daliri. Hayop lang ang pusa, manok at aso!','10 bawat nahanap. Mali: −2, at hindi ka makaka-tap sa susunod na 2 taguan.'],
+    real:'Pipikit at bibilang ang taya habang nagtatago ang iba, at kinakanta ang "Tagu-taguan, maliwanag ang buwan…". Pagkatapos, hahanapin niya ang mga nagtatago. Kapag may nakita siya, uunahan niyang makabalik sa base ang nakita. Ang unang nahuli ang magiging bagong taya.'},
+  piko:{labas:'Gumuhit ng piko sa ligtas na semento o lupa gamit ang tisa o uling, at maghanap ng patag na pamato. Puwede kahit dalawa lang kayo.',title:'Piko',aka:'Tinatawag ding piko-piko; hopscotch sa Ingles',chip:'4 na manlalaro · sabay-sabay',unit:'hakbang',make:(pre,mgi)=>mkPiko(pre,mgi),
+    preroll:d=>pikoPre(d),botScore:pre=>PIKO_CUM[pre]||0,
+    rules:['Pindot: isang paa sa iisang kahon. Diinan: dalawang paa sa magkatabing kahon.','Laktawan ang kahong may pamato. Kung nasa magkatabi ito, isang paa lang sa kabilang kahon.','Maling lukso: Patay! Balik sa simula at bawas ang hakbang sa guhit na iyon. +2 bawat tapos na guhit, 20 segundo.'],
+    real:'Iginuguhit ng tisa o uling ang mga kahon sa lupa. Ihahagis ng manlalaro ang pamato (patag na bato o piraso ng paso) sa unang kahon, lulundag sa isang paa sa iisang kahon at dalawang paa sa magkatabi, at lalaktawan ang kahong may pamato. Pagbalik, pupulutin niya ang pamato nang hindi natutumba. Patay kapag tumapak sa guhit, natumba o nagkamali ng kahon.'}
 };
-const MG_KEYS=Object.keys(MG);
+const MG_KEYS=Object.keys(MG).filter(k=>!MG[k].off);
+/* online needs every phone on the same build: the round plan comes from the seed and MG_KEYS, so a phone on an older
+   cached copy would pick other minigames and fall out of step. Change BUILD_VER whenever a game's rules change; the
+   list of minigames (with any switched off) is part of the id. window.LSU_NET.build overrides it (tests) */
+const BUILD_VER='2026-10-25',BUILD=(window.LSU_NET&&window.LSU_NET.build)||BUILD_VER+'/'+MG_KEYS.join('.');
 /* F9.1: trivia, real-street rules and Subukan sa labas text live in content/fil.json so
    writers edit that file, not this one. The arrays above stay as a built-in fallback if
    the fetch fails (offline first load, file:// preview, etc.); whichever resolves first wins. */
@@ -2010,7 +2038,7 @@ const CONTENT_P=(async function loadContent(){
   }catch(e){console.warn('content/fil.json not loaded, using built-in fallback text',e);}
 })();
 function mgCtrl(kind){const L=locals();if(kind==='patintero')return L.length>1&&!NET.on?'Isa-isang tatakbo ang mga tao. I-drag ang daliri o arrow keys / WASD.':'I-drag ang daliri kahit saan, o arrow keys / WASD.';
-  if(L.length>1)return'Bawat tao: i-tap ang sariling hanay, o pindutin ang '+L.map(p=>'['+keyLabel(p)+'] '+p.name).join(', ')+'.';return kind==='sipa'?'Tap, Space, o ang Sipa! na button.':(kind==='palosebo'?'Tap, Space, o ang Akyat! na button.':kind==='luksong'?'Tap, Space, o ang Talon! na button.':'Tap, Space, o ang Tira! na button.');}
+  if(L.length>1)return'Bawat tao: i-tap ang sariling hanay, o pindutin ang '+L.map(p=>'['+keyLabel(p)+'] '+p.name).join(', ')+'.';if(kind==='piko')return'Pindot = isang paa, diinan = dalawang paa: tap, Space, o ang Lukso! na button.';return'Tap, Space, o ang '+({sipa:'Sipa!',palosebo:'Akyat!',luksong:'Talon!',palayok:'Palo!',taguan:'Hanap!'}[kind]||'Tira!')+' na button.';}
 /* the minigame order for a whole game, fixed by the seed (same on every device), no game twice in a row */
 function mgPlan(seed,n){const r=seeded((seed^0x2545F491)|0),out=[];let bag=[];while(out.length<n){if(!bag.length){bag=MG_KEYS.slice();for(let i=bag.length-1;i>0;i--){const j=Math.floor(r()*(i+1));const t=bag[i];bag[i]=bag[j];bag[j]=t;}if(out.length&&bag[0]===out[out.length-1])bag.push(bag.shift());}out.push(bag.shift());}return out;}
 function realBox(def){return def.real?'<div class="real"><b>Sa totoong kalye</b><p>'+esc(def.real)+'</p></div>':'';}
@@ -2127,6 +2155,338 @@ function mkPalosebo(pre,mgi){
   return sc;
 }
 
+/* Pukpok Palayok: look at the pot, get blindfolded and spun, then count your steps and swing once. Three tries; every
+   lane walks on one clock, and a try starts when every lane is done with the last one. The pots' offsets and the
+   crowd's fake calls come from the game's seeded numbers, so every phone has the same ones */
+const PALAYOK={LOOK:2,SPIN:.8,STEP:.55,RES:1.2,MAXS:12,SS:30,START:196,POTS:[5,7,9],CALLS:['Ayan na!','Palo na!','Ngayon na!','Hampas!','Dito na!','Sige, pukpok!']};
+const palayokScore=d=>d<=.35?10:d<=1?6:d<=2?3:0;
+/* a bot's three tries: points (0, 3, 6 or 10 each) adding up to the total nearest a target in its level's range
+   (6–15, 12–21, 18–27), never outside that range */
+function palayokPre(d){const R0=[[6,15],[12,21],[18,27]][d]||[12,21],t=R0[0]+Math.floor(G()*(R0[1]-R0[0]+1)),V=[0,3,6,10],c=[];let best=1e9;
+  for(const a of V)for(const b of V)for(const e of V){const n=a+b+e;if(n<R0[0]||n>R0[1])continue;const s=Math.abs(n-t);if(s<best){best=s;c.length=0;}if(s===best)c.push([a,b,e]);}return c[Math.floor(G()*c.length)];}
+function mkPalayok(pre,mgi){
+  const P=PALAYOK;let resolve;const L1=locals(),keys=localKeyMap();
+  const sc={kind:'palayok',view:{w:600,h:520},focusY:-6,t:0,cd:3.6,ended:false,actionLabel:L1.length===1?'Palo!':null,hint:L1.length===1?'Bilangin ang hakbang, tapos pumalo':'I-tap ang sarili mong hanay para pumalo'};sc.done=new Promise(r=>resolve=r);
+  const tries=P.POTS.map((b,k)=>{const pot=b+G()*.9,calls=[];
+    if(k>0){const pick=()=>P.CALLS[Math.floor(G()*P.CALLS.length)],late=G()<.5;calls.push({at:pot-3.2+G()*1.6,txt:pick()},{at:late?pot+1.1+G()*.7:pot-1.45+G()*.5,txt:pick()});}
+    return{pot,calls};});
+  const lanes=state.players.map((p,i)=>({p,i,mode:p.ctrl,x:(i-1.5)*135,res:[],taps:[],tap:null,out:null,rt:0,done:false,plan:undefined,rip:0,sw:0,broke:0}));
+  let tri=0,ph='look',pt=0,wt=0,lastStep=0;const bubbles=[];
+  const steps=()=>Math.min(P.MAXS,wt/P.STEP),pos=L=>L.tap!=null?L.tap:steps(),total=L=>L.res.reduce((a,b)=>a+(b||0),0);
+  const potY=()=>P.START-tries[tri].pot*P.SS,kidY=L=>P.START-(ph==='walk'?pos(L):0)*P.SS;
+  const publish=L=>{if(NET.on&&L.mode==='local')netMg({i:mgi,tp:L.taps.slice(),r:L.res.slice(),s:total(L),d:L.res.length>=3&&L.done?1:0});};
+  const LABEL={10:'BASAG!',6:'Sagi!',3:'Malapit!',0:'Wala!'};
+  function result(L,at,given){const s=given!=null?given:at==null?0:palayokScore(Math.abs(at-tries[tri].pot));L.out={s,at};L.res[tri]=s;L.taps[tri]=at==null?-1:Math.round(at*100);L.rt=0;
+    if(at!=null){L.tap=at;L.sw=1;}const x=L.x,y=potY()-44,me=L.mode==='local';
+    if(s===10){L.broke=1;Sfx.clang();hitstop=.07;if(!RM)cam.shake=.22;if(me)buzz([30,40,30]);burst(x,y,14,'confetti',{spd:190,g:330,life:1.1,size:6});burst(x,y,8,'star',{spd:150,size:6,color:'#FFE07A',life:.7,g:150});setMood(L.p,'cheer',1.4);}
+    else if(s>0){Sfx.thud();if(me)buzz(25);setMood(L.p,'happy',1);}else{if(me)Sfx.bad();setMood(L.p,'sad',1);}
+    floatText(LABEL[s]+(s?' +'+s:''),x,y-34,s?L.p.color:'#fff',s===10?19:16);publish(L);}
+  function act(pid){if(sc.cd>.6||ph!=='walk')return;const L=lanes[pid];if(!L||L.mode!=='local'||L.out)return;result(L,steps());}
+  sc.action=()=>{if(L1.length===1)act(L1[0].id);};
+  sc.pointerDown=(x,y)=>{if(L1.length===1){act(L1[0].id);return;}const w=toWorld(x,y);act(clamp(Math.round(w.x/135+1.5),0,3));};
+  sc.key=(e,down)=>{if(!down||e.repeat)return;const pid=keys[e.code];if(pid!=null){e.preventDefault();act(pid);}};
+  /* what a player can know: the pot only while looking, then only the steps heard */
+  sc.peek=()=>lanes.map(L=>({ph,tri,pot:ph==='look'?tries[tri].pot:null,steps:ph==='walk'?Math.floor(steps()):0,out:!!L.out,score:total(L),cd:sc.cd}));
+  /* a bot swings where its rolled points for this try put it */
+  function plan(L){const want=L.mode==='bot'?pre[L.i][tri]:null,pot=tries[tri].pot,sg=R()<.5?-1:1;
+    if(want===10)return pot+(R()-.5)*.6;if(want===6)return pot+sg*(.42+R()*.5);if(want===3)return pot+sg*(1.08+R()*.85);return R()<.5?null:pot-(2.3+R()*1.4);}
+  function nextTry(){if(tri>=2){sc.ended=true;lanes.forEach(publish);setTimeout(()=>resolve({scores:lanes.map(total)}),900);return;}
+    tri++;ph='look';pt=0;wt=0;lastStep=0;lanes.forEach(L=>{L.tap=null;L.out=null;L.rt=0;L.done=false;L.plan=undefined;L.broke=0;L.sw=0;});}
+  sc.update=dt=>{
+    if(cdTick(sc,dt))return;sc.t+=dt;if(sc.ended)return;pt+=dt;
+    for(const L of lanes){L.rip=Math.max(0,L.rip-dt);L.sw=Math.max(0,L.sw-dt*2.4);}
+    for(let i=bubbles.length-1;i>=0;i--){bubbles[i].t+=dt;if(bubbles[i].t>1.15)bubbles.splice(i,1);}
+    if(ph==='look'){if(pt>=P.LOOK){ph='spin';pt=0;Sfx.whoosh();}return;}
+    if(ph==='spin'){if(pt>=P.SPIN){ph='walk';pt=0;wt=0;lastStep=0;lanes.forEach(L=>{if(L.mode==='bot')L.plan=plan(L);});}return;}
+    wt+=dt;const n=Math.floor(steps());
+    if(n>lastStep){lastStep=n;let mine=false;for(const L of lanes)if(!L.out){L.rip=.4;if(L.mode==='local')mine=true;}if(mine){Sfx.tick(n%8);buzz(12);}}
+    for(const c of tries[tri].calls)if(!c.said&&steps()>=c.at){c.said=1;const k=Math.floor(R()*SPECT.length);bubbles.push({txt:c.txt,x:SPECT[k].x,y:SPECT[k].y,t:0});Sfx.tone(820,.12,'triangle',.03,620);Sfx.tone(700,.14,'triangle',.025,520,.1);}
+    for(const L of lanes){
+      if(L.out){L.rt+=dt;if(L.rt>=P.RES)L.done=true;continue;}
+      if(L.mode==='bot'){if(L.plan!=null&&steps()>=L.plan)result(L,L.plan);else if(steps()>=P.MAXS)result(L,null);}
+      else if(L.mode==='remote'){const m=netPeerMg(L.p.peer,mgi),v=m&&Array.isArray(m.tp)?m.tp[tri]:null,r=m&&Array.isArray(m.r)?m.r[tri]:null;   // the remote phone's own points for the try
+        if(v!=null&&v>=0&&steps()>=v/100)result(L,v/100,r);else if((v!=null&&v<0&&steps()>=P.MAXS)||wt>=P.MAXS*P.STEP+2.5)result(L,null,r);}
+      else if(steps()>=P.MAXS)result(L,null);}
+    if(lanes.every(L=>L.done))nextTry();
+  };
+  sc.phase=()=>({ph,tri,pt});
+  function drawPot(g,x,y,L){if(L.broke){for(let k=0;k<5;k++){const a=k*1.3;g.save();g.translate(x+Math.cos(a)*18,y+26+Math.sin(a)*5);g.rotate(a);g.beginPath();g.moveTo(-7,0);g.lineTo(5,-4);g.lineTo(7,3);g.closePath();fs(g,'#B8643A',INK,1.6);g.restore();}return;}
+    const sw=L.out&&L.out.s===6&&!RM?Math.sin(sc.t*14)*.25*(1-Math.min(1,L.rt)):0;g.save();g.translate(x,y-22);g.rotate(sw);g.beginPath();g.moveTo(0,-22);g.lineTo(0,0);g.strokeStyle=INK;g.lineWidth=2;g.stroke();
+    ell(g,0,18,19,17);fs(g,'#C8743F',INK,2.4);rr(g,-10,-2,20,7,3);fs(g,'#A85A2C',INK,2);ell(g,-6,13,5,8);g.fillStyle='rgba(255,230,190,.35)';g.fill();g.beginPath();g.moveTo(-16,22);g.quadraticCurveTo(0,30,16,22);g.strokeStyle='#F2B21B';g.lineWidth=2.5;g.stroke();g.restore();}
+  function drawPoles(g,L,y){for(const s of [-1,1]){rr(g,L.x+s*48-4,y-92,8,96,4);fs(g,'#B7A04A',INK,2);for(let k=1;k<4;k++){g.fillStyle='rgba(59,35,22,.35)';g.fillRect(L.x+s*48-4,y-92+k*24,8,2);}}
+    g.beginPath();g.moveTo(L.x-48,y-86);g.quadraticCurveTo(L.x,y-74,L.x+48,y-86);g.strokeStyle='#8A6A3A';g.lineWidth=2.5;g.stroke();}
+  sc.draw=g=>{
+    const list=drawArenaBase(g),looking=ph==='look';
+    g.save();g.strokeStyle='rgba(255,255,255,.8)';g.lineWidth=3;
+    for(const L of lanes){g.setLineDash([10,8]);rr(g,L.x-60,-200,120,P.START+24+200,12);g.stroke();g.setLineDash([]);g.beginPath();g.moveTo(L.x-50,P.START+10);g.lineTo(L.x+50,P.START+10);g.lineWidth=4;g.stroke();g.lineWidth=3;}
+    g.restore();
+    if(L1.length>1)for(const L of lanes)if(L.mode==='local'){rr(g,L.x-58,-198,116,P.START+20+198,11);g.fillStyle=tint(L.p.color,.5).replace('rgb','rgba').replace(')',',.22)');g.fill();}
+    for(const L of lanes){const show=looking||!!L.out,py=potY();
+      if(looking){const n=Math.floor(tries[tri].pot);for(let k=1;k<=n;k++){const yy=P.START-k*P.SS;g.beginPath();g.arc(L.x,yy,3.5,0,TAU);g.fillStyle='rgba(255,255,255,.85)';g.fill();g.font='800 10px '+BODY;g.textAlign='left';g.textBaseline='middle';g.fillStyle='rgba(59,35,22,.55)';g.fillText(String(k),L.x+8,yy);}}
+      if(L.rip>0){const k=1-L.rip/.4;ell(g,L.x,kidY(L)+2,10+k*22,4+k*8);g.strokeStyle='rgba(255,255,255,'+(.8*(1-k))+')';g.lineWidth=2.5;g.stroke();}
+      if(show)list.push({y:py,f:()=>{drawPoles(g,L,py);drawPot(g,L.x,py-50,L);}});
+      const ky=kidY(L),walking=ph==='walk'&&!L.out,spin=ph==='spin'&&!RM?Math.floor(pt*10)%4:-1;
+      list.push({y:ky,f:()=>{drawKid(g,L.p,L.x,ky,{dir:spin>=0?['front','side','back','side'][spin]:(walking||ph==='walk'?'back':'front'),face:spin===3?-1:1,walk:walking?wt*11.4:null,mood:L.out?L.p.mood:'idle',blink:L.p.blink>0});
+        if(ph!=='look'){const hy=ky-(walking?40:40);rr(g,L.x-13.5,hy-4,27,6,3);fs(g,'#C9372A',INK,1.4);}
+        const a=L.sw>0?-1.6+2.4*(1-L.sw):-.35;g.save();g.translate(L.x+10,ky-26);g.rotate(a);rr(g,-2,-44,4,44,2);fs(g,'#A87442',INK,1.4);g.restore();}});}
+    list.sort((a,b)=>a.y-b.y).forEach(o=>o.f());
+    for(const b of bubbles)drawBubble(g,b.x,b.y-40,b.txt,b.t);
+    for(const L of lanes){g.beginPath();g.arc(L.x-34,P.START+44,14,0,TAU);fs(g,L.p.color,INK,2.5);otext(g,String(total(L)),L.x-34,P.START+45,16,'#fff',4);
+      g.font='900 13px '+BODY;g.textAlign='left';g.textBaseline='middle';g.fillStyle=INK;g.fillText(L.p.name,L.x-15,P.START+39);
+      for(let k=0;k<3;k++){g.beginPath();g.arc(L.x-12+k*10,P.START+53,3.4,0,TAU);fs(g,k<L.res.length&&(k<tri||L.out)?(L.res[k]?L.p.color:'rgba(59,35,22,.25)'):'#FFF6E6',INK,1.2);}
+      laneTag(g,L.p,L.x,P.START+72);}
+  };
+  sc.drawScreen=g=>{const t=ph==='look'?'Subok '+(tri+1)+'/3 · Tingnan ang palayok!':ph==='spin'?'Piring at ikot…':'Bilangin ang hakbang!';if(sc.ended||sc.cd>.6)return;
+    g.font='900 14px '+BODY;const w=g.measureText(t).width+28,x=W/2-w/2,y=topH+4;rr(g,x,y,w,30,15);fs(g,PAPER,INK,2.5);g.fillStyle=INK;g.textAlign='center';g.textBaseline='middle';g.fillText(t,W/2,y+15.5);};
+  sc.v3={lanes,tries,P,get tri(){return tri;},get ph(){return ph;},get pt(){return pt;},get wt(){return wt;},pos,potY,kidY,bubbles,total};
+  return sc;
+}
+/* a crowd call: a speech bubble that pops in and fades after about a second */
+function drawBubble(g,x,y,txt,t){const a=t<.12?t/.12:Math.max(0,1-(t-.8)/.35);if(a<=0)return;g.save();g.globalAlpha=a;g.font='900 13px '+BODY;const w=g.measureText(txt).width+18;
+  rr(g,x-w/2,y-14,w,26,12);fs(g,'#FFFFFF',INK,2);g.beginPath();g.moveTo(x-6,y+11);g.lineTo(x,y+20);g.lineTo(x+5,y+11);g.closePath();fs(g,'#FFFFFF');g.fillStyle=INK;g.textAlign='center';g.textBaseline='middle';g.fillText(txt,x,y);g.restore();}
+
+/* Taguan (hide and seek): the taya walks the yard by itself and stops at every hiding spot. A kid hidden there gives
+   a short clue (one of 7 kinds); cats, chickens and dogs give fake ones, always a whole animal. One tap per stop: a
+   kid there is found (10 points); nobody there is "Nalito!" (minus 2, and the next 2 spots can't be tapped). The yard,
+   the clues and their timing come from the game's seeded numbers, so every phone has the same yard, and every taya
+   walks on one clock: one view for everyone, with a strip per person on a shared phone */
+const TAGUAN={ROUNDS:[{n:14,stop:.75,clue:.6,fakes:2},{n:18,stop:.6,clue:.45,fakes:4}],KIDS:5,WALK:.25,GAP:120,LOCK:2,INTRO:1.8,END:.7,
+  CLUES:['tsinelas','tirintas','mata','anino','hihi','kaluskos','daliri'],FAKES:['pusa','manok','aso'],
+  CLUE_NAME:{tsinelas:'tsinelas na nakausli',tirintas:'tirintas sa itaas',mata:'mga matang sumisilip',anino:'anino sa lupa',hihi:'hagikgik',kaluskos:'kaluskos',daliri:'mga daliring nakakapit'}};
+/* the 24 hiding spots: name, width and height (game units, on the ground at 0,0) and their 2D drawing; tg3 builds the 3D ones */
+const TG_SPOTS=[
+  ['halaman',70,52,g=>{for(const [x,y,r] of [[-20,-20,22],[18,-22,24],[0,-36,22]]){ell(g,x,y,r,r*.85);fs(g,'#4E9A3D',INK,2);}ell(g,-6,-38,8,5);g.fillStyle='rgba(200,240,160,.4)';g.fill();}],
+  ['drum',46,60,g=>{rr(g,-22,-60,44,60,8);fs(g,'#2E6FD8',INK,2.2);g.fillStyle='rgba(255,255,255,.25)';g.fillRect(-16,-56,6,52);for(const y of [-44,-16]){g.fillStyle='#1C4A9A';g.fillRect(-22,y,44,4);}ell(g,0,-60,22,5);fs(g,'#4F86E0',INK,2);}],
+  ['bakol',56,40,g=>{g.beginPath();g.moveTo(-28,-40);g.lineTo(28,-40);g.lineTo(22,0);g.lineTo(-22,0);g.closePath();fs(g,'#C99A55',INK,2);g.strokeStyle='rgba(110,70,30,.55)';g.lineWidth=1.4;for(let k=-20;k<=20;k+=8){g.beginPath();g.moveTo(k,-38);g.lineTo(k*.8,-2);g.stroke();}for(const y of [-28,-14]){g.beginPath();g.moveTo(-25,y);g.lineTo(25,y);g.stroke();}}],
+  ['puno',70,110,g=>{rr(g,-9,-60,18,60,4);fs(g,'#8A5A32',INK,2);ell(g,0,-78,34,30);fs(g,'#3F8A35',INK,2.2);ell(g,-10,-86,12,8);g.fillStyle='rgba(180,230,140,.35)';g.fill();}],
+  ['kariton',78,50,g=>{rr(g,-38,-44,76,28,4);fs(g,'#B98450',INK,2);g.strokeStyle='rgba(80,50,20,.5)';g.lineWidth=1.5;for(let k=-30;k<=30;k+=12){g.beginPath();g.moveTo(k,-42);g.lineTo(k,-18);g.stroke();}for(const x of [-22,22]){g.beginPath();g.arc(x,-12,12,0,TAU);fs(g,'#5A3A22',INK,2);g.beginPath();g.arc(x,-12,4,0,TAU);fs(g,'#C9A060');}}],
+  ['sako',48,46,g=>{g.beginPath();g.moveTo(-20,0);g.quadraticCurveTo(-26,-30,-12,-40);g.lineTo(12,-40);g.quadraticCurveTo(26,-30,20,0);g.closePath();fs(g,'#E6D3AE',INK,2);rr(g,-12,-46,24,8,3);fs(g,'#C9B48A',INK,1.6);g.font='900 9px '+BODY;g.textAlign='center';g.fillStyle='rgba(59,35,22,.55)';g.fillText('BIGAS',0,-18);}],
+  ['banga',44,50,g=>{ell(g,0,-20,22,20);fs(g,'#B8643A',INK,2);rr(g,-9,-48,18,10,3);fs(g,'#9A4E2A',INK,2);ell(g,-8,-26,5,9);g.fillStyle='rgba(255,220,180,.3)';g.fill();}],
+  ['dayami',80,58,g=>{g.beginPath();g.moveTo(-40,0);g.quadraticCurveTo(-36,-58,0,-58);g.quadraticCurveTo(36,-58,40,0);g.closePath();fs(g,'#E8C35A',INK,2.2);g.strokeStyle='rgba(150,110,30,.6)';g.lineWidth=1.3;for(let k=-28;k<=28;k+=9){g.beginPath();g.moveTo(k,-4);g.lineTo(k*.6,-44);g.stroke();}}],
+  ['gulong',56,48,g=>{for(let k=0;k<3;k++){ell(g,0,-8-k*15,26,9);fs(g,'#2A2A2E',INK,2);ell(g,0,-8-k*15,13,4);fs(g,'#555A60');}}],
+  ['kahon',58,48,g=>{rr(g,-29,-48,58,48,3);fs(g,'#C9955A',INK,2);g.fillStyle='#E8D7A8';g.fillRect(-5,-48,10,48);g.strokeStyle='rgba(80,50,20,.4)';g.lineWidth=1.4;g.strokeRect(-24,-40,14,10);}],
+  ['saging',70,100,g=>{rr(g,-6,-62,12,62,5);fs(g,'#7FA04A',INK,2);for(const [a,s] of [[-.9,-1],[-.4,1],[.3,-1],[.9,1]]){g.save();g.translate(0,-62);g.rotate(a);g.beginPath();g.ellipse(s*22,-14,26,9,s*.3,0,TAU);fs(g,'#4E9A3D',INK,1.8);g.restore();}}],
+  ['pader',90,62,g=>{rr(g,-45,-62,90,62,3);fs(g,'#D8D2C4',INK,2);g.strokeStyle='rgba(90,80,70,.35)';g.lineWidth=1.2;for(let y=-50;y<0;y+=12){g.beginPath();g.moveTo(-45,y);g.lineTo(45,y);g.stroke();for(let x=-45+((y/12)%2?15:0);x<45;x+=30){g.beginPath();g.moveTo(x,y);g.lineTo(x,y+12);g.stroke();}}}],
+  ['kubo',96,96,g=>{for(const x of [-34,34]){rr(g,x-3,-34,6,34,2);fs(g,'#7E5429',INK,1.6);}rr(g,-40,-62,80,30,3);fs(g,'#D9B06B',INK,2);g.beginPath();g.moveTo(-50,-60);g.lineTo(0,-96);g.lineTo(50,-60);g.closePath();fs(g,'#C9A157',INK,2.2);g.fillStyle='rgba(30,15,5,.55)';g.fillRect(-40,-32,80,30);}],
+  ['sampayan',110,80,g=>{for(const x of [-52,52]){rr(g,x-3,-80,6,80,2);fs(g,'#8A5A32',INK,1.6);}g.beginPath();g.moveTo(-52,-74);g.quadraticCurveTo(0,-66,52,-74);g.strokeStyle=INK;g.lineWidth=1.5;g.stroke();
+    [['#E2452E',-40,30],['#F2B21B',-6,40],['#2E6FD8',28,34]].forEach(([c,x,h])=>{rr(g,x,-71,26,h,3);fs(g,c,INK,1.6);});}],
+  ['bangko',96,34,g=>{rr(g,-48,-34,96,10,3);fs(g,'#A87442',INK,2);for(const x of [-38,30]){rr(g,x,-26,8,26,2);fs(g,'#8A5A32',INK,1.6);}}],
+  ['bangka',110,44,g=>{g.beginPath();g.moveTo(-55,-30);g.quadraticCurveTo(0,10,55,-30);g.lineTo(46,-38);g.lineTo(-46,-38);g.closePath();fs(g,'#F7F2E8',INK,2.2);g.beginPath();g.moveTo(-48,-30);g.quadraticCurveTo(0,0,48,-30);g.strokeStyle='#2E6FD8';g.lineWidth=3;g.stroke();}],
+  ['balon',70,80,g=>{rr(g,-32,-36,64,36,8);fs(g,'#A9A196',INK,2);for(const x of [-28,28]){rr(g,x-3,-80,6,46,2);fs(g,'#7E5429',INK,1.6);}g.beginPath();g.moveTo(-38,-76);g.lineTo(0,-92);g.lineTo(38,-76);g.closePath();fs(g,'#B8643A',INK,2);}],
+  ['panggatong',84,46,g=>{for(let row=0;row<3;row++)for(let k=0;k<4-row;k++){const x=-30+row*10+k*20,y=-9-row*16;g.beginPath();g.arc(x,y,9,0,TAU);fs(g,'#A87442',INK,1.6);g.beginPath();g.arc(x,y,4,0,TAU);fs(g,'#D8B080');}}],
+  ['tindahan',90,90,g=>{rr(g,-42,-56,84,56,3);fs(g,'#E8D8BA',INK,2);rr(g,-34,-48,68,22,2);fs(g,'#3A2414',INK,1.6);g.save();rr(g,-48,-74,96,18,4);g.clip();for(let k=0;k<7;k++){g.fillStyle=k%2?'#FFF6E6':'#E2452E';g.fillRect(-48+k*14,-74,14,18);}g.restore();rr(g,-48,-74,96,18,4);g.strokeStyle=INK;g.lineWidth=2;g.stroke();}],
+  ['banig',64,70,g=>{['#C9A157','#B5413A','#2E8B7A','#D9B06B'].forEach((c,k)=>{rr(g,-30+k*15,-70+(k%2)*8,14,70-(k%2)*8,6);fs(g,c,INK,1.6);});}],
+  ['tangke',50,96,g=>{rr(g,-24,-96,48,96,10);fs(g,'#5BC0BE',INK,2.2);for(const y of [-70,-40]){g.fillStyle='rgba(0,60,70,.35)';g.fillRect(-24,y,48,3);}ell(g,0,-96,24,6);fs(g,'#7CD4D2',INK,2);}],
+  ['bato',84,54,g=>{g.beginPath();g.moveTo(-42,0);g.quadraticCurveTo(-46,-40,-14,-54);g.quadraticCurveTo(30,-60,42,-22);g.quadraticCurveTo(46,-6,40,0);g.closePath();fs(g,'#9AA0A6',INK,2.2);g.beginPath();g.moveTo(-20,-40);g.quadraticCurveTo(-6,-48,10,-44);g.strokeStyle='rgba(255,255,255,.4)';g.lineWidth=3;g.stroke();}],
+  ['bakod',100,64,g=>{for(let x=-46;x<=46;x+=12){rr(g,x-5,-64,10,64,4);fs(g,'#C8B465',INK,1.5);}for(const y of [-48,-18]){g.fillStyle='#8A7A30';g.fillRect(-50,y,100,4);}}],
+  ['paso',84,52,g=>{for(const [x,c] of [[-26,'#4E9A3D'],[0,'#E2452E'],[26,'#3F8A35']]){g.beginPath();g.moveTo(x-12,-24);g.lineTo(x+12,-24);g.lineTo(x+9,0);g.lineTo(x-9,0);g.closePath();fs(g,'#B8643A',INK,1.6);ell(g,x,-34,13,11);fs(g,c,INK,1.6);}}]
+];
+/* the yard for both rounds: spots drawn from the 24 (no repeats in a round), 5 kids with at least one in each third,
+   2 or 4 fake animals, and when each clue shows; all from the game's seeded numbers */
+function taguanYard(){const T=TAGUAN,sh=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(G()*(i+1)),t=a[i];a[i]=a[j];a[j]=t;}return a;};
+  return T.ROUNDS.map(R=>{const ids=sh([...TG_SPOTS.keys()]).slice(0,R.n),spots=ids.map((t,k)=>({t,x:k*T.GAP+(G()-.5)*36,kid:null,fake:null,at:0}));
+    const third=k=>Math.min(2,Math.floor(k*3/R.n)),kids=[];
+    for(let th=0;th<3;th++){const c=spots.map((s,k)=>k).filter(k=>third(k)===th);kids.push(c[Math.floor(G()*c.length)]);}
+    const rest=sh(spots.map((s,k)=>k).filter(k=>!kids.includes(k)));kids.push(rest[0],rest[1]);
+    const clues=sh(T.CLUES.slice());kids.forEach((k,i)=>{spots[k].kid={clue:clues[i%clues.length],look:Math.floor(G()*4)};});
+    sh(rest.slice(2)).slice(0,R.fakes).forEach(k=>{spots[k].fake=T.FAKES[Math.floor(G()*T.FAKES.length)];});
+    spots.forEach(s=>{s.at=G()*(R.stop-R.clue);});
+    return{R,spots};});}
+/* clue art, drawn the same over the 2D and the 3D yard: x,y is the spot's foot, k its scale on screen, a its opacity */
+function drawClue(g,s,x,y,k,a,t){const sp=TG_SPOTS[s.t],w=sp[1]*k,h=sp[2]*k;g.save();g.globalAlpha*=a;g.lineJoin='round';
+  if(s.fake){const hx=x+w*.5+6*k,hy=y-h*.45,F=s.fake;g.translate(hx,hy);g.scale(k,k);
+    if(F==='pusa'){g.beginPath();g.moveTo(-12,-6);g.lineTo(-9,-20);g.lineTo(-2,-10);g.lineTo(5,-10);g.lineTo(11,-20);g.lineTo(13,-5);g.quadraticCurveTo(14,10,0,11);g.quadraticCurveTo(-14,10,-12,-6);g.closePath();fs(g,'#E8A34A',INK,2);
+      for(const s2 of [-1,1]){ell(g,s2*5,-1,2.2,3);g.fillStyle='#2A6A2A';g.fill();}g.beginPath();g.moveTo(-2,4);g.lineTo(2,4);g.lineTo(0,6);g.closePath();fs(g,'#E86A7A');for(const s2 of [-1,1]){g.beginPath();g.moveTo(s2*5,5);g.lineTo(s2*16,3);g.moveTo(s2*5,7);g.lineTo(s2*16,8);g.strokeStyle=INK;g.lineWidth=1;g.stroke();}}
+    else if(F==='manok'){g.beginPath();g.arc(0,0,11,0,TAU);fs(g,'#FFFFFF',INK,2);g.beginPath();g.moveTo(-6,-10);g.quadraticCurveTo(-4,-19,0,-12);g.quadraticCurveTo(3,-20,6,-11);g.quadraticCurveTo(10,-17,9,-8);g.closePath();fs(g,'#E2452E',INK,1.6);
+      g.beginPath();g.moveTo(9,-1);g.lineTo(18,2);g.lineTo(9,5);g.closePath();fs(g,'#F2B21B',INK,1.6);ell(g,3,-2,2,2.4);g.fillStyle=INK;g.fill();ell(g,7,8,3,5);fs(g,'#E2452E');}
+    else{g.beginPath();g.ellipse(0,0,12,11,0,0,TAU);fs(g,'#B07A4A',INK,2);for(const s2 of [-1,1]){g.beginPath();g.ellipse(s2*12,2,5,10,s2*.35,0,TAU);fs(g,'#7A4A2A',INK,1.8);}
+      ell(g,0,5,6,4.5);fs(g,'#E6CFA8',INK,1.2);ell(g,0,2.5,2.6,1.8);g.fillStyle=INK;g.fill();for(const s2 of [-1,1]){ell(g,s2*4.5,-3,1.8,2.2);g.fillStyle=INK;g.fill();}}
+    g.font='italic 900 11px '+BODY;g.textAlign='left';g.textBaseline='middle';g.lineWidth=3;g.strokeStyle=PAPER;const word={pusa:'ngiyaw!',manok:'puták!',aso:'aw aw!'}[F];g.strokeText(word,15,-18);g.fillStyle=INK;g.fillText(word,15,-18);g.restore();return;}
+  const C=s.kid.clue,col=NPCS[s.kid.look];
+  if(C==='tsinelas'){g.translate(x+w*.5+4*k,y-2*k);g.scale(k,k);g.rotate(-.25);rr(g,-14,-5,28,10,5);fs(g,'#3A7BD5',INK,1.8);g.beginPath();g.moveTo(-4,-5);g.lineTo(2,0);g.lineTo(-4,5);g.strokeStyle='#FFFFFF';g.lineWidth=2;g.stroke();}
+  else if(C==='tirintas'){g.translate(x+w*.18,y-h-2*k);g.scale(k,k);g.beginPath();g.moveTo(-3,4);g.quadraticCurveTo(-9,-8,-2,-16);g.quadraticCurveTo(5,-8,3,4);g.closePath();fs(g,HAIR,INK,1.8);g.beginPath();g.arc(0,2,3.2,0,TAU);fs(g,col.color,INK,1.2);}
+  else if(C==='mata'){g.translate(x,y-h*.45);g.scale(k,k);rr(g,-14,-7,28,14,7);fs(g,'rgba(20,10,5,.85)');for(const s2 of [-1,1]){const bl=Math.sin(t*20)>.85;ell(g,s2*6,0,3.4,bl?.6:3.4);g.fillStyle='#FFFFFF';g.fill();if(!bl){ell(g,s2*6+.8,.5,1.6,1.8);g.fillStyle=INK;g.fill();}}}
+  else if(C==='anino'){g.translate(x+w*.55,y+4*k);g.scale(k,k);ell(g,0,0,22,6);g.fillStyle='rgba(30,20,40,.45)';g.fill();ell(g,-15,-2,7,5);g.fill();}
+  else if(C==='hihi'){g.translate(x+w*.25,y-h-14*k);g.scale(k,k);rr(g,-17,-11,34,20,10);fs(g,'#FFFFFF',INK,1.6);g.beginPath();g.moveTo(-6,9);g.lineTo(-10,16);g.lineTo(0,9);g.closePath();fs(g,'#FFFFFF');g.font='900 12px '+BODY;g.textAlign='center';g.textBaseline='middle';g.fillStyle=INK;g.fillText('hihi',0,-1);}
+  else if(C==='kaluskos'){g.translate(x,y-h*.6);g.scale(k,k);g.strokeStyle=INK;g.lineWidth=2.2;g.lineCap='round';const j=Math.sin(t*40)*2;for(const s2 of [-1,1])for(let q=0;q<3;q++){g.beginPath();g.arc(s2*(sp[1]*.5+4),j,8+q*6,s2>0?-.6:Math.PI-.6,s2>0?.6:Math.PI+.6);g.stroke();}}
+  else if(C==='daliri'){g.translate(x-w*.5,y-h*.62);g.scale(k,k);for(let q=0;q<4;q++){rr(g,-6,-8+q*5,10,4.4,2.2);fs(g,col.skin,INK,1.2);}}
+  g.restore();}
+function mkTaguan(pre,mgi){
+  const T=TAGUAN;let resolve;const L1=locals(),keys=localKeyMap(),yard=taguanYard();
+  const sc={kind:'taguan',view:{w:600,h:520},t:0,cd:3.6,ended:false,actionLabel:L1.length===1?'Hanap!':null,hint:L1.length===1?'I-tap kapag may palatandaan ng bata':'I-tap ang sarili mong guhit kapag may palatandaan'};sc.done=new Promise(r=>resolve=r);
+  /* every player: found kids and wrong taps; bots find what their roll says, at spots picked for the show */
+  const P=state.players.map((p,i)=>({p,i,mode:p.ctrl,found:new Set(),tapped:new Set(),wrong:0,lock:-1,lockR:-1,msg:null,pop:{},events:[]}));
+  const kidKeys=[];yard.forEach((Y,r)=>Y.spots.forEach((s,k)=>{if(s.kid)kidKeys.push(r+':'+k);}));
+  for(const pl of P)if(pl.mode==='bot'){const f=pre[pl.i].f,w=pre[pl.i].w,ks=kidKeys.slice().sort(()=>R()-.5).slice(0,f),es=[];yard.forEach((Y,r)=>Y.spots.forEach((s,k)=>{if(!s.kid)es.push(r+':'+k);}));
+    pl.events=ks.map(k=>({key:k,hit:true})).concat(es.sort(()=>R()-.5).slice(0,w).map(k=>({key:k,hit:false})));}
+  let r=0,rt=0;const R0=()=>yard[r].R,score=pl=>Math.max(0,Math.min(100,pl.found.size*10-pl.wrong*2));
+  const arrive=k=>T.INTRO+k*(R0().stop+T.WALK)+T.WALK,roundLen=()=>arrive(yard[r].spots.length-1)+R0().stop+T.END;
+  /* the spot whose stop (and the short walk after it) is now, or -1 */
+  const cur=()=>{const R=R0(),n=yard[r].spots.length;if(rt<arrive(0))return -1;const k=Math.floor((rt-arrive(0))/(R.stop+T.WALK));return k<n?k:-1;};
+  const tayaX=()=>{const S=yard[r].spots,R=R0();if(rt<T.INTRO)return S[0].x-T.GAP*.8;const k=Math.min(S.length-1,Math.floor((rt-T.INTRO)/(R.stop+T.WALK))),u=(rt-T.INTRO)-k*(R.stop+T.WALK);
+    const x0=k?S[k-1].x-34:S[0].x-T.GAP*.8,x1=S[k].x-34;return u<T.WALK?lerp(x0,x1,Ez.inOut(u/T.WALK)):x1;};
+  const clueOn=k=>{if(k<0)return false;const s=yard[r].spots[k],u=rt-arrive(k)-s.at;return(s.kid||s.fake)&&u>=0&&u<R0().clue;};
+  const publish=(pl,th)=>{if(NET.on&&pl.mode==='local')netMg({i:mgi,f:pl.found.size,w:pl.wrong,s:score(pl),d:sc.ended?1:0},th);};
+  /* an online player's count comes from what that phone publishes (also after the end, so its last tap counts) */
+  const follow=pl=>{if(pl.mode!=='remote')return;const m=netPeerMg(pl.p.peer,mgi);if(m){pl.rf=m.f|0;pl.rw=m.w|0;}};
+  function say(pl,txt,col){pl.msg={txt,col,t:0};}
+  function tap(pid){if(sc.cd>.6||sc.ended)return;const pl=P[pid];if(!pl||pl.mode!=='local')return;const k=cur();if(k<0)return;const key=r+':'+k;
+    if(pl.tapped.has(key))return;if(pl.lockR===r&&k<=pl.lock){say(pl,'Hintay…','#fff');return;}
+    pl.tapped.add(key);const s=yard[r].spots[k];
+    if(s.kid){pl.found.add(key);pl.pop[key]=0;Sfx.coin();buzz(20);say(pl,'Huli ka! +10',pl.p.color);setMood(pl.p,'cheer',.8);}
+    else{pl.wrong++;pl.lock=k+T.LOCK;pl.lockR=r;Sfx.bad();buzz(45);say(pl,'Nalito! −2','#FF8A7A');setMood(pl.p,'sad',.8);}
+    publish(pl,false);}
+  sc.action=()=>{if(L1.length===1)tap(L1[0].id);};
+  sc.pointerDown=(x,y)=>{if(L1.length===1){tap(L1[0].id);return;}const st=strips().find(s=>y>=s.y&&y<s.y+s.h);if(st)tap(st.pl.i);};
+  sc.key=(e,down)=>{if(!down||e.repeat)return;const pid=keys[e.code];if(pid!=null){e.preventDefault();tap(pid);}};
+  /* what a person sees: whether a clue is up now and whether it is an animal */
+  sc.peek=()=>{const k=cur(),s=k>=0?yard[r].spots[k]:null,pl=P[(L1[0]||P[0].p).id];return{r,k,cd:sc.cd,ended:sc.ended,clue:clueOn(k)?(s.fake?'animal':'kid'):null,tapped:k>=0&&pl.tapped.has(r+':'+k),locked:pl.lockR===r&&k<=pl.lock,found:pl.found.size,wrong:pl.wrong,score:score(pl)};};
+  sc.update=dt=>{
+    if(cdTick(sc,dt))return;sc.t+=dt;if(sc.ended){P.forEach(follow);return;}rt+=dt;
+    for(const pl of P){if(pl.msg&&(pl.msg.t+=dt)>1.1)pl.msg=null;for(const q in pl.pop)pl.pop[q]+=dt;}
+    const k=cur();
+    for(const pl of P){if(pl.mode==='bot'){if(k>=0)for(const ev of pl.events)if(!ev.done&&ev.key===r+':'+k&&rt>=arrive(k)+yard[r].spots[k].at+.18){ev.done=1;if(ev.hit)pl.found.add(ev.key);else pl.wrong++;}}
+      else follow(pl);}
+    if(rt>=roundLen()){if(r>=yard.length-1){sc.ended=true;P.forEach(pl=>publish(pl,false));setTimeout(()=>resolve({scores:P.map(pl=>pl.mode==='remote'?Math.max(0,Math.min(100,(pl.rf|0)*10-(pl.rw|0)*2)):score(pl))}),900);return;}
+      r++;rt=0;Sfx.whistle();}
+  };
+  /* the screen: counters for bots and online players on top, then one strip per local player (the whole area for one) */
+  function strips(){const others=P.filter(pl=>pl.mode!=='local'),loc=P.filter(pl=>pl.mode==='local'),top=topH+(others.length?34:4)+26,bot=H-botH-6,n=Math.max(1,loc.length),h=(bot-top)/n;
+    return(loc.length?loc:[P[0]]).map((pl,j)=>({pl,x:0,y:top+j*h,w:W,h:h-(n>1?4:0)}));}
+  sc.layout=()=>strips().map(s=>({x:s.x,y:s.y,w:s.w,h:s.h,scale:Math.min(s.h/190,s.w/300)}));
+  const camX=()=>tayaX()+34;
+  function strip2d(g,st){const sc2=Math.min(st.h/190,st.w/300),vw=st.w/sc2,x0=camX()-vw*.4,gy=Math.min(st.y+st.h*.82,st.y+st.h*.5+190*sc2*.3);
+    g.save();g.beginPath();g.rect(st.x,st.y,st.w,st.h);g.clip();
+    const sky=g.createLinearGradient(0,st.y,0,gy);sky.addColorStop(0,'#FBD7A0');sky.addColorStop(1,'#FFF0D2');g.fillStyle=sky;g.fillRect(st.x,st.y,st.w,gy-st.y);
+    g.fillStyle='#E9C995';for(let hx=Math.floor(x0*.5/160)*160;hx<x0*.5+vw;hx+=160){const sx=st.x+(hx-x0*.5)*sc2;rr(g,sx,gy-72*sc2,110*sc2,72*sc2,4);g.fill();g.beginPath();g.moveTo(sx-8*sc2,gy-70*sc2);g.lineTo(sx+55*sc2,gy-104*sc2);g.lineTo(sx+118*sc2,gy-70*sc2);g.closePath();g.fill();}
+    g.fillStyle='#8DC85A';g.fillRect(st.x,gy-6*sc2,st.w,st.y+st.h-gy+6*sc2);g.fillStyle='#E0C08C';g.fillRect(st.x,gy+14*sc2,st.w,22*sc2);
+    g.save();g.translate(st.x-x0*sc2,gy);g.scale(sc2,sc2);
+    yard[r].spots.forEach((s,k)=>{if(s.x<x0-90||s.x>x0+vw+90)return;const key=r+':'+k,mine=st.pl.found.has(key)&&st.pl.mode==='local';
+      const shake=s.kid&&s.kid.clue==='kaluskos'&&clueOn(k)&&!RM?Math.sin(rt*50)*2:0;g.save();g.translate(s.x+shake,0);TG_SPOTS[s.t][3](g);g.restore();
+      if(mine){const u=Math.min(1,st.pl.pop[key]/.25);drawKid(g,NPCS[s.kid.look],s.x+TG_SPOTS[s.t][1]*.5+10,0,{scale:.9,lift:Math.sin(Math.PI*u)*18,mood:'cheer',face:-1});}});
+    const ty=24,walking=rt>=T.INTRO&&cur()<0||((rt-T.INTRO)%(R0().stop+T.WALK))<T.WALK;
+    drawKid(g,st.pl.p,tayaX(),ty,{dir:rt<T.INTRO?'back':'side',face:1,walk:walking&&rt>=T.INTRO?rt*12:null,mood:st.pl.p.mood,blink:st.pl.p.blink>0});
+    g.restore();
+    const k=cur();if(clueOn(k)&&!(st.pl.found.has(r+':'+k)&&st.pl.mode==='local')){const s=yard[r].spots[k],u=rt-arrive(k)-s.at,a=Math.min(1,u/.08,(R0().clue-u)/.08);drawClue(g,s,st.x+(s.x-x0)*sc2,gy,sc2,a,rt);}
+    g.restore();}
+  function stripHud(g,st){const pl=st.pl,sm=st.h<130;g.font='900 '+(sm?12:13)+'px '+BODY;const nm=pl.p.name+' · '+pl.found.size+' nahanap',tw=g.measureText(nm).width+22;rr(g,st.x+8,st.y+6,tw,22,11);fs(g,'rgba(255,246,230,.94)',INK,2);
+    g.beginPath();g.arc(st.x+19,st.y+17,4.5,0,TAU);fs(g,pl.p.color);g.fillStyle=INK;g.textAlign='left';g.textBaseline='middle';g.fillText(nm,st.x+28,st.y+17.5);
+    const kl=keyLabel(pl.p);if(kl){g.font='900 11px '+BODY;g.fillStyle='rgba(59,35,22,.7)';g.fillText('['+kl+']',st.x+tw+14,st.y+17.5);}
+    const k=cur(),lk=pl.lockR===r&&k>=0&&k<=pl.lock;if(lk){const left=pl.lock-k+1;g.font='900 12px '+BODY;const t='Nalito · '+left;const w2=g.measureText(t).width+18;rr(g,st.x+st.w-w2-8,st.y+6,w2,22,11);fs(g,'#FFD6CF',INK,2);g.fillStyle='#A92A18';g.textAlign='center';g.fillText(t,st.x+st.w-w2/2-8,st.y+17.5);}
+    if(pl.msg){const m=pl.msg,a=Math.min(1,(1.1-m.t)/.3);g.save();g.globalAlpha=a;otext(g,m.txt,st.x+st.w*.5,st.y+st.h*.3-m.t*16,sm?17:21,m.col,4);g.restore();}
+    if(P.filter(q=>q.mode==='local').length>1){g.strokeStyle=pl.p.color;g.lineWidth=3;g.strokeRect(st.x+1.5,st.y+1.5,st.w-3,st.h-3);}}
+  function topHud(g){const S=yard[r].spots,w=Math.min(W-32,420),x=W/2-w/2,y=topH+2;rr(g,x,y,w,22,11);fs(g,PAPER,INK,2);
+    g.font='900 11px '+BODY;g.textBaseline='middle';const lab='Ikot '+(r+1)+'/2',lw=g.measureText(lab).width+16,bx=x+lw,bw=w-lw-14;g.fillStyle=INK;g.textAlign='left';g.fillText(lab,x+9,y+11.5);
+    const u=clamp((tayaX()-S[0].x+T.GAP*.8)/(S[S.length-1].x-S[0].x+T.GAP*.8),0,1);S.forEach((s,k)=>{const sx=bx+bw*(k/(S.length-1));g.beginPath();g.arc(sx,y+11,2.4,0,TAU);g.fillStyle='rgba(59,35,22,.35)';g.fill();});
+    g.beginPath();g.arc(bx+bw*u,y+11,6,0,TAU);fs(g,'#FFC93C',INK,2);
+    /* bots and online players as counters, centred; the word "nahanap" goes when they don't fit */
+    const others=P.filter(pl=>pl.mode!=='local');if(others.length){g.font='900 12px '+BODY;const cnt=pl=>pl.mode==='remote'?(pl.rf|0):pl.found.size;
+      let txt=others.map(pl=>pl.p.name+': '+cnt(pl)+' nahanap'),ws=txt.map(t=>g.measureText(t).width+20);if(ws.reduce((a,b)=>a+b+6,-6)>W-16){txt=others.map(pl=>pl.p.name+': '+cnt(pl));ws=txt.map(t=>g.measureText(t).width+20);}
+      let cx=W/2-ws.reduce((a,b)=>a+b+6,-6)/2;others.forEach((pl,j)=>{rr(g,cx,y+28,ws[j],22,11);fs(g,tint(pl.p.color,.25),INK,1.8);g.fillStyle=INK;g.textAlign='left';g.fillText(txt[j],cx+10,y+39.5);cx+=ws[j]+6;});}
+    if(rt<T.INTRO&&!(sc.cd>.6)){const t=r?'Ikalawang ikot: mas mabilis!':'Isa, dalawa, tatlo… Taguan!';otext(g,t,W/2,topH+(H-topH-botH)*.32,22,'#fff',5);}}
+  sc.draw=()=>{};
+  sc.drawScreen=g=>{const ss=strips();if(!B3.on)for(const st of ss)strip2d(g,st);for(const st of ss)stripHud(g,st);topHud(g);};
+  sc.v3={T,yard,P,get r(){return r;},get rt(){return rt;},cur,clueOn,tayaX,camX,strips,arrive,R0,score};
+  return sc;
+}
+
+/* hold input (shared, new-minigames PRD P3.9; Piko is the first game to use it): a press and a release per player.
+   Keys act on keydown and keyup (auto-repeat ignored); each touch is tracked by its pointer id, so lifting a finger
+   releases the right lane; the action button sends scene.actionDown / actionUp. A cancelled touch, the window losing
+   focus or the tab being hidden release every press. down(pid) and up(pid) are the scene's; lane(x,y) picks the player
+   whose part of the board a touch landed on. A player pressed through two sources (Space and the button) is released
+   when the last one lets go */
+function holdInput(sc,{down,up,lane}){const L1=locals(),keys=localKeyMap(),src=new Map(),count=pid=>{let n=0;for(const v of src.values())if(v===pid)n++;return n;};
+  const press=(s,pid)=>{if(pid==null||src.has(s))return;const first=!count(pid);src.set(s,pid);if(first)down(pid);};
+  const release=s=>{if(!src.has(s))return;const pid=src.get(s);src.delete(s);if(!count(pid))up(pid);};
+  sc.key=(e,isDown)=>{const pid=keys[e.code];if(pid==null)return;e.preventDefault();if(isDown){if(e.repeat)return;press('k:'+e.code,pid);}else release('k:'+e.code);};
+  sc.pointerDown=(x,y,id)=>press('p:'+id,L1.length===1?L1[0].id:lane(x,y));
+  sc.pointerUp=(x,y,id)=>release('p:'+id);
+  sc.actionDown=id=>{if(L1.length===1)press('b:'+id,L1[0].id);};
+  sc.actionUp=id=>release('b:'+id);
+  sc.releaseAll=()=>{for(const s of [...src.keys()])release(s);};
+  return{held:pid=>count(pid)>0,sources:()=>src.size};}
+
+/* Piko (hopscotch): read the court and hop it. A single box takes one foot (a quick press), a side-by-side pair takes
+   two feet (a press held to 0.22 s, which counts right then). The pamato's box is skipped; a pair with the pamato is a
+   one-foot step into the free box. A wrong hop is "Patay!": 0.8 s, back to the start, and that court's steps are lost.
+   1 hakbang per step, 2 more per finished court, 20 s. Courts and pamato are the same for every lane and every phone */
+const PIKO={T:20,HOLD:.22,HOP:.26,PATAY:.8,NEXT:.35,ROWH:44,BOXW:44,START:196,
+  PAT:[['Klasiko',[1,1,1,2,1,2]],['Eroplano',[1,2,1,2,1]],['Hagdan',[1,1,2,1,1,2]]]};
+/* court c (0-based): its rows, its boxes (numbered from the start) with the pamato in box c+1, and the steps to hop */
+function pikoCourt(c){const P=PIKO,[name,rows]=P.PAT[c%3],nb=rows.reduce((a,b)=>a+b,0),pb=c%nb,boxes=[],steps=[];let bi=0;
+  rows.forEach((n,ri)=>{const ids=[];for(let q=0;q<n;q++)ids.push(bi++);const pam=ids.indexOf(pb);boxes.push({ri,n,ids,pam});
+    if(n===1){if(pam<0)steps.push({ri,need:'tap',side:0});}else steps.push({ri,need:pam<0?'hold':'tap',side:pam<0?0:(pam===0?1:-1)});});
+  return{c,name,rows,boxes,steps,pb};}
+/* the running total after each correct step when nobody misses: a bot's preroll is a number of steps, so what it shows
+   is exactly what it scores */
+const PIKO_CUM=(()=>{const a=[0];for(let c=0;a.length<200;c++){const st=pikoCourt(c).steps;st.forEach((s,i)=>a.push(a[a.length-1]+1+(i===st.length-1?2:0)));}return a;})();
+function pikoPre(d){const R0=[[8,16],[14,24],[22,32]][d]||[14,24],t=R0[0]+Math.floor(G()*(R0[1]-R0[0]+1));let n=0;
+  for(let i=0;i<PIKO_CUM.length;i++)if(PIKO_CUM[i]<=t&&PIKO_CUM[i]>=R0[0])n=i;if(!n)n=PIKO_CUM.findIndex(v=>v>=R0[0]);return n;}
+function mkPiko(pre,mgi){
+  const P=PIKO;let resolve;const L1=locals();
+  const sc={kind:'piko',view:{w:470,h:420},focusY:95,t:0,cd:3.6,ended:false,actionLabel:L1.length===1?'Lukso!':null,hint:L1.length===1?'Pindot: isang paa · Diinan: dalawang paa':'Pindutin o diinan ang sariling hanay'};sc.done=new Promise(r=>resolve=r);
+  const courts=[];const court=c=>courts[c]||(courts[c]=pikoCourt(c));
+  const lanes=state.players.map((p,i)=>({p,i,mode:p.ctrl,x:(i-1.5)*112,c:0,si:0,hk:0,ch:0,hopT:0,patT:0,nextT:0,press:null,buf:null,flash:null,from:null,to:null,botK:0,shown:null}));
+  const publish=(L,th)=>{if(NET.on&&L.mode==='local')netMg({i:mgi,c:L.c,si:L.si,hk:L.hk,pt:L.patT>0?1:0,s:L.hk,d:sc.ended?1:0},th);};
+  /* where a kid stands: before the court (si 0) or in the row of its last step; side -1/1 is one box of a pair */
+  const spot=(L,c,si)=>{if(!si)return{x:L.x,y:P.START};const s=court(c).steps[si-1];return{x:L.x+s.side*P.BOXW*.5,y:P.START-(s.ri+1)*P.ROWH+P.ROWH*.5};};
+  function msg(L,txt,col){L.flash={txt,col,t:0};}
+  function apply(L,kind){const st=court(L.c).steps[L.si];if(!st)return;const me=L.mode==='local';
+    if(kind===st.need){L.from=spot(L,L.c,L.si);L.si++;L.hk++;L.ch++;L.to=spot(L,L.c,L.si);L.hopT=P.HOP;if(me){Sfx.hop(kind==='hold');buzz(kind==='hold'?22:10);}
+      if(L.si>=court(L.c).steps.length){L.hk+=2;L.nextT=P.HOP+P.NEXT;msg(L,court(L.c).name+'! +2',L.p.color);if(me)Sfx.coin();}}
+    else{L.hk-=L.ch;L.ch=0;L.si=0;L.patT=P.PATAY;L.buf=null;L.hopT=0;msg(L,'Patay!','#FF8A7A');setMood(L.p,'sad',P.PATAY);if(me){Sfx.bad();buzz(50);}}
+    publish(L,true);}
+  /* an input that arrives while the kid is mid-hop (or stepping onto the next court) waits for the landing; one is kept */
+  /* an online player's lane follows what that phone publishes (also after the end, so its last hop shows) */
+  function follow(L){const m=netPeerMg(L.p.peer,mgi);if(!m||(L.shown&&m.c===L.shown.c&&m.si===L.shown.si&&m.hk===L.shown.hk))return;
+    if(m.c===L.c&&m.si===L.si+1){L.from=spot(L,L.c,L.si);L.to=spot(L,m.c,m.si);L.hopT=P.HOP;}else if(m.si<L.si&&m.c===L.c&&m.pt){L.patT=P.PATAY;msg(L,'Patay!','#FF8A7A');}
+    L.c=m.c|0;L.si=m.si|0;L.hk=m.hk|0;L.shown={c:L.c,si:L.si,hk:L.hk};}
+  function input(L,kind){if(sc.ended||L.patT>0)return;if(L.hopT>0||L.nextT>0){if(!L.buf)L.buf=kind;return;}apply(L,kind);}
+  const hold=holdInput(sc,{lane:(x,y)=>{const w=toWorld(x,y);return clamp(Math.round(w.x/112+1.5),0,3);},
+    down:pid=>{const L=lanes[pid];if(!L||L.mode!=='local'||sc.cd>.6||sc.ended){return;}L.press={t0:sc.t,fired:false};},
+    up:pid=>{const L=lanes[pid];if(!L||!L.press)return;const p=L.press;L.press=null;if(!p.fired)input(L,'tap');}});
+  sc.peek=()=>lanes.map(L=>{const st=court(L.c).steps[L.si];return{need:st?st.need:null,hopping:L.hopT>0,patay:L.patT>0,between:L.nextT>0,pressing:!!L.press,fired:!!(L.press&&L.press.fired),held:hold.held(L.i),si:L.si,c:L.c,hk:L.hk,cd:sc.cd,t:sc.t};});
+  sc.update=dt=>{
+    if(cdTick(sc,dt))return;if(sc.ended){lanes.forEach(L=>{if(L.mode==='remote'){follow(L);L.hopT=0;}});return;}sc.t+=dt;
+    for(const L of lanes){if(L.flash&&(L.flash.t+=dt)>1)L.flash=null;
+      if(L.press&&!L.press.fired&&sc.t-L.press.t0>=P.HOLD){L.press.fired=true;input(L,'hold');}
+      if(L.patT>0){L.patT-=dt;if(L.patT<=0)publish(L,true);continue;}
+      if(L.hopT>0){L.hopT-=dt;if(L.hopT<=0&&L.buf&&L.nextT<=0){const b=L.buf;L.buf=null;apply(L,b);}}
+      if(L.nextT>0){L.nextT-=dt;if(L.nextT<=0){L.c++;L.si=0;L.ch=0;publish(L,true);if(L.buf){const b=L.buf;L.buf=null;apply(L,b);}}}
+      if(L.mode==='bot'){const n=pre[L.i],gap=Math.max(.34,17/Math.max(1,n));if(L.botK<n&&sc.t>=(L.botK+1)*gap&&L.hopT<=0&&L.nextT<=0){L.botK++;apply(L,court(L.c).steps[L.si].need);}}
+      else if(L.mode==='remote')follow(L);}
+    if(sc.t>=P.T){sc.ended=true;sc.releaseAll();lanes.forEach(L=>publish(L,false));Sfx.whistle();setTimeout(()=>resolve({scores:lanes.map(L=>Math.max(0,L.hk))}),900);}
+  };
+  /* footprints: one per foot that lands in the box, so the court reads without colour */
+  function foot(g,x,y,s,flip){g.save();g.translate(x,y);g.scale(flip?-s:s,s);g.beginPath();g.ellipse(0,2,4.2,7,0,0,TAU);g.fillStyle='rgba(59,35,22,.62)';g.fill();for(let q=0;q<4;q++){g.beginPath();g.arc(-3+q*2.2,-6.6+Math.abs(q-1.5)*.7,1.3,0,TAU);g.fill();}g.restore();}
+  function pamato(g,x,y){ell(g,x,y+2,10,6);fs(g,'#8E8A86',INK,1.8);ell(g,x-2,y,4,2);g.fillStyle='rgba(255,255,255,.5)';g.fill();}
+  function drawCourt(g,L){const C=court(L.c),x=L.x,bw=P.BOXW,act=C.steps[L.si];
+    C.boxes.forEach(b=>{const y=P.START-(b.ri+1)*P.ROWH,two=b.n===2;
+      for(let q=0;q<b.n;q++){const bx=two?x-bw+q*bw:x-bw/2,box=b.ids[q],isPam=box===C.pb,next=act&&act.ri===b.ri;
+        rr(g,bx+1,y+1,bw-2,P.ROWH-2,3);g.fillStyle=next&&L.mode==='local'?'rgba(255,233,140,.55)':'rgba(255,255,255,.14)';g.fill();g.strokeStyle='rgba(255,255,255,.95)';g.lineWidth=2.6;g.stroke();
+        g.font='800 9px '+BODY;g.textAlign='left';g.textBaseline='top';g.fillStyle='rgba(59,35,22,.55)';g.fillText(String(box+1),bx+4,y+3);
+        if(isPam)pamato(g,bx+bw/2,y+P.ROWH/2);
+        else if(two&&b.pam<0)foot(g,bx+bw/2+(q?-3:3),y+P.ROWH/2+2,.9,q===0);
+        else foot(g,bx+bw/2,y+P.ROWH/2+2,.9,false);}});
+    g.font='900 10px '+BODY;g.textAlign='center';g.textBaseline='middle';g.fillStyle='rgba(59,35,22,.7)';g.fillText(C.name,x,P.START-C.rows.length*P.ROWH-10);}
+  sc.draw=g=>{
+    const list=drawArenaBase(g);
+    if(L1.length>1)for(const L of lanes)if(L.mode==='local'){rr(g,L.x-54,-150,108,P.START+30+150,12);g.fillStyle=tint(L.p.color,.5).replace('rgb','rgba').replace(')',',.22)');g.fill();}
+    for(const L of lanes){drawCourt(g,L);g.beginPath();g.moveTo(L.x-36,P.START+6);g.lineTo(L.x+36,P.START+6);g.strokeStyle='rgba(255,255,255,.9)';g.lineWidth=3;g.stroke();
+      const u=L.hopT>0?1-L.hopT/P.HOP:1,a=L.hopT>0&&L.from?L.from:spot(L,L.c,L.si),b=L.hopT>0&&L.to?L.to:a,x=lerp(a.x,b.x,Ez.inOut(u)),y=lerp(a.y,b.y,Ez.inOut(u)),lift=L.hopT>0&&!RM?Math.sin(Math.PI*u)*16:0;
+      const two=L.si>0&&court(L.c).steps[L.si-1]&&court(L.c).steps[L.si-1].need==='hold';
+      list.push({y:y+20,f:()=>{drawKid(g,L.p,x,y+20,{dir:'back',lift,mood:L.patT>0?'sad':(L.hopT>0?'hop':L.p.mood),sx:two&&L.hopT<=0?1.12:1,sy:L.press&&!L.press.fired?.9:1,blink:L.p.blink>0});
+        if(L.press&&L.mode==='local'){const k=Math.min(1,(sc.t-L.press.t0)/P.HOLD);g.beginPath();g.arc(x+22,y-26,8,-Math.PI/2,-Math.PI/2+TAU*k);g.strokeStyle=k>=1?'#2FA35A':'#F2B21B';g.lineWidth=4;g.stroke();}}});}
+    list.sort((a,b)=>a.y-b.y).forEach(o=>o.f());
+    for(const L of lanes){if(L.flash){const m=L.flash;g.save();g.globalAlpha=Math.min(1,(1-m.t)/.3);otext(g,m.txt,L.x,P.START-P.ROWH*3-m.t*14,15,m.col,4);g.restore();}
+      g.beginPath();g.arc(L.x-34,P.START+44,14,0,TAU);fs(g,L.p.color,INK,2.5);otext(g,String(Math.max(0,L.hk)),L.x-34,P.START+45,16,'#fff',4);
+      g.font='900 13px '+BODY;g.textAlign='left';g.textBaseline='middle';g.fillStyle=INK;g.fillText(L.p.name,L.x-15,P.START+39);g.font='800 10px '+BODY;g.fillStyle='rgba(59,35,22,.65)';g.fillText('hakbang',L.x-15,P.START+52);laneTag(g,L.p,L.x,P.START+70);}
+  };
+  sc.drawScreen=g=>{const left=Math.max(0,P.T-sc.t),w=150,x=W/2-w/2,y=topH+4;rr(g,x,y,w,32,16);fs(g,PAPER,INK,2.5);g.font='900 14px '+BODY;g.textAlign='center';g.textBaseline='middle';g.fillStyle=left<5?'#C9372A':INK;g.fillText('0:'+String(Math.ceil(left)).padStart(2,'0'),x+w/2,y+16);};
+  sc.v3={lanes,court,spot,P,hold,t:()=>sc.t};
+  return sc;
+}
 async function runMinigame(kind,opt){
   opt=opt||{};
   await seatSync();
@@ -2267,7 +2627,7 @@ function clearRun(){tweens.length=0;parts.length=0;floats.length=0;flyers.length
 function beginGame(spec,seed,cp,cfg){
   gameToken++;const tok=gameToken;scene=null;closeCard();clearRun();
   state.cfg=normCfg(cfg);gs=seed|0;decK=0;mgSeq=0;state.ended=false;
-  state.plan=isHamon()?[MG[state.cfg.mg]?state.cfg.mg:'tumbang']:mgPlan(seed|0,maxR());
+  state.plan=isHamon()?[MG[state.cfg.mg]?state.cfg.mg:'tumbang']:mgPlan(seed|0,maxR());if(DEBUG_MG&&MG[DEBUG_MG]&&!isHamon())state.plan=state.plan.map(()=>DEBUG_MG);
   state.order=[0,1,2,3];if(!isHamon())for(let i=3;i>0;i--){const j=Math.floor(G()*(i+1)),t=state.order[i];state.order[i]=state.order[j];state.order[j]=t;}
   setBoard(isParty()?state.cfg.map:'ulap');state.players=makePlayers(spec);state.players.forEach(p=>{p.pos=BOARD.start;});resetKorona();state.round=1;state.turn=0;state.overview=false;state.active=null;state.party=false;mapBtn.setAttribute('aria-pressed','false');
   let r0=1,t0=0;
@@ -2386,7 +2746,7 @@ async function hostFlow(){
   showMsg('Kumokonekta…','Ginagawa ang room.');
   const code=makeCode();
   try{NET.host=true;NET.name=nm;await netJoin(code);NET.host=true;NET.name=nm;}catch(e){netLeave();return netFail();}
-  netPres({app:APPID,role:'host',name:nm,st:'lobby',roster:[],gid:''});
+  netPres({app:APPID,role:'host',build:BUILD,name:nm,st:'lobby',roster:[],gid:''});
   setTimeout(hostRoster,300);
   const link=SHARE_URL+'#'+code;
   const c=openCard('<h2>Online room</h2><p class="note">Ipa-scan ang QR, o ipasok ng kalaro ang code sa Maglaro online → Sumali.</p><div class="codebig">'+code+'</div><canvas class="qr" id="lbQr" width="344" height="344" aria-label="QR code ng room"></canvas><div class="linkrow"><code id="lbLink">'+esc(link)+'</code><button type="button" class="btn small" id="lbCopy">Kopyahin</button></div>'+rosterHTML(NET.roster)+'<div id="setBox"></div><p class="note">'+esc(netHelp())+'</p><div class="row"><button type="button" class="btn" data-v="back">Kanselahin</button><button type="button" class="btn primary" data-v="start" data-primary>Simulan ang laro</button></div>');
@@ -2420,7 +2780,7 @@ async function joinFlow(pref){
   if(code.length!==4){const c2=openCard('<h2>Mali ang code</h2><p>Apat na letra o numero ang code ng room.</p><div class="row"><button type="button" class="btn primary" data-v="ok" data-primary>Ulitin</button></div>');await cardChoice(c2);return joinFlow(code);}
   showMsg('Kumokonekta…','Hinahanap ang room '+code+'.');
   try{NET.host=false;NET.name=nm;await netJoin(code);NET.host=false;NET.name=nm;}catch(e){netLeave();return netFail();}
-  netPres({app:APPID,role:'guest',name:nm,gid:''});NET.hostSeenAt=Date.now();
+  netPres({app:APPID,role:'guest',build:BUILD,name:nm,gid:''});NET.hostSeenAt=Date.now();
   const w=openCard('<h2>Nasa room '+esc(code)+'</h2><p id="jwMsg">Hinahanap ang host…</p><div id="jwRoster"></div><div class="row"><button type="button" class="btn" data-v="leave">Umalis</button></div>');
   const t0=Date.now();
   NET.onUpdate=()=>{const h=netHost();const m=document.getElementById('jwMsg'),r=document.getElementById('jwRoster');if(!m)return;
@@ -2510,7 +2870,7 @@ function guidePages(){
     {t:'Mga espasyo',h:'<ul class="legend">'+sw(SPACE.piso.c,'Piso','+3 piso')+sw(SPACE.utang.c,'Utang','−3 piso')+sw(SPACE.swerte.c,'Swerte','bonus na piso o libreng item')+sw(SPACE.tikbalang.c,'Tikbalang','atras ng 3 espasyo')+sw(SPACE.sari.c,'Sari-sari','bumili ng item; puwede ring dumaan lang')+sw(SPACE.kasama.c,'Kasama','may sasama sa barkada mo, +1 o +2 sa bawat gulong')+sw(SPACE.tanong.c,'Tanong ni Lola','tanong tungkol sa larong Pilipino, +5 kapag tama')+sw(SPACE.jack.c,'Jack en Poy','hamunin ang sinuman: hanggang 5 piso')+sw('#FFC93C','Korona','10 piso, dumaan para bumili')+'</ul>'},
     {t:'Mga mapa',h:'<p>Pumili ng isla bago maglaro: <b>Plaza, Palengke, Aplaya</b> o <b>Palayan</b>. May <b>4 na korona</b> sa bawat mapa.</p><ul><li><b>Sangandaan:</b> may daan na humihiwalay at bumabalik sa ikot. Ikaw ang pipili kung saan dadaan.</li><li><b>Sakay:</b> sa espasyo ng kalesa, padyak, bangka o kariton ng kalabaw, magbayad ng 6 piso para makarating sa malayong bahagi ng mapa.</li><li><b>Espasyo ng isla:</b> may sariling espasyo ang bawat mapa, gaya ng Banda at Kampana sa Plaza, Tawad at Basa sa Palengke, Alon at Huli sa Aplaya, Ani at Balang sa Palayan. Sasabihin ng tip kung ano ang ginagawa nito sa unang tapak mo rito.</li></ul>'},
     {t:'Mga item',h:'<p>Isang item lang ang madadala. Bilhin sa Sari-sari store, o makuha sa Swerte.</p><ul class="legend items">'+Object.keys(ITEMS).map(k=>'<li><span class="iic">'+ITEM_ICON[k]+'</span><span><b>'+esc(ITEMS[k].name)+' · '+ITEMS[k].cost+' piso</b><br>'+esc(ITEMS[k].desc)+'</span></li>').join('')+'</ul><p class="note">Itira ang 10 piso para sa korona bago bumili!</p>'},
-    {t:'Mga laro',h:'<p>Pagkatapos ng bawat ikot, maglalaro ang lahat ng isang larong kalye: <b>Tumbang Preso, Patintero, Sipa, Palosebo</b> o <b>Luksong Tinik</b>.</p><p>Premyo: <b>+10</b> piso sa una, <b>+5</b> sa ikalawa, <b>+3</b> sa ikatlo.</p><p><b>Huling Hirit:</b> sa huling ikot, doble ang premyo at may tulong ang nasa huli.</p><p><b>Bonus na korona</b> sa dulo: <b>Hari ng Laro</b> (pinakamaraming panalo sa mga laro), <b>Mayaman</b> (pinakamaraming piso) at <b>Malas sa Dice</b> (pinakamababang average ng dice).</p>'},
+    {t:'Mga laro',h:'<p>Pagkatapos ng bawat ikot, maglalaro ang lahat ng isang larong kalye: '+(t=>'<b>'+t.slice(0,-1).join(', ')+'</b> o <b>'+t[t.length-1]+'</b>')(MG_KEYS.map(k=>esc(MG[k].title)))+'.</p><p>Premyo: <b>+10</b> piso sa una, <b>+5</b> sa ikalawa, <b>+3</b> sa ikatlo.</p><p><b>Huling Hirit:</b> sa huling ikot, doble ang premyo at may tulong ang nasa huli.</p><p><b>Bonus na korona</b> sa dulo: <b>Hari ng Laro</b> (pinakamaraming panalo sa mga laro), <b>Mayaman</b> (pinakamaraming piso) at <b>Malas sa Dice</b> (pinakamababang average ng dice).</p>'},
     {t:'Mga paraan ng paglaro',h:'<ul><li><b>Party</b>: board, dice at laro, 3, 5 o 8 ikot.</li><li><b>Torneo</b>: laro lang, walang dice. Bawat panalo ay isang korona, kaya galing ang batayan.</li><li><b>Hamon ng Araw</b>: solo laban sa mahihirap na bot. Iisang hamon para sa lahat ngayong araw, may talaan ng iskor.</li><li><b>Online</b>: gumawa ng room at ipa-scan ang QR, o ibigay ang 4-letrang code.</li></ul>'},
     {t:'Album ng Laro',h:'<p>Ganito nilalaro ang mga ito sa totoong kalye at pista.</p>'+MG_KEYS.map(k=>'<div class="real"><b>'+esc(MG[k].title)+'</b><p>'+esc(MG[k].real)+'</p></div>').join('')+'<div class="row"><button type="button" class="btn small" data-v="tips">Ipakita ulit ang mga tip</button></div>'}
   ];
@@ -2607,10 +2967,13 @@ cv.addEventListener('pointermove',e=>{if(!scene||!scene.pointerMove)return;const
 const ptrUp=e=>{if(scene&&scene.pointerUp){const r=cv.getBoundingClientRect();scene.pointerUp(e.clientX-r.left,e.clientY-r.top,e.pointerId);}};
 cv.addEventListener('pointerup',ptrUp);cv.addEventListener('pointercancel',ptrUp);
 window.addEventListener('keydown',e=>{if(e.defaultPrevented||topDialog()||APP.screen!=='game')return;if(e.key==='Escape'){e.preventDefault();openMenu();return;}Sfx.init();const onBtn=e.target&&e.target.tagName==='BUTTON';
-  if(scene){if(onBtn&&(e.code==='Space'||e.code==='Enter'))return;scene.key&&scene.key(e,true);return;}
+  if(scene){if(onBtn&&(e.code==='Space'||e.code==='Enter')&&!scene.releaseAll)return;scene.key&&scene.key(e,true);return;}
   if((e.code==='Space'||e.code==='Enter')&&!onBtn&&actionResolver){e.preventDefault();actionResolver();}
   if(e.code==='KeyM'){mapBtn.click();}});
 window.addEventListener('keyup',e=>{if(scene&&scene.key)scene.key(e,false);});
+/* a press held while the window loses focus or the tab is hidden never gets its keyup or pointerup: release it */
+const releaseHeld=()=>{if(scene&&scene.releaseAll)scene.releaseAll();};
+window.addEventListener('blur',releaseHeld);document.addEventListener('visibilitychange',()=>{if(document.hidden)releaseHeld();});
 /* dialogs: Tab stays inside the open card, Escape presses its back/close button */
 const ESC_V=['back','prev','n','none','leave','close'];
 document.addEventListener('keydown',e=>{const top=topDialog();if(!top)return;
@@ -2824,6 +3187,7 @@ function init3D(){
     else if(md==='cheer')d=at('victory',tm);
     else if(md==='sad')d=at('defeat',tm);
     else if(md==='kick')d=at('kick',.55);
+    else if(md==='swing')d=at('throw',.4+.45*(o.st||0));   // Pukpok Palayok: o.st runs 0 to 1 over the swing
     else if((o.lift||0)>3)d=at('jump',.56);
     else d=at('idle',tm);
     if(md==='guard')d=Object.assign({},d,{'upperArm_L.z':1.3,'upperArm_R.z':-1.3,'lowerArm_L.x':-.35,'lowerArm_R.x':-.35});
@@ -2923,7 +3287,8 @@ function init3D(){
     const rope=new T3.Mesh(new T3.TubeGeometry(new T3.CatmullRomCurve3(Array.from({length:9},(_,i)=>new T3.Vector3(lerp(-292,292,i/8),102-Math.sin(Math.PI*i/8)*22,-262))),20,.9,5),M('#5A3A22'));G3.add(rope);
     arena=G3;return G3;}
   function tagOf(p){const kl=keyLabel(p);return p.ctrl==='remote'?'online':(p.ctrl==='bot'?'bot':(kl?'['+kl+']':''));}
-  function badge(g,x,y,z,col,txt,name,sub,tag){const s=B3.proj(x,y,z),k=clamp(s.k*1.15,.62,1.25);g.save();g.translate(clamp(s.x,18,W-16-96*k),s.y);g.scale(k,k);g.beginPath();g.arc(0,0,15,0,TAU);fs(g,col,INK,2.5);otext(g,String(txt),0,1,String(txt).length>3?11:16,'#fff',4);
+  /* col: an optional screen column {x,w} for lanes too close together on a narrow screen */
+  function badge(g,x,y,z,col,txt,name,sub,tag,colm){const s=B3.proj(x,y,z),k=colm?clamp(Math.min(s.k*1.15,colm.w/112),.5,1.25):clamp(s.k*1.15,.62,1.25);g.save();g.translate(colm?colm.x+17*k:clamp(s.x,18,W-16-96*k),s.y);g.scale(k,k);g.beginPath();g.arc(0,0,15,0,TAU);fs(g,col,INK,2.5);otext(g,String(txt),0,1,String(txt).length>3?11:16,'#fff',4);
     g.textAlign='left';g.textBaseline='middle';g.lineJoin='round';const tx=(t,yy,f)=>{g.font=f;g.lineWidth=4;g.strokeStyle=PAPER;g.strokeText(t,20,yy);g.fillStyle=INK;g.fillText(t,20,yy);};
     if(name)tx(name,sub?-5:0,'900 13px '+BODY);if(sub)tx(sub,9,'800 10.5px '+BODY);if(tag)tx(tag,sub?23:14,'900 10px '+BODY);g.restore();}
   function tinCan(){const g=new T3.Group();const c=mesh(new T3.CylinderGeometry(9,9,18,16),M('#C9D1D9'),0,9,0);ol(c,.06);g.add(c,mesh(new T3.CylinderGeometry(9.3,9.3,8,16),M('#E2452E'),0,9,0),mesh(new T3.CylinderGeometry(9.4,9.4,1.6,16),M('#F2B21B'),0,9,0));shadowAll(g);return g;}
@@ -2936,7 +3301,7 @@ function init3D(){
     const npc=(p,o)=>extraKid(p,Object.assign({parent:root},o||{}));
     const spect=gq().crowd?SPECT.map(s=>({s,K:npc(NPCS.at(s.n))})):[];
     const kidOf=p=>{const K=kidFor(p);K.g.visible=true;return K;};
-    let upd=()=>{},over=()=>{},cam=mgCam(sc,.95);
+    let upd=()=>{},over=()=>{},render=null,cam=mgCam(sc,.95);   // render: a minigame that draws its own viewports (Taguan's strips)
     if(kind==='tumbang'){const TOL=v.TOL;
       const L3=v.lanes.map(L=>{dashRect(root,L.x-60,-200,L.x+60,172);flatBox(root,L.x-52,92,L.x+52,92,5);flatRing(root,L.x,-140,19,23);
         const can=tinCan();root.add(can);const sl=slipper(L.p.color);root.add(sl);const taya=npc(NPCS.at(0));
@@ -2989,9 +3354,112 @@ function init3D(){
         pose(kidOf(L.p),L.x+sway,PZ+10,{lift:hh,dir:L.done?'front':'back',walk:L.done||L.stun>0?null:L.taps*.9,mood:L.done?'cheer':(L.stun>0?'sad':'climb'),blink:L.p.blink>0},1);}};
       over=g=>{for(const o of L3){const L=o.L;badge(g,L.x-34,0,PZ+60,L.p.color,Math.min(TOP,L.h).toFixed(1),L.p.name,'metro',tagOf(L.p));
         if(L.mode==='local'&&!L.done&&!sc.ended&&!(sc.cd>.6)){const s=B3.proj(L.x+34,Math.min(TOP,L.h)*PX+50,PZ+10),early=sc.t-L.last<v.GAP,k=clamp(s.k*1.2,.7,1.3);g.save();g.translate(s.x,s.y);g.scale(k,k);g.beginPath();g.arc(0,0,13,0,TAU);fs(g,L.stun>0?'#9AA3AE':(early?'#E2452E':'#2FA35A'),INK,2.2);otext(g,early||L.stun>0?'!':'↑',0,1,15,'#fff',3);g.restore();}}};}
+    else if(kind==='palayok'){const PP=v.P,CANDY=['#E2452E','#F2B21B','#2E6FD8','#2FA35A','#F28DB2','#FFF6E6'],candyG=new T3.BoxGeometry(5,3.2,3.2),shardG=new T3.BoxGeometry(7,2,6),bits=[];
+      /* the blindfold and the stick follow the kid's head and right hand (the rigged kids are shared between scenes, so nothing is attached to them) */
+      const follow=(o,K)=>{if(o.K===K)return;o.K=K;const nk=!!K.nk;o.head=nk?(K.m.group.getObjectByName('skull')||K.m.joints.head):K.head;o.hand=nk?K.m.joints.hand_R:K.arms[1];
+        o.blind.geometry.dispose();o.blind.geometry=nk?new T3.CylinderGeometry(.19,.19,.065,24,1,true):new T3.CylinderGeometry(13.6,13.6,3.6,20,1,true);o.bOff.makeTranslation(0,nk?.035:.8,0);
+        o.stick.geometry.dispose();o.stick.geometry=nk?new T3.CylinderGeometry(.016,.016,.55,6):new T3.CylinderGeometry(1.1,1.1,32,6);o.sOff.makeTranslation(0,nk?-.3:-26,0);};
+      const L3=v.lanes.map(L=>{dashRect(root,L.x-60,-200,L.x+60,PP.START+24);flatBox(root,L.x-50,PP.START+10,L.x+50,PP.START+10,5);
+        const dots=[];for(let k=1;k<=10;k++)dots.push(flatRing(root,L.x,PP.START-k*PP.SS,0,4,WHITE,1.4));
+        const rig=new T3.Group();rig.position.x=L.x;root.add(rig);
+        for(const sd of [-1,1]){const pl=mesh(new T3.CylinderGeometry(3.2,3.6,104,10),M('#B7A04A'),sd*48,52,0);ol(pl,.1);rig.add(pl);for(let k=1;k<4;k++)rig.add(mesh(new T3.CylinderGeometry(3.8,3.8,1.6,10),M('#8A7A30'),sd*48,k*26,0));}
+        rig.add(new T3.Mesh(new T3.TubeGeometry(new T3.CatmullRomCurve3([new T3.Vector3(-48,101,0),new T3.Vector3(0,93,0),new T3.Vector3(48,101,0)]),12,.8,5),M('#8A6A3A')));
+        const pot=new T3.Group();pot.position.set(0,93,0);rig.add(pot);pot.add(mesh(new T3.CylinderGeometry(.6,.6,20,5),M('#5A3A22'),0,-10,0));
+        const body=mesh(new T3.SphereGeometry(15,18,14),M('#C8743F'),0,-36,0);body.scale.y=.92;ol(body,.05);pot.add(body,mesh(new T3.CylinderGeometry(8,10,6,16),M('#A85A2C'),0,-22,0));
+        const bandP=mesh(new T3.TorusGeometry(14.2,1.2,6,20),M('#F2B21B'),0,-36,0);bandP.rotation.x=Math.PI/2;pot.add(bandP);
+        const blind=new T3.Mesh(new T3.BufferGeometry(),new T3.MeshToonMaterial({color:'#C9372A',gradientMap:gm,side:T3.DoubleSide}));blind.matrixAutoUpdate=false;root.add(blind);
+        const stick=new T3.Mesh(new T3.BufferGeometry(),M('#A87442'));stick.matrixAutoUpdate=false;root.add(stick);
+        return{L,dots,rig,pot,blind,stick,bOff:new T3.Matrix4(),sOff:new T3.Matrix4(),K:null,head:null,hand:null,burst:0};});
+      function spill(x,z){for(let k=0;k<22;k++){const shard=k>=16,m=new T3.Mesh(shard?shardG:candyG,shard?M('#B8643A'):M(CANDY[k%6]));m.position.set(x+(R()-.5)*10,58,z);root.add(m);
+        bits.push({m,vx:(R()-.5)*120,vy:60+R()*90,vz:(R()-.5)*70+20,vr:(R()-.5)*12,t:0});}}
+      upd=dt=>{const ph=v.ph,look=ph==='look',T=v.tries[Math.min(2,v.tri)],pz=v.potY(),n=Math.floor(T.pot);
+        for(const o of L3){const L=o.L,show=look||!!L.out;o.rig.visible=show;o.rig.position.z=pz;o.pot.visible=!L.broke;o.pot.rotation.z=L.out&&L.out.s===6&&!RM?Math.sin(now*14)*.3*Math.max(0,1-L.rt):0;
+          o.dots.forEach((d,k)=>d.visible=look&&k<n);
+          if(L.broke&&!o.burst){o.burst=1;spill(L.x,pz);}if(!L.broke)o.burst=0;
+          const walking=ph==='walk'&&!L.out,sp=ph==='spin'&&!RM?Math.floor(v.pt*10)%4:-1,K=kidOf(L.p);
+          pose(K,L.x,v.kidY(L),{dir:sp>=0?['front','side','back','side'][sp]:(look?'front':'back'),face:sp===3?-1:1,walk:walking?v.wt*11.4:null,mood:L.sw>0?'swing':(L.out?L.p.mood:'idle'),st:1-L.sw,blink:L.p.blink>0},1.1);
+          follow(o,K);K.g.updateMatrixWorld(true);o.blind.visible=!look;o.blind.matrix.multiplyMatrices(o.head.matrixWorld,o.bOff);o.stick.matrix.multiplyMatrices(o.hand.matrixWorld,o.sOff);}
+        for(let i=bits.length-1;i>=0;i--){const b=bits[i];b.t+=dt;b.vy-=320*dt;b.m.position.x+=b.vx*dt;b.m.position.y=Math.max(1.6,b.m.position.y+b.vy*dt);b.m.position.z+=b.vz*dt;if(b.m.position.y>1.6)b.m.rotation.x+=b.vr*dt;else{b.vx*=.9;b.vz*=.9;}
+          if(b.t>1.6){root.remove(b.m);bits.splice(i,1);}}};
+      over=g=>{for(const o of L3){const L=o.L;badge(g,L.x-30,0,PP.START+44,L.p.color,v.total(L),L.p.name,'subok '+Math.min(3,v.tri+1)+'/3',tagOf(L.p));}
+        for(const b of v.bubbles){const s=B3.proj(b.x,70,b.y);drawBubble(g,s.x,s.y,b.txt,b.t);}};}
+    else if(kind==='taguan'){const TT=v.T,GAPT=TT.GAP;root.remove(arenaGroup());spect.forEach(o=>root.remove(o.K.g));
+      /* a long yard: grass, a dirt path, houses at the back; the 24 spots from TG_SPOTS in code-drawn 3D */
+      const len=(18+6)*GAPT,yg=new T3.PlaneGeometry(len,2400);yg.rotateX(-Math.PI/2);const gm2=mesh(yg,grassM,len/2-GAPT*3,0,0);gm2.receiveShadow=true;root.add(gm2);
+      const pg=new T3.PlaneGeometry(len,40);pg.rotateX(-Math.PI/2);const path=mesh(pg,dirtM,len/2-GAPT*3,.6,30);path.receiveShadow=true;root.add(path);
+      for(let x=-GAPT*3;x<len-GAPT*3;x+=170){const hs=mesh(new T3.BoxGeometry(120,70,60),M(['#F4E3C3','#F2C9A0','#CFE6E0','#F6D6C8'][Math.abs(Math.round(x/170))%4]),x,35,-170);ol(hs,.02);const rf=mesh(new T3.ConeGeometry(92,40,4),M(['#C8553D','#2F8F8A','#B86B3F'][Math.abs(Math.round(x/170))%3]),x,90,-170);rf.rotation.y=Math.PI/4;rf.scale.z=.6;root.add(hs,rf);}
+      function tg3(t){const g=new T3.Group(),nm=TG_SPOTS[t][0],w=TG_SPOTS[t][1],h=TG_SPOTS[t][2],add=(m,k)=>{if(k!==0)ol(m,k||.04);g.add(m);return m;};
+        const cyl=(r1,r2,hh,c,x,y,z,seg)=>add(mesh(new T3.CylinderGeometry(r1,r2,hh,seg||16),M(c),x||0,y,z||0)),box=(bw,bh,bd,c,x,y,z)=>add(mesh(new T3.BoxGeometry(bw,bh,bd),M(c),x||0,y,z||0)),sph=(r,c,x,y,z,sy)=>{const m=add(mesh(new T3.SphereGeometry(r,14,10),M(c),x||0,y,z||0));if(sy)m.scale.y=sy;return m;};
+        switch(nm){
+          case'halaman':sph(22,'#4E9A3D',-18,20,0,.85);sph(24,'#5FAE48',16,22,4,.85);sph(22,'#3F8A35',0,34,-4,.85);break;
+          case'drum':cyl(22,22,60,'#2E6FD8',0,30,0);break;
+          case'bakol':cyl(28,22,40,'#C99A55',0,20,0,10);break;
+          case'puno':cyl(8,10,60,'#8A5A32',0,30,0,8);sph(34,'#3F8A35',0,80,0,.9);break;
+          case'kariton':box(76,26,40,'#B98450',0,30,0);for(const x of [-22,22]){const wh=cyl(12,12,6,'#5A3A22',x,12,22,14);wh.rotation.x=Math.PI/2;}break;
+          case'sako':sph(22,'#E6D3AE',0,22,0,1);box(22,8,22,'#C9B48A',0,44,0);break;
+          case'banga':sph(22,'#B8643A',0,22,0,.95);cyl(9,10,10,'#9A4E2A',0,44,0);break;
+          case'dayami':{const m=add(mesh(new T3.SphereGeometry(40,16,10,0,Math.PI*2,0,Math.PI/2),M('#E8C35A'),0,0,0));m.scale.y=1.45;break;}
+          case'gulong':for(let k=0;k<3;k++){const tr=add(mesh(new T3.TorusGeometry(20,8,8,16),M('#2A2A2E'),0,8+k*15,0));tr.rotation.x=Math.PI/2;}break;
+          case'kahon':box(58,48,46,'#C9955A',0,24,0);box(10,48.5,46.5,'#E8D7A8',0,24,0).userData.ol=1;break;
+          case'saging':cyl(5,6,62,'#7FA04A',0,31,0,8);for(let k=0;k<4;k++){const lf=add(mesh(new T3.BoxGeometry(46,2,16),M('#4E9A3D'),0,62,0));lf.rotation.y=k*Math.PI/4;lf.rotation.z=.35*(k%2?1:-1);}break;
+          case'pader':box(90,62,18,'#D8D2C4',0,31,0);break;
+          case'kubo':for(const x of [-34,34])for(const z of [-20,20])cyl(3,3,34,'#7E5429',x,17,z,6);box(80,30,52,'#D9B06B',0,47,0);{const rf=add(mesh(new T3.ConeGeometry(66,36,4),M('#C9A157'),0,80,0));rf.rotation.y=Math.PI/4;rf.scale.z=.8;}break;
+          case'sampayan':for(const x of [-52,52])cyl(3,3,80,'#8A5A32',x,40,0,6);[['#E2452E',-28,30],['#F2B21B',6,40],['#2E6FD8',40,34]].forEach(([c,x,hh])=>box(26,hh,1.5,c,x,72-hh/2,0));break;
+          case'bangko':box(96,8,26,'#A87442',0,30,0);for(const x of [-38,38])box(8,26,22,'#8A5A32',x,13,0);break;
+          case'bangka':{const hb=sph(55,'#F7F2E8',0,20,0,1);hb.scale.set(1,.42,.36);box(96,3,4,'#2E6FD8',0,24,18);break;}
+          case'balon':cyl(32,32,36,'#A9A196',0,18,0,18);for(const x of [-28,28])cyl(3,3,46,'#7E5429',x,57,0,6);{const rf=add(mesh(new T3.ConeGeometry(46,18,4),M('#B8643A'),0,86,0));rf.rotation.y=Math.PI/4;}break;
+          case'panggatong':for(let row=0;row<3;row++)for(let k=0;k<4-row;k++){const lg=cyl(9,9,40,'#A87442',-30+row*10+k*20,9+row*16,0,10);lg.rotation.x=Math.PI/2;}break;
+          case'tindahan':box(84,56,46,'#E8D8BA',0,28,0);{const aw=box(96,4,54,'#E2452E',0,66,6);aw.rotation.x=.15;}break;
+          case'banig':['#C9A157','#B5413A','#2E8B7A','#D9B06B'].forEach((c,k)=>cyl(7,7,70-(k%2)*8,c,-22+k*15,35-(k%2)*4,0,10));break;
+          case'tangke':cyl(24,24,96,'#5BC0BE',0,48,0,18);break;
+          case'bato':sph(42,'#9AA0A6',0,10,0,.75).scale.set(1,.75,.7);break;
+          case'bakod':for(let x=-46;x<=46;x+=12)cyl(5,5,64,'#C8B465',x,32,0,6);box(100,4,6,'#8A7A30',0,48,4);box(100,4,6,'#8A7A30',0,18,4);break;
+          case'paso':for(const [x,c] of [[-26,'#4E9A3D'],[0,'#E2452E'],[26,'#3F8A35']]){cyl(12,9,24,'#B8643A',x,12,0,10);sph(13,c,x,32,0,.85);}break;
+          default:box(w,h,30,'#C9955A',0,h/2,0);}
+        shadowAll(g);return g;}
+      const rounds=v.yard.map((Y,r)=>{const grp=new T3.Group();root.add(grp);
+        const spots=Y.spots.map((s,k)=>{const m=tg3(s.t);m.position.set(s.x,0,-10);grp.add(m);let kid=null;
+          if(s.kid){kid=npc(NPCS.at(s.kid.look),{parent:grp});kid.base={x:s.x+TG_SPOTS[s.t][1]*.5+14,z:4};kid.g.visible=false;}return{s,m,kid,key:r+':'+k};});
+        return{grp,spots};});
+      const cams=[0,1,2,3].map(()=>new T3.PerspectiveCamera(40,1,10,6000)),TAN=Math.tan(20*Math.PI/180),VV=new T3.Vector3();let views=[];
+      const camAt=(cm,st)=>{const as=st.w/st.h,d=Math.max(240,300/(2*TAN*as)),cx=v.camX()+.2*as*d*TAN;cm.aspect=as;cm.position.set(cx,64+d*.2,d);cm.lookAt(cx,30,0);cm.updateProjectionMatrix();cm.updateMatrixWorld();};   // the taya about 40% from the left, at least 300 units of yard across (as in 2D), looking a little down so the yard fills a tall phone
+      upd=()=>{const r=v.r;rounds.forEach((R2,j)=>{R2.grp.visible=j===r;});const k=v.cur();
+        for(const o of rounds[r].spots){const sh=o.s.kid&&o.s.kid.clue==='kaluskos'&&v.clueOn(k)&&o===rounds[r].spots[k]&&!RM?Math.sin(v.rt*50)*2:0;o.m.position.x=o.s.x+sh;
+          if(o.kid)pose(o.kid,o.kid.base.x,o.kid.base.z,{mood:'cheer',dir:'front'},.9);}
+        const walking=v.rt>=v.T.INTRO&&((v.rt-v.T.INTRO)%(v.R0().stop+v.T.WALK))<v.T.WALK;
+        for(const pl of v.P)if(pl.mode==='local'||v.P.every(q=>q.mode!=='local')){const K=kidOf(pl.p);pose(K,v.tayaX(),28,{dir:v.rt<v.T.INTRO?'back':'side',face:1,walk:walking?v.rt*12:null,mood:pl.p.mood,blink:pl.p.blink>0},1.05);}};
+      /* each strip: its own camera and viewport, showing only its player's taya and the kids that player found */
+      render=(ren,S2)=>{const ss=v.strips(),loc=v.P.filter(q=>q.mode==='local');views=[];ren.setScissorTest(false);ren.clear();ren.setScissorTest(true);
+        ss.forEach((st,j)=>{const cm=cams[j];camAt(cm,st);for(const pl of v.P){const K=B3.kids.get(pl.p);if(K)K.g.visible=pl===st.pl;}
+          for(const o of rounds[v.r].spots)if(o.kid)o.kid.g.visible=st.pl.found.has(o.key)&&st.pl.mode==='local';
+          ren.setViewport(st.x,H-st.y-st.h,st.w,st.h);ren.setScissor(st.x,H-st.y-st.h,st.w,st.h);ren.render(S2,cm);views.push({st,cm});});
+        ren.setScissorTest(false);ren.setViewport(0,0,W,H);};
+      over=g=>{const k=v.cur();if(!v.clueOn(k))return;const o=rounds[v.r].spots[k],s=o.s,u=v.rt-v.arrive(k)-s.at,a=Math.min(1,u/.08,(v.R0().clue-u)/.08);
+        for(const {st,cm} of views){if(st.pl.found.has(o.key)&&st.pl.mode==='local')continue;VV.set(s.x,0,-10);const dist=VV.distanceTo(cm.position);VV.project(cm);
+          g.save();g.beginPath();g.rect(st.x,st.y,st.w,st.h);g.clip();drawClue(g,s,st.x+(VV.x+1)/2*st.w,st.y+(1-VV.y)/2*st.h,st.h/(2*dist*TAN),a,v.rt);g.restore();}};}
+    else if(kind==='piko'){cam.d*=1.14;   /* a little wider than the 2D view, so the outer courts stay on a tall phone */
+      const PK=v.P,chalk=new T3.MeshBasicMaterial({color:0xFFFFFF,transparent:true,opacity:.92}),footM=new T3.MeshBasicMaterial({color:0x3B2316,transparent:true,opacity:.62,depthWrite:false}),
+        hiM=new T3.MeshBasicMaterial({color:0xFFE98C,transparent:true,opacity:.55,depthWrite:false}),footG=new T3.CircleGeometry(4.4,12),hiG=new T3.PlaneGeometry(PK.BOXW-4,PK.ROWH-4);
+      footG.rotateX(-Math.PI/2);footG.scale(1,1,1.6);hiG.rotateX(-Math.PI/2);
+      /* each lane's court in chalk, with a footprint per foot that lands in a box and the pamato in its box; built again when the lane moves to the next court */
+      const L3=v.lanes.map(L=>{const grp=new T3.Group();root.add(grp);flatBox(root,L.x-36,PK.START+6,L.x+36,PK.START+6,4);
+        const pam=mesh(new T3.CylinderGeometry(9,10,3,12),M('#8E8A86'),0,1.8,0);ol(pam,.06);root.add(pam);const hi=new T3.Mesh(hiG,hiM);hi.position.y=1.1;root.add(hi);return{L,grp,pam,hi,c:-1};});
+      function buildCourt(o){o.grp.traverse(m=>{if(m.geometry&&m.geometry!==footG)m.geometry.dispose();});o.grp.clear();const C=v.court(o.L.c),x=o.L.x,bw=PK.BOXW,hh=PK.ROWH;
+        C.boxes.forEach(b=>{const z0=PK.START-(b.ri+1)*hh,two=b.n===2;for(let q=0;q<b.n;q++){const bx=two?x-bw+q*bw:x-bw/2,box=b.ids[q];
+          flatBox(o.grp,bx+1,z0+1,bx+bw-1,z0+1,2.6,chalk,1.3);flatBox(o.grp,bx+1,z0+hh-1,bx+bw-1,z0+hh-1,2.6,chalk,1.3);flatBox(o.grp,bx+1,z0+1,bx+1,z0+hh-1,2.6,chalk,1.3);flatBox(o.grp,bx+bw-1,z0+1,bx+bw-1,z0+hh-1,2.6,chalk,1.3);
+          if(box===C.pb){o.pam.position.set(bx+bw/2,1.8,z0+hh/2);continue;}
+          const f=new T3.Mesh(footG,footM);f.position.set(bx+bw/2+(two&&b.pam<0?(q?-3:3):0),1.25,z0+hh/2+2);o.grp.add(f);}});
+        o.c=o.L.c;}
+      upd=()=>{for(const o of L3){const L=o.L;if(o.c!==L.c)buildCourt(o);const C=v.court(L.c),act=C.steps[L.si];
+          o.hi.visible=!!act&&L.mode==='local';if(act){const s=act,x=L.x+(s.side?s.side*PK.BOXW*.5:0);o.hi.position.set(x,1.1,PK.START-(s.ri+1)*PK.ROWH+PK.ROWH/2);o.hi.scale.x=C.rows[s.ri]===2&&!s.side?2:1;}
+          const u=L.hopT>0?1-L.hopT/PK.HOP:1,a=L.hopT>0&&L.from?L.from:v.spot(L,L.c,L.si),b=L.hopT>0&&L.to?L.to:a,x=lerp(a.x,b.x,Ez.inOut(u)),z=lerp(a.y,b.y,Ez.inOut(u));
+          pose(kidOf(L.p),x,z,{dir:'back',lift:L.hopT>0&&!RM?Math.sin(Math.PI*u)*16:0,mood:L.patT>0?'sad':(L.hopT>0?'hop':L.p.mood),sy:L.press&&!L.press.fired?.92:1,blink:L.p.blink>0},1.05);}};
+      over=g=>{for(const o of L3){const L=o.L;badge(g,L.x-30,0,PK.START+44,L.p.color,Math.max(0,L.hk),L.p.name,'hakbang',tagOf(L.p),{x:W*L.i/4+2,w:W/4-4});
+          if(L.flash){const m=L.flash,s=B3.proj(L.x,60,PK.START-PK.ROWH*3);g.save();g.globalAlpha=Math.min(1,(1-m.t)/.3);otext(g,m.txt,s.x,s.y-m.t*14,15,m.col,4);g.restore();}
+          if(L.press&&L.mode==='local'){const sp=L.hopT>0&&L.to?L.to:v.spot(L,L.c,L.si),s=B3.proj(sp.x+20,70,sp.y),k=Math.min(1,(v.t()-L.press.t0)/PK.HOLD);g.beginPath();g.arc(s.x,s.y,9,-Math.PI/2,-Math.PI/2+TAU*k);g.strokeStyle=k>=1?'#2FA35A':'#F2B21B';g.lineWidth=4.5;g.stroke();}}};}
     shadowAll(root);
     const updAll=dt=>{spect.forEach(({s,K})=>{const j=RM?0:Math.max(0,Math.sin(now*4+s.n*1.7))*8;pose(K,s.x,s.y,{lift:j,mood:j>4?'cheer':'happy',dir:'front'},.9);});upd(dt);};
-    return{root,upd:updAll,over,cam};}
+    return{root,upd:updAll,over,cam,render};}
   B3.unproj=(sx,sy)=>{const rc=new T3.Raycaster(),ndc=new T3.Vector2(sx/W*2-1,-(sy/H)*2+1);rc.setFromCamera(ndc,camera);const pl=new T3.Plane(new T3.Vector3(0,1,0),B3.mg?0:-(B3.gy||0)),pt=new T3.Vector3();return rc.ray.intersectPlane(pl,pt)?{x:pt.x,y:pt.z}:null;};
   /* frees what a removed minigame, kid or portrait built on the GPU. The shared pieces stay: the cached toon colours (M),
      the outline, the arena island and the world's textured materials */
@@ -3056,7 +3524,7 @@ function init3D(){
       B3.palms.forEach((pm,i)=>{pm.userData.sway.rotation.z=Math.sin(now*1.2+i)*.06;});
       B3.rocks.forEach(({g,r})=>{g.position.y=-40+Math.sin(now*1.1+r.ph)*8;});
       B3.clouds.forEach(c=>{c.g.position.x+=c.v*dt;if(c.g.position.x>2800)c.g.position.x=-1000;});}
-    ren.render(S,camera);
+    if(B3.mg&&B3.mg.render)B3.mg.render(ren,S,camera);else ren.render(S,camera);
   };
   const px1=new Uint8Array(4);B3.finish=()=>{const gl=ren.getContext();gl.readPixels(0,0,1,1,gl.RGBA,gl.UNSIGNED_BYTE,px1);};   // waits until the GPU has drawn the frame (benchmarks)
   B3.info=()=>{const r=ren.info.render,m=ren.info.memory;return{pr:ren.getPixelRatio(),calls:r.calls,tris:r.triangles,geo:m.geometries,tex:m.textures,progs:(ren.info.programs||[]).length,shadow:sun.castShadow?sun.shadow.mapSize.x:0};};

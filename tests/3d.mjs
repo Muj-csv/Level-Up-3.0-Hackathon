@@ -115,7 +115,10 @@ const MASH = {
   sipa: `sc => { const s = sc.peek()[0]; if (s.kickable) sc.action(); }`,
   palosebo: `sc => { if (Math.random() < 0.3) sc.action(); }`,
   patintero: `sc => { const v = sc.peek(); const up = v.run.dir < 0; sc.key({ code: 'ArrowUp', preventDefault() {} }, up); sc.key({ code: 'ArrowDown', preventDefault() {} }, !up); }`,
-  luksong: `sc => { const L = sc.peek()[0]; if (L.st === 'run' && L.inZone) sc.action(); }`
+  luksong: `sc => { const L = sc.peek()[0]; if (L.st === 'run' && L.inZone) sc.action(); }`,
+  palayok: `sc => { const L = sc.peek()[0]; if (L.ph === 'walk' && !L.out && L.steps >= 6) sc.action(); }`,
+  taguan: `sc => { const v = sc.peek(); if (v.clue === 'kid' && !v.tapped && !v.locked) sc.action(); }`,
+  piko: `sc => { const v = sc.peek()[0], s = window.__pk || (window.__pk = {}); if (s.down) { if (s.need === 'tap' || v.fired) { sc.actionUp(1); s.down = false; } return; } if (v.need && !v.hopping && !v.between && !v.patay && !v.pressing) { s.need = v.need; s.down = true; sc.actionDown(1); } }`
 };
 for (const kind of Object.keys(MASH)) {
   const page = await newPage('3d', '?debug&speed=3');
