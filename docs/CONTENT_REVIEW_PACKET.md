@@ -298,6 +298,31 @@ region step into the other box with one foot (as the game does), or hop over the
 
 ---
 
+## Part 2b — Pasaporte one-liners and the first-game guide (new, Oct 25, 2026)
+
+Each game card in the Pasaporte (which now holds the Album ng Laro) shows one short line
+before "Ipakita ang detalye". Check that each line is right for the game:
+
+| Game | One line shown on its card |
+|---|---|
+| Tumbang Preso | Patumbahin ang lata gamit ang tsinelas. |
+| Patintero | Tumawid sa mga linya nang hindi natataya. |
+| Sipa | Sipain ang sipa nang hindi bumabagsak. |
+| Palosebo | Akyatin ang madulas na kawayan. |
+| Luksong Tinik | Lundagin ang tumataas na tinik ng kamay. |
+| Pukpok Palayok | Basagin ang palayok nang nakapiring. |
+| Taguan | Hanapin ang mga nagtatago sa bakuran. |
+| Piko | Lumukso sa mga kahong iginuhit sa lupa. |
+
+⬜ All correct  ⬜ Needs a fix
+
+The first-game guide (six short cards before the first roll) explains the board, moving,
+piso and korona, items, the street games and how to win; its text is in `index.html`
+(`tourSteps`). It describes the app's own rules, not the real-street games, so it needs a
+game-rules check rather than a cultural one.
+
+---
+
 ## Part 3 — General questions for the reviewer
 
 - Are there regional variations of any of these games/rules that should be noted (the
