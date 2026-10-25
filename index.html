@@ -78,6 +78,7 @@ body{background:var(--sky);color:var(--ink);font-family:var(--body);overflow:hid
 .btn.small{font-size:15px;padding:9px 13px;box-shadow:0 4px 0 var(--ink)}
 .btn.icon{width:48px;height:48px;padding:0;display:grid;place-items:center;border-radius:14px}
 .btn.icon svg{width:24px;height:24px}
+.btn.icon.lang{font:900 14px/1 var(--body);letter-spacing:.02em}
 .btn.item{font-size:14px;padding:10px 12px;background:var(--sand)}
 .btn[aria-pressed="true"].item{background:var(--leaf)}
 .btn:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:0 5px 0 var(--ink)}
@@ -405,6 +406,7 @@ body{background:var(--sky);color:var(--ink);font-family:var(--body);overflow:hid
       <button class="btn icon" id="soundBtn" type="button" aria-pressed="true" aria-label="Tunog">
         <svg viewBox="0 0 24 24" fill="none" stroke="#3B2316" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="#FFC93C"/><path id="sndWave" d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/><path id="sndOff" d="M17 9l5 6M22 9l-5 6" style="display:none"/></svg>
       </button>
+      <button class="btn icon lang" id="langBtn" type="button">FIL</button>
     </div>
   </div>
   <div class="screen mapscr" id="scrMaps" hidden>
@@ -467,8 +469,9 @@ function star(g,x,y,r,ri,n){g.beginPath();n=n||5;for(let i=0;i<n*2;i++){const a=
 /* settings kept on this device: music, sound effects, vibration */
 /* gq: 3D graphics quality (low, mid, high; see GQ in the 3D board section), separate from the 3D/2D choice */
 /* saved settings. The game is always 3D where the device can draw it; Kalidad (gq) sets how heavy that 3D is. The old Grapiko 3D/2D
-   choice is gone: a device that had picked 2D and never a quality starts on Mababa (the lightest 3D), a quality it picked is kept */
-const PREFS=(()=>{const d={music:true,sfx:true,vib:true,gq:'mid'};try{const o=JSON.parse(localStorage.getItem('lsu-prefs')||'{}');for(const k in d)if(typeof o[k]===typeof d[k])d[k]=o[k];if(o.g3d===false&&typeof o.gq!=='string')d.gq='low';}catch(e){}if(!['low','mid','high'].includes(d.gq))d.gq='mid';return d;})();
+   choice is gone: a device that had picked 2D and never a quality starts on Mababa (the lightest 3D), a quality it picked is kept.
+   lang: the language of the cards (fil, en; see the content loader) */
+const PREFS=(()=>{const d={music:true,sfx:true,vib:true,gq:'mid',lang:'fil'};try{const o=JSON.parse(localStorage.getItem('lsu-prefs')||'{}');for(const k in d)if(typeof o[k]===typeof d[k])d[k]=o[k];if(o.g3d===false&&typeof o.gq!=='string')d.gq='low';}catch(e){}if(!['low','mid','high'].includes(d.gq))d.gq='mid';if(!['fil','en'].includes(d.lang))d.lang='fil';return d;})();
 function savePrefs(){try{localStorage.setItem('lsu-prefs',JSON.stringify(PREFS));}catch(e){}}
 /* audio graph: effects and music buses -> master -> limiter, so stacked sounds never clip */
 const Sfx={ac:null,out:null,fx:null,lastTick:0,
@@ -1350,6 +1353,9 @@ itemBtn.addEventListener('click',()=>{const on=itemBtn.getAttribute('aria-presse
 mapBtn.addEventListener('click',()=>{state.overview=!state.overview;mapBtn.setAttribute('aria-pressed',String(state.overview));});
 /* the speaker button mutes or restores music and effects together; the menu sets them one by one */
 function syncSoundBtn(){const on=Sfx.on;$('#soundBtn').setAttribute('aria-pressed',String(on));$('#sndWave').style.display=on?'':'none';$('#sndOff').style.display=on?'none':'';}
+/* Wika on the title (next to the sound button): FIL or EN, the other language one tap away */
+function syncLangBtn(){const b=$('#langBtn'),en=lang()==='en';b.textContent=en?'EN':'FIL';b.setAttribute('aria-label','Wika: '+(en?'English':'Filipino')+'. Pindutin para '+(en?'Filipino':'English')+'.');}
+$('#langBtn').addEventListener('click',()=>{Sfx.init();const to=lang()==='en'?'fil':'en';setLang(to);if(to==='en')toast('English: rules and trivia only for now','#fff',1800);});
 $('#soundBtn').addEventListener('click',()=>{const on=!Sfx.on;PREFS.music=PREFS.sfx=on;savePrefs();Sfx.init();syncSoundBtn();if(on)Sfx.tick(4);});
 syncSoundBtn();
 
@@ -2039,19 +2045,32 @@ const MG_KEYS=Object.keys(MG).filter(k=>!MG[k].off);
    cached copy would pick other minigames and fall out of step. Change BUILD_VER whenever a game's rules change; the
    list of minigames (with any switched off) is part of the id. window.LSU_NET.build overrides it (tests) */
 const BUILD_VER='2026-10-25b',BUILD=(window.LSU_NET&&window.LSU_NET.build)||BUILD_VER+'/'+MG_KEYS.join('.');
-/* F9.1: trivia, real-street rules and Subukan sa labas text live in content/fil.json so
-   writers edit that file, not this one. The arrays above stay as a built-in fallback if
-   the fetch fails (offline first load, file:// preview, etc.); whichever resolves first wins. */
+/* F9.1: trivia, real-street rules and Subukan sa labas text live in content/fil.json so writers edit that file, not
+   this one. Phase 2 (Simpler Filipino and English PRD): content/en.json holds the same entries in English. The arrays
+   above stay as the built-in text if a file doesn't load (offline first load, file:// preview, etc.): an English entry
+   that is missing falls back to Filipino, then to the built-in text, so a gap never shows a blank card.
+   ?lang=en or ?lang=fil opens that language for this visit without saving it (for testers). */
+let LANG_Q=(/[?&]lang=(en|fil)\b/.exec(location.search)||[])[1]||null;
+const lang=()=>LANG_Q||PREFS.lang;
+const CTXT=['title','aka','chip','unit','labas','rules','real'],CONTENT={fil:null,en:null};
+const BUILTIN={tanong:TANONG.map(t=>({q:t.q,a:t.a.slice(),f:t.f})),soon:SOON.map(s=>({t:s.t,d:s.d})),mg:{}};
+for(const k in MG){BUILTIN.mg[k]={};for(const x of CTXT)if(MG[k][x]!=null)BUILTIN.mg[k][x]=MG[k][x];}
+async function fetchContent(l){try{const res=await fetch('content/'+l+'.json');return res.ok?await res.json():null;}catch(e){console.warn('content/'+l+'.json not loaded',e);return null;}}
+/* the Filipino list decides how many questions and games there are, so every phone in an online room has the same
+   list whatever its language (the seed picks a question by its number); each English entry replaces its Filipino twin */
+function applyContent(){
+  const F=CONTENT.fil||{},E=lang()==='en'&&CONTENT.en||{},has=v=>v!=null&&v!==''&&!(Array.isArray(v)&&!v.length),pick=(e,f,b)=>has(e)?e:(has(f)?f:b);
+  const qs=Array.isArray(F.trivia)&&F.trivia.length?F.trivia:BUILTIN.tanong;TANONG.length=0;
+  qs.forEach((t,i)=>{const e=(E.trivia||[])[i]||{};TANONG.push({q:pick(e.q,t.q),a:Array.isArray(e.a)&&e.a.length===t.a.length?e.a:t.a,f:pick(e.f,t.f)});});
+  for(const k in MG){const f=(F.minigames||{})[k]||{},e=(E.minigames||{})[k]||{};for(const x of CTXT){const v=pick(e[x],f[x],BUILTIN.mg[k][x]);if(v!=null)MG[k][x]=v;}}
+  const ss=Array.isArray(F.soon)&&F.soon.length?F.soon:BUILTIN.soon;SOON.length=0;ss.forEach((t,i)=>{const e=(E.soon||[])[i]||{};SOON.push({t:t.t,d:pick(e.d,t.d)});});
+  document.documentElement.lang=lang();
+}
 const CONTENT_P=(async function loadContent(){
-  try{
-    const res=await fetch('content/fil.json');
-    if(!res.ok)return;
-    const c=await res.json();
-    if(Array.isArray(c.trivia)&&c.trivia.length){TANONG.length=0;c.trivia.forEach(t=>TANONG.push({q:t.q,a:t.a,f:t.f}));}
-    if(c.minigames)for(const k in c.minigames)if(MG[k])Object.assign(MG[k],c.minigames[k]);
-    if(Array.isArray(c.soon)&&c.soon.length){SOON.length=0;c.soon.forEach(s=>SOON.push(s));}
-  }catch(e){console.warn('content/fil.json not loaded, using built-in fallback text',e);}
+  const [f,e]=await Promise.all([fetchContent('fil'),lang()==='en'?fetchContent('en'):null]);CONTENT.fil=f;CONTENT.en=e;applyContent();syncLangBtn();
 })();
+/* the Wika switch: saved with the other settings; for now it changes the cards only (rules, trivia, Pasaporte) */
+async function setLang(l){if(l!=='fil'&&l!=='en')return;LANG_Q=null;PREFS.lang=l;savePrefs();if(l==='en'&&!CONTENT.en)CONTENT.en=await fetchContent('en');applyContent();syncLangBtn();}
 function mgCtrl(kind){const L=locals();if(kind==='patintero')return L.length>1&&!NET.on?'Isa-isang tatakbo ang mga tao. I-drag ang daliri o arrow keys / WASD.':'I-drag ang daliri kahit saan, o arrow keys / WASD.';
   if(L.length>1)return'Bawat tao: i-tap ang sariling hanay, o pindutin ang '+L.map(p=>'['+keyLabel(p)+'] '+p.name).join(', ')+'.';if(kind==='piko')return'Pindot = isang paa, diinan = dalawang paa: tap, Space, o ang Lukso! na button.';return'Tap, Space, o ang '+({sipa:'Sipa!',palosebo:'Akyat!',luksong:'Talon!',palayok:'Palo!',taguan:'Hanap!'}[kind]||'Tira!')+' na button.';}
 /* the minigame order for a whole game, fixed by the seed (same on every device), no game twice in a row */
@@ -2685,7 +2704,7 @@ function startOnline(pr,cp,log){
 }
 
 /* ================= screens & menus ================= */
-function setScreen(s){if(s!=='gallery')galDrop();APP.screen=s;$('#scrTitle').hidden=s!=='title';$('#scrGallery').hidden=s!=='gallery';$('#scrMaps').hidden=s!=='maps';$('#mapView').hidden=s!=='maps';titleScene(s);$('#hudTop').hidden=s!=='game';mapBtn.hidden=s!=='game';$('#menuBtn').hidden=s!=='game';$('#soundBtn').hidden=s==='game';$('#hudBottom').hidden=s==='gallery'||s==='maps';$('#hudBottom').classList.toggle('ontitle',s==='title');closeMenu();
+function setScreen(s){if(s!=='gallery')galDrop();APP.screen=s;$('#scrTitle').hidden=s!=='title';$('#scrGallery').hidden=s!=='gallery';$('#scrMaps').hidden=s!=='maps';$('#mapView').hidden=s!=='maps';titleScene(s);$('#hudTop').hidden=s!=='game';mapBtn.hidden=s!=='game';$('#menuBtn').hidden=s!=='game';$('#soundBtn').hidden=s==='game';$('#langBtn').hidden=s==='game';$('#hudBottom').hidden=s==='gallery'||s==='maps';$('#hudBottom').classList.toggle('ontitle',s==='title');closeMenu();
   if(s!=='game'){actionBtn.hidden=true;itemBtn.hidden=true;setHint('');clearTips();}measureHud();Music.play(s==='game'?'board':'title');}
 function demoPlayers(){state.players=makePlayers(CHARS.map(c=>({name:c.name,ctrl:'bot'})));state.players.forEach((p,i)=>{p.pos=[0,1,0,1][i];});state.active=null;}
 function toTitle(){gameToken++;loadBar(-1);scene=null;closeCard();clearRun();if(NET.rm)netLeave();netUnsave();state.party=false;state.ended=false;state.checkpoint=null;state.cfg=normCfg({});setBoard('ulap');demoPlayers();resetKorona();setScreen('title');refreshResume();setTimeout(()=>{try{($('#mResume').hidden?$('#mLocal'):$('#mResume')).focus({preventScroll:true});}catch(e){}},50);}
@@ -2916,9 +2935,11 @@ function prefRow(key,label){return segRow(key,label,[{v:1,l:'Bukas'},{v:0,l:'Sar
 /* the settings rows and their buttons: the in-game menu uses them, and a settings screen on the title (F3.2) can too.
    Kalidad (graphics quality: Mababa, Katamtaman, Mataas) changes how heavy the 3D is; every quality stays 3D */
 function settingsRows(){return prefRow('music','Musika')+prefRow('sfx','Tunog')+(navigator.vibrate?prefRow('vib','Vibrate'):'')+
-  (B3.ok?segRow('gq','Kalidad',[{v:'low',l:'Mababa'},{v:'mid',l:'Katamtaman'},{v:'high',l:'Mataas'}],PREFS.gq):'');}
+  (B3.ok?segRow('gq','Kalidad',[{v:'low',l:'Mababa'},{v:'mid',l:'Katamtaman'},{v:'high',l:'Mataas'}],PREFS.gq):'')+
+  segRow('lang','Wika',[{v:'fil',l:'Filipino'},{v:'en',l:'English'}],lang())+'<p class="note" id="langNote"'+(lang()==='en'?'':' hidden')+'>Rules and trivia only for now.</p>';}
 function wireSettings(c){c.querySelectorAll('button[data-k]').forEach(b=>b.addEventListener('click',()=>{const k=b.dataset.k;
   if(k==='gq'){if(!GQ[b.dataset.val])return;const was=B3.island&&B3.island.q;PREFS.gq=b.dataset.val;if(was&&was!==gqIsland())toast('Inaayos ang isla para sa bagong kalidad…','#fff',1800);}
+  else if(k==='lang'){setLang(b.dataset.val);const n=c.querySelector('#langNote');if(n)n.hidden=b.dataset.val!=='en';}
   else PREFS[k]=b.dataset.val==='1';
   savePrefs();Sfx.init();syncSoundBtn();
   c.querySelectorAll('button[data-k="'+k+'"]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));if(k==='sfx'&&PREFS.sfx)Sfx.tick(4);if(k==='vib'&&PREFS.vib)buzz(30);}));}
@@ -3677,7 +3698,7 @@ function start(data){
     setInterval(()=>{const s=perfStats();d.textContent=s.fps+' fps  p50 '+s.p50+'  p95 '+s.p95+' ms\n'+s.mode+(s.mode==='3d'?' '+s.q+'  pr '+s.pr+'  calls '+s.calls+'  tris '+s.tris+'\ngeo '+s.geo+'  tex '+s.tex+'  shadow '+s.shadow:'');},500);}
 }
 if(DEBUG){const m=/[?&]speed=(\d+)/.exec(location.search);if(m)SPEED=clamp(+m[1],1,60);
-  window.__lsu={get title(){return TS;},get hero(){return HERO;},get splash(){return SPLASH;},get gal(){return GAL;},state,NET,MG,get SP(){return SP;},get N(){return N;},get board(){return BOARD;},korona,DBG,get scene(){return scene;},get screen(){return APP.screen;},setSpeed:v=>{SPEED=clamp(v|0,1,60);},startLocal:(s,cp)=>startLocal(s,cp),toTitle:()=>toTitle(),bot:{usesItem:botUsesItem,shop:botShop,rival:botRival,ginto:botGintoPick},hamon:{fetchTop:fetchDailyTop,sync:syncDailyScore,dayKey,dailyKind,on:HAMON_ONLINE},b3:B3,toWorld:(x,y)=>toWorld(x,y),toScreen:(x,y)=>worldToScreen(x,y),spacePos:i=>spacePos(i),bench:n=>{const t=performance.now();for(let i=0;i<n;i++){draw();if(B3.on&&B3.finish)B3.finish();}return(performance.now()-t)/n;},perf:()=>perfStats(),perfReset:()=>{FT.length=0;},
+  window.__lsu={get title(){return TS;},get hero(){return HERO;},get splash(){return SPLASH;},get gal(){return GAL;},state,NET,MG,TANONG,SOON,lang:()=>lang(),get SP(){return SP;},get N(){return N;},get board(){return BOARD;},korona,DBG,get scene(){return scene;},get screen(){return APP.screen;},setSpeed:v=>{SPEED=clamp(v|0,1,60);},startLocal:(s,cp)=>startLocal(s,cp),toTitle:()=>toTitle(),bot:{usesItem:botUsesItem,shop:botShop,rival:botRival,ginto:botGintoPick},hamon:{fetchTop:fetchDailyTop,sync:syncDailyScore,dayKey,dailyKind,on:HAMON_ONLINE},b3:B3,toWorld:(x,y)=>toWorld(x,y),toScreen:(x,y)=>worldToScreen(x,y),spacePos:i=>spacePos(i),bench:n=>{const t=performance.now();for(let i=0;i<n;i++){draw();if(B3.on&&B3.finish)B3.finish();}return(performance.now()-t)/n;},perf:()=>perfStats(),perfReset:()=>{FT.length=0;},
     GQ,setQ:q=>{PREFS.gq=q;},resultPng:()=>buildResultImage([...state.players].map((p,k)=>Object.assign({},p,{rank:k})),'Test ang Bida ng Isla!').toDataURL()};}
 try{window.claude&&window.claude.hot&&window.claude.hot.snapshot&&window.claude.hot.snapshot(()=>({checkpoint:NET.on?null:state.checkpoint}));}catch(e){}
 /* ================= title scene: the Plaza at golden hour behind the main menu (maps/title.js) =================

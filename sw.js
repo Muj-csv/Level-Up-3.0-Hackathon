@@ -8,11 +8,11 @@
      so an island not opened for a while cannot fall out of step with a newer index.html.
    Online rooms still need internet (Supabase). tests/offline.mjs checks that FILES lists every game file.
    Change VERSION when FILES changes; the old copy is then dropped. */
-const VERSION = '2026-10-25';
+const VERSION = '2026-10-25b';
 const CACHE = 'taympers-' + VERSION;
 const FILES = [
   'index.html',
-  'content/fil.json', 'content/terms.json',
+  'content/fil.json', 'content/en.json', 'content/terms.json',
   'kids/hero.js', 'kids/kidgeo.js', 'kids/kids.js', 'kids/sprites.json', 'kids/sprites.png',
   'maps/boards.js', 'maps/life.js', 'maps/living.js', 'maps/polish.js', 'maps/title.js',
   'maps/islands/aplaya.js', 'maps/islands/palayan.js', 'maps/islands/palengke.js', 'maps/islands/plaza.js',

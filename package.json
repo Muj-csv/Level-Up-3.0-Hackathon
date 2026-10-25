@@ -3,7 +3,7 @@
   "private": true,
   "description": "Taympers: a party board game of Filipino street games. The game is index.html; this file only sets up the play-tests.",
   "scripts": {
-    "test": "node tests/play.mjs && node tests/minigames.mjs && node tests/online.mjs && node tests/online-mg.mjs && node tests/3d.mjs && node tests/hamon-online.mjs && node tests/quality.mjs && node tests/offline.mjs",
+    "test": "node tests/content.mjs && node tests/play.mjs && node tests/minigames.mjs && node tests/online.mjs en && node tests/online-mg.mjs && node tests/3d.mjs && node tests/hamon-online.mjs && node tests/quality.mjs && node tests/lang.mjs && node tests/offline.mjs",
     "test:play": "node tests/play.mjs",
     "test:minigames": "node tests/minigames.mjs",
     "test:online": "node tests/online.mjs",
@@ -11,6 +11,8 @@
     "test:3d": "node tests/3d.mjs",
     "test:hamon": "node tests/hamon-online.mjs",
     "test:quality": "node tests/quality.mjs",
+    "test:content": "node tests/content.mjs",
+    "test:lang": "node tests/lang.mjs",
     "test:offline": "node tests/offline.mjs",
     "perf": "node tests/perf.mjs"
   },
