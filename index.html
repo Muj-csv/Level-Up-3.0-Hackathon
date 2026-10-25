@@ -295,6 +295,36 @@ body{background:var(--sky);color:var(--ink);font-family:var(--body);overflow:hid
   .toast{top:42%}
 }
 @keyframes tipinL{from{transform:translateY(10px);opacity:0}}
+/* splash (first screen) */
+.splash{position:fixed;inset:0;z-index:60;overflow:hidden;background:linear-gradient(180deg,#BFE4EA 0%,#E3F1EC 38%,#FFF6E6 64%,#F6E7CC 100%);color:var(--ink);user-select:none;-webkit-user-select:none;transition:opacity .35s ease-out}
+.splash.go{opacity:0;pointer-events:none}
+.splash.ready{cursor:pointer}
+.sp-stripe{position:absolute;left:0;right:0;top:0;height:12px;background:repeating-linear-gradient(45deg,rgba(226,69,46,.9) 0 7px,transparent 7px 14px),repeating-linear-gradient(-45deg,#F2B21B 0 7px,#2E6FD8 7px 14px);border-bottom:2.5px solid var(--ink)}
+.sp-sun{position:absolute;top:max(28px,5vh);right:max(18px,6vw);width:clamp(64px,11vmin,120px);height:auto}
+.sp-bg{position:absolute;inset:0;width:100%;height:100%}
+.sp-sipa{position:absolute;left:max(14px,7vw);top:max(36px,9vh);width:clamp(38px,6.5vmin,70px);height:auto;transform:rotate(-14deg)}
+#heroCv{position:absolute;left:0;top:0;width:100%;height:100%;display:block;pointer-events:none}
+#heroCv[hidden]{display:none}
+.sp-col{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 16px 150px;box-sizing:border-box;gap:clamp(10px,2.4vmin,22px)}
+.sp-logo{margin:0;display:flex;font-family:var(--display);font-weight:400;font-size:min(17vw,22vh,168px);line-height:1.05;padding-bottom:.14em;letter-spacing:.01em;transform:rotate(-3deg);color:var(--paper);
+  text-shadow:0 .07em 0 var(--ink),.04em 0 0 var(--ink),-.04em 0 0 var(--ink),0 -.04em 0 var(--ink),.03em .03em 0 var(--ink),-.03em .03em 0 var(--ink),.03em -.03em 0 var(--ink),-.03em -.03em 0 var(--ink),.04em .06em 0 var(--ink)}
+.sp-logo span{display:inline-block}.sp-logo .y{color:var(--sun)}
+.sp-tag{margin:0;font-weight:900;font-size:clamp(14px,2.6vmin,22px);background:var(--paper);border:2.5px solid var(--ink);border-radius:999px;padding:.3em 1em;box-shadow:0 3px 0 var(--ink);text-align:center}
+.sp-row{display:flex;align-items:flex-end;justify-content:center;gap:clamp(4px,1.6vmin,14px);height:0;flex:none;width:100%}
+.sp-row canvas{display:none;width:clamp(46px,9vmin,84px);aspect-ratio:64/80}
+.sp-row.flat canvas{display:block}
+.sp-bottom{position:absolute;left:0;right:0;bottom:max(34px,5vh);display:flex;flex-direction:column;align-items:center;gap:10px;padding:0 20px}
+.sp-bar{width:min(340px,78vw);height:22px;box-sizing:border-box;background:var(--paper);border:3px solid var(--ink);border-radius:999px;box-shadow:0 3px 0 var(--ink);overflow:hidden;padding:3px}
+.sp-bar i{display:block;height:100%;width:0;min-width:12px;border-radius:999px;background:repeating-linear-gradient(-45deg,#FFC93C 0 8px,#F2B21B 8px 16px);border:2px solid var(--ink);box-sizing:border-box;transition:width .25s ease-out}
+.sp-status{font-weight:800;font-size:clamp(13px,2.2vmin,16px);color:#7A5A44;min-height:1.4em;text-align:center}
+.sp-go{font-family:var(--display);font-size:clamp(20px,3.6vmin,30px);color:var(--paper);background:#E2452E;border:3px solid var(--ink);border-radius:999px;box-shadow:0 5px 0 var(--ink);padding:.45em 1.3em;min-height:56px;cursor:pointer;animation:sp-breathe 2.4s ease-in-out infinite;text-shadow:0 2px 0 var(--ink)}
+.sp-go:active{transform:translateY(3px);box-shadow:0 2px 0 var(--ink)}
+.sp-go:focus-visible{outline:3px dashed #2E6FD8;outline-offset:5px}
+.sp-credit{font-weight:700;font-size:12px;color:#7A5A44;letter-spacing:.04em}
+@keyframes sp-breathe{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@media (prefers-reduced-motion: reduce){
+  .sp-go{animation:none}.splash{transition:none}
+}
 @media (prefers-reduced-motion: reduce){
   .mapworld,.mapworld .mapclose,#titleCv{transition:none}
   .toast.show,.card,.bump,.tip.show{animation:none}
@@ -302,6 +332,27 @@ body{background:var(--sky);color:var(--ink);font-family:var(--body);overflow:hid
 </style>
 </head>
 <body>
+<div id="splash" class="splash" role="dialog" aria-modal="true" aria-label="Taympers">
+  <div class="sp-stripe"></div>
+  <svg class="sp-sun" viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="34" fill="#FFC93C" stroke="#3B2316" stroke-width="5"/><g stroke="#3B2316" stroke-width="5" stroke-linecap="round"><path d="M60 8v10M60 102v10M8 60h10M102 60h10M23 23l7 7M90 90l7 7M97 23l-7 7M30 90l-7 7"/></g></svg>
+  <svg class="sp-bg" viewBox="0 0 1000 600" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <path data-a="path" d="M-20 470 C 140 400, 230 520, 380 470 S 620 380, 700 450 S 900 540, 1030 430" fill="none" stroke="#3B2316" stroke-width="5" stroke-dasharray="2 16" stroke-linecap="round" opacity=".55"/>
+    <g data-a="piko" transform="translate(70 455) rotate(-8)" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linejoin="round" opacity=".95"><rect x="0" y="60" width="44" height="40"/><rect x="0" y="20" width="44" height="40"/><rect x="-44" y="-20" width="44" height="40"/><rect x="0" y="-20" width="44" height="40"/><rect x="0" y="-60" width="44" height="40"/><path d="M0 -60 Q 22 -96 44 -60"/></g>
+  </svg>
+  <svg class="sp-sipa" data-a="sipa" viewBox="0 0 80 110" aria-hidden="true"><path d="M40 62 L14 10 Q40 0 66 10 Z" fill="#E2452E" stroke="#3B2316" stroke-width="5" stroke-linejoin="round"/><path d="M40 62 L30 8 M40 62 L50 8" stroke="#3B2316" stroke-width="3.5" fill="none"/><ellipse cx="40" cy="74" rx="22" ry="12" fill="#FFC93C" stroke="#3B2316" stroke-width="5"/></svg>
+  <canvas id="heroCv" aria-hidden="true"></canvas>
+  <div class="sp-col">
+    <h1 class="sp-logo" id="spLogo" aria-label="Taympers"><span data-l>T</span><span data-l>a</span><span data-l>y</span><span data-l>m</span><span data-l class="y">p</span><span data-l class="y">e</span><span data-l class="y">r</span><span data-l class="y">s</span></h1>
+    <p class="sp-tag" id="spTag">Board party ng larong kalye</p>
+    <div class="sp-row" id="spRow" aria-hidden="true"><canvas data-kid="0"></canvas><canvas data-kid="1"></canvas><canvas data-kid="2"></canvas><canvas data-kid="3"></canvas></div>
+  </div>
+  <div class="sp-bottom">
+    <div class="sp-bar" id="spBar" role="progressbar" aria-label="Naglo-load" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="spFill"></i></div>
+    <div class="sp-status" id="spStatus" aria-live="polite">Inihahanda…</div>
+    <button type="button" class="sp-go" id="spGo" hidden>Pindutin para magsimula</button>
+    <div class="sp-credit">Taympers Team</div>
+  </div>
+</div>
 <div id="app">
   <div class="titlebg" id="titleBg" aria-hidden="true"><picture><source media="(max-aspect-ratio:4/5)" srcset="maps/world/title-tall.jpg"><img id="titleImg" src="maps/world/title.jpg" alt="" decoding="async"></picture><canvas id="titleCv"></canvas></div>
   <div class="mapview" id="mapView" aria-hidden="true" hidden><div class="mapworld" id="mapWorld"><img id="mapImg" alt="" decoding="async"></div></div>
@@ -2042,7 +2093,7 @@ const BUILD_VER='2026-10-25',BUILD=(window.LSU_NET&&window.LSU_NET.build)||BUILD
 /* F9.1: trivia, real-street rules and Subukan sa labas text live in content/fil.json so
    writers edit that file, not this one. The arrays above stay as a built-in fallback if
    the fetch fails (offline first load, file:// preview, etc.); whichever resolves first wins. */
-(async function loadContent(){
+const CONTENT_P=(async function loadContent(){
   try{
     const res=await fetch('content/fil.json');
     if(!res.ok)return;
@@ -3338,7 +3389,7 @@ function start(data){
     setInterval(()=>{const s=perfStats();d.textContent=s.fps+' fps  p50 '+s.p50+'  p95 '+s.p95+' ms\n'+s.mode+(s.mode==='3d'?' '+s.q+'  pr '+s.pr+'  calls '+s.calls+'  tris '+s.tris+'\ngeo '+s.geo+'  tex '+s.tex+'  shadow '+s.shadow:'');},500);}
 }
 if(DEBUG){const m=/[?&]speed=(\d+)/.exec(location.search);if(m)SPEED=clamp(+m[1],1,60);
-  window.__lsu={get title(){return TS;},state,NET,MG,get SP(){return SP;},get N(){return N;},get board(){return BOARD;},korona,DBG,get scene(){return scene;},get screen(){return APP.screen;},setSpeed:v=>{SPEED=clamp(v|0,1,60);},startLocal:(s,cp)=>startLocal(s,cp),toTitle:()=>toTitle(),bot:{usesItem:botUsesItem,shop:botShop,rival:botRival,ginto:botGintoPick},hamon:{fetchTop:fetchDailyTop,sync:syncDailyScore,dayKey,dailyKind,on:HAMON_ONLINE},b3:B3,toWorld:(x,y)=>toWorld(x,y),toScreen:(x,y)=>worldToScreen(x,y),spacePos:i=>spacePos(i),bench:n=>{const t=performance.now();for(let i=0;i<n;i++){draw();if(B3.on&&B3.finish)B3.finish();}return(performance.now()-t)/n;},perf:()=>perfStats(),perfReset:()=>{FT.length=0;},
+  window.__lsu={get title(){return TS;},get hero(){return HERO;},get splash(){return SPLASH;},state,NET,MG,get SP(){return SP;},get N(){return N;},get board(){return BOARD;},korona,DBG,get scene(){return scene;},get screen(){return APP.screen;},setSpeed:v=>{SPEED=clamp(v|0,1,60);},startLocal:(s,cp)=>startLocal(s,cp),toTitle:()=>toTitle(),bot:{usesItem:botUsesItem,shop:botShop,rival:botRival,ginto:botGintoPick},hamon:{fetchTop:fetchDailyTop,sync:syncDailyScore,dayKey,dailyKind,on:HAMON_ONLINE},b3:B3,toWorld:(x,y)=>toWorld(x,y),toScreen:(x,y)=>worldToScreen(x,y),spacePos:i=>spacePos(i),bench:n=>{const t=performance.now();for(let i=0;i<n;i++){draw();if(B3.on&&B3.finish)B3.finish();}return(performance.now()-t)/n;},perf:()=>perfStats(),perfReset:()=>{FT.length=0;},
     GQ,setQ:q=>{PREFS.gq=q;}};}
 try{window.claude&&window.claude.hot&&window.claude.hot.snapshot&&window.claude.hot.snapshot(()=>({checkpoint:NET.on?null:state.checkpoint}));}catch(e){}
 /* ================= title scene: the Plaza at golden hour behind the main menu (maps/title.js) =================
@@ -3359,13 +3410,79 @@ function titleLayout(){if(!TS.ctl||!TS.on)return;const w=innerWidth,h=innerHeigh
 function titleScene(s){TS.on=s==='title';TS.bg.hidden=!TS.on;
   if(s==='game'){titleDrop();return;}
   if(TS.ctl){if(TS.on)titleShow();else TS.ctl.show(false);}
-  else if(TS.on&&!TS.mk&&PREFS.g3d)titleBuild();}
+  else if(TS.on&&!TS.mk&&PREFS.g3d&&!SPLASH.hold)titleBuild();}
 addEventListener('resize',titleLayout);
 if(window.ResizeObserver)new ResizeObserver(titleLayout).observe($('#scrTitle .menu'));   // Ituloy ang laro shows or hides
+
+/* ================= splash: logo, the four 3D kids hopping in, a loading bar that follows the real loading, then the tap =================
+   It opens the game over everything. Its steps are real loading: fonts, Three.js, its own kids (kids/hero.js), the game
+   text, and the main menu's Plaza scene (maps/title.js), so the menu is live when the splash fades into it. */
+const HERO={ctl:null,cv:$('#heroCv')};
+const SPLASH={on:!!$('#splash'),hold:false,done:0,total:5,ready:false,started:false,t0:performance.now(),flank:false,flat:false};
+/* the tests open the game with ?debug and skip the splash; ?debug&splash shows it */
+if(SPLASH.on&&DEBUG&&!/[?&]splash/.test(location.search)){$('#splash').remove();SPLASH.on=false;}
+SPLASH.hold=SPLASH.on;
+async function heroInit(){if(!PREFS.g3d)return false;try{await loadThree();
+    const [geo,m]=await Promise.all([import('./kids/kidgeo.js'),import('./kids/hero.js')]);const Q=gq();if(geo.LOD)geo.LOD.k=Q.kid;
+    HERO.ctl=m.create(HERO.cv,{reduced:RM,maxDpr:Q.pr});return true;}catch(e){console.warn('splash kids',e);HERO.ctl=null;return false;}}
+function splashMeasure(){if(!SPLASH.on)return;const el=$('#splash'),lg=$('#spLogo'),tg=$('#spTag'),row=$('#spRow'),W=el.clientWidth,H=el.clientHeight;
+  const block=tg.getBoundingClientRect().bottom-lg.getBoundingClientRect().top,avail=H-150-24-block-40;
+  SPLASH.flank=(W>H*1.3&&avail<120)||avail<80;row.style.height=(SPLASH.flank?0:Math.round(Math.max(0,Math.min(avail,H*.42,360))))+'px';
+  if(SPLASH.flat){splashFlatKids();return;}if(!HERO.ctl)return;
+  const o=el.getBoundingClientRect(),cx=W/2,S=[{f:-1.5,lift:0,k:1,yaw:.4,z:30},{f:-.5,lift:.11,k:.9,yaw:.18,z:-30},{f:.55,lift:.17,k:.94,yaw:-.12,z:-40},{f:1.5,lift:.02,k:.97,yaw:-.4,z:25}];let slots;
+  if(SPLASH.flank){/* short landscape: two kids each side of the centred column */const L=lg.getBoundingClientRect(),side=Math.max(0,(W-Math.max(L.width,340))/2-12);
+    const sh=Math.min(H*.5,side*.95,220),sp=sh*.62,base=H-40,xs=[12+sh*.45,12+sh*.45+sp,W-12-sh*.45-sp,W-12-sh*.45];
+    slots=S.map((q,i)=>({x:xs[i],y:base-sh*.2*q.lift*5,h:sh*q.k,yaw:q.yaw,z:q.z*sh/120}));}
+  else{const R=row.getBoundingClientRect(),rb=R.bottom-o.top,rh=R.height;let sh=rh*.82;const ratio=W>H*1.3?1.2:W>H*1.05?.9:.66,fit=(W/2-12)/(1.5*ratio+.45);if(sh>fit)sh=fit;const sp=sh*ratio;
+    slots=S.map(q=>({x:cx+q.f*sp,y:rb-6-rh*q.lift,h:sh*q.k,yaw:q.yaw,z:q.z*sh/120}));}
+  HERO.ctl.layout(slots,W,H);}
+/* no 3D: the four kids drawn in 2D in the row */
+function splashFlatKids(){const moods=['cheer','happy','hop','cheer'];$('#spRow').querySelectorAll('canvas').forEach(cv=>{const i=+cv.dataset.kid,r=cv.getBoundingClientRect();if(!r.width)return;
+  const d=Math.min(3,DPR),sc=r.width/64*d;cv.width=Math.round(r.width*d);cv.height=Math.round(r.height*d);const c=cv.getContext('2d');c.setTransform(sc,0,0,sc,0,0);c.clearRect(0,0,64,80);
+  c.translate(32,74);ell(c,0,1,13,4.5);c.fillStyle='rgba(45,28,16,.22)';c.fill();c.lineJoin='round';c.lineCap='round';kidFront(c,CHARS[[3,1,2,0][i]],moods[i],false,0);});}
+function splashIntro(){const el=$('#splash'),E='cubic-bezier(.2,.8,.3,1)',q=x=>el.querySelectorAll(x);if(RM||!el.animate)return;
+  q('[data-l]').forEach((n,i)=>n.animate([{transform:'translateY(.35em) scale(.9,1.1)',opacity:0},{transform:'translateY(-.06em) scale(1.04,.96)',opacity:1,offset:.6},{transform:'none',opacity:1}],{duration:560,delay:250+i*70,easing:E,fill:'backwards'}));
+  $('#spTag').animate([{opacity:0,transform:'translateY(8px)'},{opacity:1,transform:'none'}],{duration:420,delay:900,easing:E,fill:'backwards'});
+  const p=el.querySelector('[data-a="path"]');if(p)p.animate([{strokeDashoffset:600,opacity:0},{strokeDashoffset:0,opacity:.55}],{duration:1200,delay:900,easing:E,fill:'backwards'});
+  q('[data-a="piko"]').forEach(n=>n.animate([{opacity:0},{opacity:.95}],{duration:500,delay:1300,easing:E,fill:'backwards'}));
+  const sp=el.querySelector('[data-a="sipa"]');if(sp)sp.animate([{transform:'translateY(20px) rotate(-14deg)',opacity:0},{transform:'translateY(-10px) rotate(-6deg)',opacity:1,offset:.55},{transform:'rotate(-14deg)'}],{duration:700,delay:1700,easing:E,fill:'backwards'});}
+function splashReport(done,label){if(!SPLASH.on||SPLASH.ready)return;SPLASH.done=Math.max(SPLASH.done,done);const pct=Math.round(100*SPLASH.done/SPLASH.total);
+  $('#spFill').style.width=pct+'%';$('#spBar').setAttribute('aria-valuenow',String(pct));if(label!=null)$('#spStatus').textContent=label;
+  if(SPLASH.done>=SPLASH.total){const wait=Math.max(0,(RM?0:1100)-(performance.now()-SPLASH.t0));setTimeout(splashReady,wait);}}
+function splashReady(){if(SPLASH.ready||!SPLASH.on)return;SPLASH.ready=true;$('#splash').classList.add('ready');$('#spBar').hidden=true;$('#spStatus').hidden=true;
+  const b=$('#spGo');b.hidden=false;try{b.focus({preventScroll:true});}catch(e){}if(HERO.ctl)HERO.ctl.cheer();}
+/* the tap: sound starts (browsers need a tap first), the splash fades into the main menu, whose kids cheer as it opens */
+function splashStart(){if(!SPLASH.ready||SPLASH.started)return;SPLASH.started=true;
+  Sfx.init();[523,659,784].forEach((f,i)=>Sfx.tone(f,.35,'triangle',.06,null,i*.09));
+  const el=$('#splash');el.classList.add('go');SPLASH.hold=false;
+  if(APP.screen==='title'){titleScene('title');if(TS.ctl)TS.ctl.cheer();}
+  setTimeout(()=>{SPLASH.on=false;if(HERO.ctl){HERO.ctl.dispose();HERO.ctl=null;}el.remove();   /* the splash's kids are freed; the menu has its own */
+    if(APP.screen==='title')try{($('#mResume').hidden?$('#mLocal'):$('#mResume')).focus({preventScroll:true});}catch(e){}},RM?0:340);}
+/* the menu's Plaza scene, built now (the step the bar waits longest on); ends early if it fails or takes too long */
+function splashMenuScene(){if(!PREFS.g3d||TS.ctl)return Promise.resolve();SPLASH.hold=false;
+  const built=TS.mk?new Promise(res=>{const poll=()=>{if(TS.ctl||!TS.mk)res();else setTimeout(poll,120);};poll();}):titleBuild();
+  return Promise.race([built,new Promise(r=>setTimeout(r,15000))]);}
+async function splashLoad(fontsP){const N=SPLASH.total,raf=()=>new Promise(r=>requestAnimationFrame(()=>r()));
+  splashReport(0,'Kinukuha ang mga font…');await fontsP;splashMeasure();
+  splashReport(1,'Kinukuha ang 3D engine…');await loadThree().catch(()=>null);
+  splashReport(2,'Binubuo sina Bunso, Neneng, Totoy at Jun…');await raf();
+  if(await heroInit())HERO.ctl.play(true);else{SPLASH.flat=true;$('#spRow').classList.add('flat');}
+  splashMeasure();
+  splashReport(3,'Inihahanda ang Plaza…');
+  const still=new Image();still.src=matchMedia('(max-aspect-ratio:4/5)').matches?'maps/world/title-tall.jpg':'maps/world/title.jpg';
+  await Promise.all([splashMenuScene(),Promise.race([Promise.all([CONTENT_P,still.decode?still.decode().catch(()=>{}):Promise.resolve()]),new Promise(r=>setTimeout(r,5000))])]);
+  splashReport(4,'Inihahanda ang eksena…');if(HERO.ctl)HERO.ctl.renderOnce();await raf();
+  splashReport(N,'');}
+if(SPLASH.on){const el=$('#splash');splashIntro();
+  el.addEventListener('click',()=>splashStart());$('#spGo').addEventListener('click',e=>{e.stopPropagation();splashStart();});
+  el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();splashStart();}});
+  addEventListener('resize',splashMeasure);
+  setTimeout(()=>{if(!SPLASH.ready&&SPLASH.on){SPLASH.done=SPLASH.total;splashReport(SPLASH.total,'');}},25000);}   /* never stuck on the splash */
 
 const boot=()=>{const h=window.claude&&window.claude.hot;if(h&&h.ready)h.ready(start);else start((h&&h.data)||{});};
 const fontsP=document.fonts&&document.fonts.load?Promise.race([Promise.all([document.fonts.load('20px "Bagel Fat One"'),document.fonts.load('900 12px "Nunito"')]),new Promise(r=>setTimeout(r,1200))]).catch(()=>{}):Promise.resolve();
 fontsP.then(boot,boot);
+if(SPLASH.on)splashLoad(fontsP);
 
 })();
 </script>

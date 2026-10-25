@@ -174,5 +174,19 @@ for (const kind of Object.keys(MASH)) {
   await page.context().close();
 }
 
+// ---------- 4. splash in 3D: the kids hop in while the menu's Plaza is built, then the tap opens the live menu ----------
+{
+  const page = await newPage('3d', '?debug&splash');
+  await page.waitForFunction(() => !document.querySelector('#spGo').hidden, null, { timeout: 90000 }).catch(() => {});
+  const s = await page.evaluate(() => ({ ready: !document.querySelector('#spGo').hidden, kids: !!window.__lsu.hero.ctl, flat: document.querySelector('#spRow').classList.contains('flat'), menu: !!window.__lsu.title.ctl }));
+  check(s.ready && s.kids && !s.flat, 'splash: the four 3D kids are built and "Pindutin para magsimula" shows', JSON.stringify(s));
+  check(s.menu, 'splash: the main menu\'s Plaza scene is built during the splash');
+  await page.waitForTimeout(1500); await page.screenshot({ path: path.join(OUT, '3d-splash.png'), timeout: 120000 });
+  await page.click('#spGo', { force: true });   // force: the button gently bobs, so it never holds still for the click check
+  await page.waitForFunction(() => !document.querySelector('#splash'), null, { timeout: 20000 }).catch(() => {});
+  const t = await page.evaluate(() => ({ gone: !document.querySelector('#splash'), screen: window.__lsu.screen, live: document.getElementById('titleCv').classList.contains('on'), freed: !window.__lsu.hero.ctl }));
+  check(t.gone && t.screen === 'title' && t.live && t.freed, 'splash: the tap opens the live main menu and frees the splash kids', JSON.stringify(t));
+  await page.context().close();
+}
 check(allErrs.flat().length === 0, 'no script errors across all 3D runs', allErrs.flat().slice(0, 3).join(' | '));
 await browser.close(); srv.close(); done();
