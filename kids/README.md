@@ -22,9 +22,17 @@ Sizes are in meters (a kid is about 0.95 m tall); the game scales them by 60.
 How the game uses them: board, title, HUD portraits and minigames show these kids for the
 four players; the game's moods pick the animation and face (walking or hopping → walk/run,
 cheer → victory and excited face, sad → defeat, Sipa kick → kick, Palosebo → a climbing
-pose, Luksong Tinik jumps → jump). Kasama friends, spectators and guards are still the
-simple shape kids. These are 3D only: the 2D board (no WebGL, or Grapiko 2D) keeps the
-original 2D kids.
+pose, Luksong Tinik jumps → jump). Kasama friends, spectators, guards and the other
+minigame kids are built from the same rig: `NPC_KIDS` holds their four designs (Lito,
+Mayumi, Boyet, Dodong). `buildKid` merges each kid's static parts by material and
+`castShadows` keeps small parts out of the shadow pass, so a kid costs about 31 to 35
+draws.
+
+On devices without 3D (no WebGL, or before `kids.js` has loaded) the board and portraits
+use `sprites.png` / `sprites.json`: the 8 kids in 15 poses (front, back, side; idle, walk,
+hop, cheer, sad), 96 × 120 frames, rendered from these 3D kids by
+`node tools/kid-sprites.mjs`. Re-run it after changing a kid's design. The Mga Bata
+gallery shows the 3D kids themselves through `hero.js` (`gallery(clip, yaw)`).
 
 Changes from the character set: the import of `kid-geo` points at `./kidgeo.js`, and an
 `LOD` setting lets phones and tablets build the swept forms and Bunso's curls with fewer

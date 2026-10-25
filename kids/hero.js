@@ -1,16 +1,17 @@
 /* Taympers hero kids: the four rigged kids (kids.js) on one transparent orthographic WebGL layer, for the splash
-   screen and the main menu. Adapted from the splash design's "3D kids v4": they hop in from the sides, Neneng waves
+   screen and the character gallery (Mga karakter: gallery() loops one clip, facing front, side or back). Adapted from the splash design's "3D kids v4": they hop in from the sides, Neneng waves
    once, and all four cheer on cue. Full frame rate only while something moves, about 20 fps idle, paused when the
-   page is hidden. */
+   page is hidden. A frame held up by other work pauses the animation instead of skipping it, so the entrance always
+   plays out in full. With wait: true nothing moves until play(), and prepare() compiles the shaders beforehand. */
 import * as T3 from '../vendor/three-r184/three.module.min.js';
-import { KIDS, buildKid, setExpression, applyPose, poseAt, CLIPS } from './kids.js';
+import { KIDS, buildKid, setExpression, applyPose, poseAt, CLIPS, castShadows } from './kids.js';
 const PI3 = Math.PI, TILT = 0.2, CT = Math.cos(TILT), KH = 0.95;
 const cl = (v, a, b) => Math.max(a, Math.min(b, v));
 const ease = p => 1 - Math.pow(1 - p, 3);
 function mix(a, b, w) { if (w <= 0) return a; if (w >= 1) return b; const o = {}; for (const k of new Set([...Object.keys(a), ...Object.keys(b)])) o[k] = (a[k] || 0) * (1 - w) + (b[k] || 0) * w; return o; }
 export const ORDER = KIDS.map(k => k.name); // Bunso, Neneng, Totoy, Jun (left → right)
 
-export function create(canvas, { reduced = false, maxDpr = 2 } = {}) {
+export function create(canvas, { reduced = false, maxDpr = 2, wait = false } = {}) {
   const ren = new T3.WebGLRenderer({ canvas, antialias: true, alpha: true });
   ren.setPixelRatio(Math.min(maxDpr, window.devicePixelRatio || 1));
   ren.shadowMap.enabled = true; ren.shadowMap.type = T3.PCFShadowMap; ren.outputColorSpace = T3.SRGBColorSpace;
@@ -31,7 +32,7 @@ export function create(canvas, { reduced = false, maxDpr = 2 } = {}) {
   const tileGeo = new T3.CylinderGeometry(.3, .3, .07, 6), rimM = new T3.MeshBasicMaterial({ color: 0x3B2316, side: T3.BackSide });
   const kids = KIDS.map((def, i) => {
     const K = buildKid(T3, def), slot = new T3.Group(), hop = new T3.Group();
-    K.group.traverse(o => { if (o.isMesh) { o.castShadow = true; o.frustumCulled = false; } });
+    castShadows(K); K.group.traverse(o => { if (o.isMesh) o.frustumCulled = false; });
     hop.add(K.group); slot.add(hop); S.add(slot);
     const tile = new T3.Mesh(tileGeo, new T3.MeshStandardMaterial({ color: ROLE[i].tile, roughness: .85 }));
     tile.rotation.y = PI3 / 6; tile.position.y = -.035; tile.receiveShadow = true;
@@ -41,7 +42,8 @@ export function create(canvas, { reduced = false, maxDpr = 2 } = {}) {
     return { K, slot, hop, r: ROLE[i], i, expr: 'happy' };
   });
 
-  let t0 = performance.now(), readyAt = -1, raf = 0, lastR = 0, dead = false, laid = false, hidden = false, entrance = true;
+  let t0 = performance.now(), readyAt = -1, raf = 0, lastR = 0, lastF = 0, dead = false, laid = false, hidden = false, entrance = true, gal = null, held = wait;
+  const GAL_EX = { idle: 'happy', walk: 'happy', run: 'excited', jump: 'excited', victory: 'excited', wave: 'happy', defeat: 'sad', kick: 'determined', throw: 'determined', pickUp: 'neutral' };
   const now = () => performance.now();
   function layout(slots, w, h) {
     ren.setSize(w, h, false);
@@ -49,11 +51,12 @@ export function create(canvas, { reduced = false, maxDpr = 2 } = {}) {
     const D = Math.max(w, h);
     key.position.set(-.5 * D, 1.4 * D, .9 * D); front.position.set(0, .4 * D, 1.2 * D);
     Object.assign(key.shadow.camera, { left: -D * .7, right: D * .7, top: D * .7, bottom: -D * .7, near: 1, far: 5 * D }); key.shadow.camera.updateProjectionMatrix();
-    slots.forEach((s, i) => { const k = kids[i]; k.slot.position.set(s.x - w / 2, (h / 2 - s.y) / CT, s.z || 0); k.slot.scale.setScalar(s.h / KH); k.slot.rotation.y = s.yaw || 0; });
+    slots.forEach((s, i) => { const k = kids[i]; k.slot.position.set(s.x - w / 2, (h / 2 - s.y) / CT, s.z || 0); k.slot.scale.setScalar(s.h / KH); k.yaw0 = s.yaw || 0; k.slot.rotation.y = k.yaw0 + (gal ? gal.yaw : 0); });
     laid = true; kick();
   }
   function expr(k, e) { if (k.expr !== e) { setExpression(k.K, e); k.expr = e; } }
   function step(t) {
+    if (gal) return galStep(t);
     let busy = false;
     for (const k of kids) {
       const { K, r } = k, lt = reduced || !entrance ? 1e9 : t - r.delay;
@@ -78,9 +81,21 @@ export function create(canvas, { reduced = false, maxDpr = 2 } = {}) {
     }
     return busy;
   }
+  /* gallery: every kid loops the chosen clip (a still frame from its middle with reduced motion), turned to the chosen side */
+  function galStep(t) {
+    for (const k of kids) {
+      const { K } = k, c = CLIPS[gal.clip] ? gal.clip : 'idle', ts = reduced ? CLIPS[c].dur * .4 : (t / 1000) * (K.def.tempo || 1) + k.i * .17;
+      K.group.visible = true; k.hop.position.x = 0; k.slot.rotation.y = (k.yaw0 || 0) + gal.yaw;
+      applyPose(K, poseAt(K, c, ts)); expr(k, GAL_EX[c] || 'happy');
+    }
+    return !reduced;
+  }
   function frame() {
-    raf = 0; if (dead || !laid || hidden) return;
-    const tn = now(), busy = step(tn - t0);
+    raf = 0; if (dead || !laid || hidden || held) { lastF = 0; return; }
+    const tn = now();
+    if (lastF && tn - lastF > 100) t0 += tn - lastF - 16;   // a stall: carry on from the same pose
+    lastF = tn;
+    const busy = step(tn - t0);
     if (busy || tn - lastR > 48 || reduced) { ren.render(S, cam); lastR = tn; }
     if (!reduced && !document.hidden) raf = requestAnimationFrame(frame);
   }
@@ -90,11 +105,22 @@ export function create(canvas, { reduced = false, maxDpr = 2 } = {}) {
   return {
     layout,
     /* start (or restart) the hop-in entrance; withEntrance false shows the kids standing at once */
-    play(withEntrance = true) { t0 = now(); readyAt = -1; entrance = withEntrance; kick(); },
+    play(withEntrance = true) { t0 = now(); readyAt = -1; entrance = withEntrance; held = false; kick(); },
+    /* how long the entrance runs (ms): the last kid lands, Neneng finishes her wave */
+    entranceMs() { return reduced ? 0 : Math.max(...ROLE.map(r => r.delay + (CLIPS.jump.dur + (r.wave ? .1 + CLIPS.wave.dur * 1.5 : 0)) * 1000)); },
+    /* compile every shader, the shadow pass too, and leave the opening frame (the empty tiles) on the canvas */
+    async prepare() {
+      try { await ren.compileAsync(S, cam); } catch (e) {}
+      if (dead || !laid) return;
+      ren.render(S, cam);
+      step(0); ren.render(S, cam); lastR = now();
+    },
     /* all four cheer, one after another */
     cheer() { readyAt = now() - t0; kick(); },
     show(on) { hidden = !on; if (on) kick(); },
     renderOnce() { if (!laid) return; step(now() - t0); ren.render(S, cam); },
+    /* character gallery: loop one clip ('idle', 'walk', 'run', 'jump', 'victory', 'wave', 'defeat', 'kick', 'throw'), yaw 0 front, PI/2 side, PI back */
+    gallery(clip, yaw = 0) { gal = { clip, yaw }; entrance = false; kick(); if (reduced && laid) { step(now() - t0); ren.render(S, cam); } },
     dispose() { dead = true; cancelAnimationFrame(raf); document.removeEventListener('visibilitychange', vis); ren.dispose(); }
   };
 }
