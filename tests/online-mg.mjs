@@ -6,7 +6,8 @@
 import path from 'path';
 import { chromium, serve, watchErrors, check, done, ROOT, renderer } from './lib.mjs';
 
-// in-page players (the local kid's lane is `i`) and what each phone shows as every lane's total when a game ends
+// in-page players (the local kid's lane is `i`) and what each phone shows as every lane's total when a game is over
+// (read when the scene hands back its result, so an online player's last move has arrived)
 const GAMES = {
   palayok: {
     player: `(sc, i) => { const L = sc.peek()[i], m = window.__pp || (window.__pp = {}); if (L.ph === 'look' && L.pot != null) m[L.tri] = Math.round(L.pot); if (L.ph === 'walk' && !L.out && m[L.tri] != null && L.steps >= m[L.tri]) sc.action(); }`,
@@ -81,7 +82,7 @@ for (const [kind, G] of Object.entries(GAMES).filter(([k]) => !only || k === onl
   for (const p of [host, guest]) await p.evaluate(([src, tot]) => {
     const fn = eval(src), totals = eval(tot); window.__ends = [];
     const tick = () => { const L = window.__lsu, sc = L.scene, i = L.state.players.findIndex(q => q.ctrl === 'local');
-      if (sc && sc.peek && i >= 0) { if (!sc.ended && !(sc.cd > .6)) { try { fn(sc, i); } catch (e) { console.error(e); } } else if (sc.ended && !sc.__rec) { sc.__rec = 1; window.__ends.push(totals(sc)); } }
+      if (sc && sc.peek && i >= 0) { if (!sc.ended && !(sc.cd > .6)) { try { fn(sc, i); } catch (e) { console.error(e); } } else if (sc.ended && !sc.__rec) { sc.__rec = 1; sc.done.then(() => window.__ends.push(totals(sc))); } }
       requestAnimationFrame(tick); };
     requestAnimationFrame(tick); }, [G.player, G.totals]);
   const finals = await playUntilFinal([host, guest], 600000);

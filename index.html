@@ -2346,6 +2346,8 @@ function mkTaguan(pre,mgi){
     const x0=k?S[k-1].x-34:S[0].x-T.GAP*.8,x1=S[k].x-34;return u<T.WALK?lerp(x0,x1,Ez.inOut(u/T.WALK)):x1;};
   const clueOn=k=>{if(k<0)return false;const s=yard[r].spots[k],u=rt-arrive(k)-s.at;return(s.kid||s.fake)&&u>=0&&u<R0().clue;};
   const publish=(pl,th)=>{if(NET.on&&pl.mode==='local')netMg({i:mgi,f:pl.found.size,w:pl.wrong,s:score(pl),d:sc.ended?1:0},th);};
+  /* an online player's count comes from what that phone publishes (also after the end, so its last tap counts) */
+  const follow=pl=>{if(pl.mode!=='remote')return;const m=netPeerMg(pl.p.peer,mgi);if(m){pl.rf=m.f|0;pl.rw=m.w|0;}};
   function say(pl,txt,col){pl.msg={txt,col,t:0};}
   function tap(pid){if(sc.cd>.6||sc.ended)return;const pl=P[pid];if(!pl||pl.mode!=='local')return;const k=cur();if(k<0)return;const key=r+':'+k;
     if(pl.tapped.has(key))return;if(pl.lockR===r&&k<=pl.lock){say(pl,'Hintay…','#fff');return;}
@@ -2359,11 +2361,11 @@ function mkTaguan(pre,mgi){
   /* what a person sees: whether a clue is up now and whether it is an animal */
   sc.peek=()=>{const k=cur(),s=k>=0?yard[r].spots[k]:null,pl=P[(L1[0]||P[0].p).id];return{r,k,cd:sc.cd,ended:sc.ended,clue:clueOn(k)?(s.fake?'animal':'kid'):null,tapped:k>=0&&pl.tapped.has(r+':'+k),locked:pl.lockR===r&&k<=pl.lock,found:pl.found.size,wrong:pl.wrong,score:score(pl)};};
   sc.update=dt=>{
-    if(cdTick(sc,dt))return;sc.t+=dt;if(sc.ended)return;rt+=dt;
+    if(cdTick(sc,dt))return;sc.t+=dt;if(sc.ended){P.forEach(follow);return;}rt+=dt;
     for(const pl of P){if(pl.msg&&(pl.msg.t+=dt)>1.1)pl.msg=null;for(const q in pl.pop)pl.pop[q]+=dt;}
     const k=cur();
     for(const pl of P){if(pl.mode==='bot'){if(k>=0)for(const ev of pl.events)if(!ev.done&&ev.key===r+':'+k&&rt>=arrive(k)+yard[r].spots[k].at+.18){ev.done=1;if(ev.hit)pl.found.add(ev.key);else pl.wrong++;}}
-      else if(pl.mode==='remote'){const m=netPeerMg(pl.p.peer,mgi);if(m){pl.rf=m.f|0;pl.rw=m.w|0;}}}
+      else follow(pl);}
     if(rt>=roundLen()){if(r>=yard.length-1){sc.ended=true;P.forEach(pl=>publish(pl,false));setTimeout(()=>resolve({scores:P.map(pl=>pl.mode==='remote'?Math.max(0,Math.min(100,(pl.rf|0)*10-(pl.rw|0)*2)):score(pl))}),900);return;}
       r++;rt=0;Sfx.whistle();}
   };
