@@ -3,8 +3,15 @@
 // (?debug&mg=<key>), each running a scripted player, and must agree on every score: the scores both phones logged and
 // every lane's total on each phone's screen. Also checks the build check: a phone on another build can't join a room.
 // Run: node tests/online-mg.mjs [game]
+//      node tests/online-mg.mjs live [game]   (the real Supabase project in index.html, same as
+//      `online.mjs live`; needs internet. This is the D3 "real-phone Supabase check" for the new
+//      minigames specifically, from a laptop — it still does not replace an actual multi-phone test
+//      on the venue network, which needs real devices.)
 import path from 'path';
 import { chromium, serve, watchErrors, check, done, ROOT, renderer } from './lib.mjs';
+
+const LIVE = process.argv[2] === 'live';
+console.log('room service: ' + (LIVE ? 'Supabase adapter, real project' : 'Claude room (mock-room.js)'));
 
 // in-page players (the local kid's lane is `i`) and what each phone shows as every lane's total when a game is over
 // (read when the scene hands back its result, so an online player's last move has arrived)
@@ -32,7 +39,7 @@ async function phone(ctx, query, build) {
   await p.goto(srv.url + query); await p.waitForFunction(() => window.__lsu && window.__lsu.screen === 'title', null, { timeout: 15000 });
   return p;
 }
-async function newCtx() { const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } }); await renderer(ctx, '2d'); await ctx.addInitScript({ path: path.join(ROOT, 'tests/mock-room.js') }); return ctx; }
+async function newCtx() { const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } }); await renderer(ctx, '2d'); if (!LIVE) await ctx.addInitScript({ path: path.join(ROOT, 'tests/mock-room.js') }); return ctx; }
 async function hostRoom(host, mode) {
   await host.click('#mOnline'); await host.click('#card [data-v="host"]'); await host.fill('#nmMe', 'Host'); await host.click('#card [data-v="go"]');
   await host.waitForSelector('#card .codebig', { timeout: 10000 });
@@ -75,7 +82,7 @@ async function playUntilFinal(pages, ms) {
   }
   return finals;
 }
-const only = process.argv[2];
+const only = LIVE ? process.argv[3] : process.argv[2];
 for (const [kind, G] of Object.entries(GAMES).filter(([k]) => !only || k === only)) {
   const ctx = await newCtx(), q = `?debug&speed=2&mg=${kind}`;
   const host = await phone(ctx, q), guest = await phone(ctx, q);
