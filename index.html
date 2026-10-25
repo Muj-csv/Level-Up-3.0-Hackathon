@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Taympers</title>
-<meta name="description" content="Taympers: isang party board game ng mga larong kalye ng Pilipinas para sa 1 hanggang 4 na manlalaro.">
+<meta name="description" content="Taympers: isang party board game ng mga larong kalye ng Pilipinas para sa 1 hanggang 4 na player.">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Taympers">
 <meta property="og:description" content="Board party ng larong kalye: Tumbang Preso, Patintero, Sipa, Palosebo at Luksong Tinik sa mga islang lumulutang sa ulap.">
@@ -78,6 +78,7 @@ body{background:var(--sky);color:var(--ink);font-family:var(--body);overflow:hid
 .btn.small{font-size:15px;padding:9px 13px;box-shadow:0 4px 0 var(--ink)}
 .btn.icon{width:48px;height:48px;padding:0;display:grid;place-items:center;border-radius:14px}
 .btn.icon svg{width:24px;height:24px}
+.btn.icon.lang{font:900 14px/1 var(--body);letter-spacing:.02em}
 .btn.item{font-size:14px;padding:10px 12px;background:var(--sand)}
 .btn[aria-pressed="true"].item{background:var(--leaf)}
 .btn:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:0 5px 0 var(--ink)}
@@ -409,6 +410,7 @@ body{background:var(--sky);color:var(--ink);font-family:var(--body);overflow:hid
       <button class="btn icon" id="soundBtn" type="button" aria-pressed="true" aria-label="Tunog">
         <svg viewBox="0 0 24 24" fill="none" stroke="#3B2316" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="#FFC93C"/><path id="sndWave" d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/><path id="sndOff" d="M17 9l5 6M22 9l-5 6" style="display:none"/></svg>
       </button>
+      <button class="btn icon lang" id="langBtn" type="button">FIL</button>
     </div>
   </div>
   <div class="screen mapscr" id="scrMaps" hidden>
@@ -471,8 +473,9 @@ function star(g,x,y,r,ri,n){g.beginPath();n=n||5;for(let i=0;i<n*2;i++){const a=
 /* settings kept on this device: music, sound effects, vibration */
 /* gq: 3D graphics quality (low, mid, high; see GQ in the 3D board section), separate from the 3D/2D choice */
 /* saved settings. The game is always 3D where the device can draw it; Kalidad (gq) sets how heavy that 3D is. The old Grapiko 3D/2D
-   choice is gone: a device that had picked 2D and never a quality starts on Mababa (the lightest 3D), a quality it picked is kept */
-const PREFS=(()=>{const d={music:true,sfx:true,vib:true,gq:'mid'};try{const o=JSON.parse(localStorage.getItem('lsu-prefs')||'{}');for(const k in d)if(typeof o[k]===typeof d[k])d[k]=o[k];if(o.g3d===false&&typeof o.gq!=='string')d.gq='low';}catch(e){}if(!['low','mid','high'].includes(d.gq))d.gq='mid';return d;})();
+   choice is gone: a device that had picked 2D and never a quality starts on Mababa (the lightest 3D), a quality it picked is kept.
+   lang: the language of the cards (fil, en; see the content loader) */
+const PREFS=(()=>{const d={music:true,sfx:true,vib:true,gq:'mid',lang:'fil'};try{const o=JSON.parse(localStorage.getItem('lsu-prefs')||'{}');for(const k in d)if(typeof o[k]===typeof d[k])d[k]=o[k];if(o.g3d===false&&typeof o.gq!=='string')d.gq='low';}catch(e){}if(!['low','mid','high'].includes(d.gq))d.gq='mid';if(!['fil','en'].includes(d.lang))d.lang='fil';return d;})();
 function savePrefs(){try{localStorage.setItem('lsu-prefs',JSON.stringify(PREFS));}catch(e){}}
 /* audio graph: effects and music buses -> master -> limiter, so stacked sounds never clip */
 const Sfx={ac:null,out:null,fx:null,lastTick:0,
@@ -1219,10 +1222,10 @@ const roomAvailable=()=>inClaude()||!!(SUPA.url&&SUPA.key);
 const APPID='lsu1',SHARE_URL=inClaude()?'https://claude.ai/artifact/FQqtor9NZvLytPNJotsPuc':location.href.split(/[?#]/)[0];
 const KCOST=10;
 const ITEMS={
-  doble:{name:'Dobleng dice',tag:'x2',cost:5,desc:'Dalawang dice: 2 hanggang 20 hakbang.'},
-  kendi:{name:'Kendi',tag:'+3',cost:3,desc:'Dagdag na 3 hakbang sa roll.'},
+  doble:{name:'Dobleng dice',tag:'x2',cost:5,desc:'2 dice: 2 hanggang 20 hakbang.'},
+  kendi:{name:'Kendi',tag:'+3',cost:3,desc:'+3 hakbang sa roll mo.'},
   ginto:{name:'Gintong dice',tag:'pili',cost:8,desc:'Ikaw ang pipili ng bilang, 1 hanggang 10.'},
-  agimat:{name:'Agimat',tag:'ag',cost:4,desc:'Kusang sasalag sa susunod na Utang, Tikbalang o talo sa Jack en Poy.',passive:true}
+  agimat:{name:'Agimat',tag:'ag',cost:4,desc:'Ligtas ka sa susunod na Utang, Tikbalang o talo sa Jack en Poy.',passive:true}
 };
 const ITEM_ICON={
   doble:'<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1" y="5.5" width="8" height="8" rx="2" fill="#FFF6E6" stroke="#3B2316" stroke-width="1.5"/><rect x="7" y="2" width="8" height="8" rx="2" fill="#FFF6E6" stroke="#3B2316" stroke-width="1.5"/><circle cx="5" cy="9.5" r="1.1" fill="#3B2316"/><circle cx="9.3" cy="4.3" r="1" fill="#3B2316"/><circle cx="12.7" cy="7.7" r="1" fill="#3B2316"/></svg>',
@@ -1327,11 +1330,11 @@ function nextTip(){const el=$('#tip');const text=tipQ.shift();if(!text){tipOn=fa
 function clearTips(){tipQ.length=0;clearTimeout(tipT);tipOn=false;const el=$('#tip');if(el)el.hidden=true;}
 function resetTips(){TIPS_SEEN.clear();try{localStorage.removeItem('lsu-tips');}catch(e){}}
 $('#tip').addEventListener('click',()=>{clearTimeout(tipT);nextTip();});
-const SPACE_TIP={banda:'Banda: sumabay sa parada, abante ng 3.',kampana:'Kampana: tumunog ang kampana ng simbahan, +5 piso.',munisipyo:'Munisipyo: libreng item (Kendi o Agimat), o +3 piso kung may item ka na.',rizal:'Bantayog ni Rizal: sagutin ang Tanong ni Lola, +5 piso kapag tama.',
-  tawad:'Tawad: nakatawad ka, +3 piso.',timbangan:'Timbangan ng Bayan: tapat ang timbang, +2 piso.',suki:'Suki: may libreng item mula sa tindera, o +3 piso.',basa:'Basa ang sahig: nadulas ka, atras ng 2. Sasalagin ito ng agimat.',
-  alon:'Alon: tinangay ka ng alon, abante ng 2.',huli:'Huli: nakahuli ka ng isda, +4 piso.',taog:'Taog: tumaas ang tubig, atras ng 2. Sasalagin ito ng agimat.',buko:'Buko: presko! Libreng item, o +3 piso.',araw:'Tirik ang araw: bumili ng tubig, −2 piso. Sasalagin ito ng agimat.',
-  tanim:'Tanim: nagtanim ka, +2 piso.',ani:'Anihan: +5 piso.',balang:'Balang: sinalakay ang tanim, −4 piso. Sasalagin ito ng agimat.',bayanihan:'Bayanihan: tulong-tulong, +2 piso sa lahat ng manlalaro.',
-  kalesa:'Kalesa: 8 piso para sumakay papunta sa kabilang dulo ng plaza. Puwede ring sumakay kapag dumaan ka rito.',padyak:'Padyak: 8 piso para sumakay papunta sa kabilang dulo ng palengke. Puwede ring sumakay kapag dumaan ka rito.',bangka:'Bangka: 6 piso para tumawid sa lagoon. Puwede ring sumakay kapag dumaan ka rito.',kalabaw:'Kariton ng kalabaw: 8 piso para sumakay sa kabilang bukid. Puwede ring sumakay kapag dumaan ka rito.',kasama:'Kasama: may sasama sa barkada mo. Sa bawat gulong, magdadagdag ang bawat kasama ng 1 o 2 hakbang. Hanggang 2 kasama.',tanong:'Tanong ni Lola: sagutin ang tanong tungkol sa larong Pilipino. +5 piso kapag tama.',piso:'Piso: dagdag na 3 piso.',utang:'Utang: babayaran mo ang 3 piso. Sasalagin ito ng agimat.',swerte:'Swerte: bonus na piso o libreng item.',tikbalang:'Tikbalang: ililigaw ka nito, atras ng 3 espasyo. Sasalagin ito ng agimat.',sari:'Sari-sari store: bumili ng isang item. Itira ang 10 piso para sa korona!',jack:'Jack en Poy: ikaw ang pipili ng kalaban. Ang panalo ay kukuha ng hanggang 5 piso.'};
+const SPACE_TIP={banda:'Banda: sumabay ka sa parada! Abante ng 3.',kampana:'Kampana: tumunog ang kampana ng simbahan! +5 piso.',munisipyo:'Munisipyo: libreng item (Kendi o Agimat). Kung may item ka na, +3 piso.',rizal:'Bantayog ni Rizal: sagutin ang Tanong ni Lola. +5 piso pag tama.',
+  tawad:'Tawad: nakatawad ka! +3 piso.',timbangan:'Timbangan ng Bayan: tapat ang timbang! +2 piso.',suki:'Suki: may libreng item ka mula sa tindera, o +3 piso.',basa:'Basa: madulas ang sahig, nadulas ka! Atras ng 2. Hindi ka aatras kung may Agimat ka.',
+  alon:'Alon: tinangay ka ng alon! Abante ng 2.',huli:'Huli: nakahuli ka ng isda! +4 piso.',taog:'Taog: tumaas ang tubig! Atras ng 2. Hindi ka aatras kung may Agimat ka.',buko:'Buko: presko! Libreng item, o +3 piso.',araw:'Araw: tirik ang araw, bumili ka ng tubig. −2 piso. Hindi ka mababawasan kung may Agimat ka.',
+  tanim:'Tanim: nagtanim ka! +2 piso.',ani:'Ani: anihan na! +5 piso.',balang:'Balang: kinain ng balang ang tanim! −4 piso. Hindi ka mababawasan kung may Agimat ka.',bayanihan:'Bayanihan: tulong-tulong! +2 piso sa lahat ng player.',
+  kalesa:'Kalesa: 8 piso para sumakay papunta sa kabilang dulo ng plaza. Puwede ka ring sumakay pag dumaan ka rito.',padyak:'Padyak: 8 piso para sumakay papunta sa kabilang dulo ng palengke. Puwede ka ring sumakay pag dumaan ka rito.',bangka:'Bangka: 6 piso para tumawid sa lagoon. Puwede ka ring sumakay pag dumaan ka rito.',kalabaw:'Kariton ng kalabaw: 8 piso para sumakay papunta sa kabilang bukid. Puwede ka ring sumakay pag dumaan ka rito.',kasama:'Kasama: may sasama sa barkada mo! Bawat roll, dagdag na 1 o 2 hakbang ang bawat kasama. Hanggang 2 kasama.',tanong:'Tanong ni Lola: sagutin ang tanong tungkol sa larong Pilipino. +5 piso pag tama.',piso:'Piso: dagdag na 3 piso.',utang:'Utang: magbabayad ka ng 3 piso. Hindi ka mababawasan kung may Agimat ka.',swerte:'Swerte: bonus na piso o libreng item.',tikbalang:'Tikbalang: ililigaw ka nito! Atras ng 3. Hindi ka aatras kung may Agimat ka.',sari:'Sari-sari store: bumili ng 1 item. Magtira ng 10 piso para sa korona!',jack:'Jack en Poy: pumili ka ng kalaban. Ang panalo, kukuha ng hanggang 5 piso.'};
 
 /* coins that fly from the board into the HUD */
 const flyers=[];
@@ -1361,6 +1364,9 @@ itemBtn.addEventListener('click',()=>{const on=itemBtn.getAttribute('aria-presse
 mapBtn.addEventListener('click',()=>{state.overview=!state.overview;mapBtn.setAttribute('aria-pressed',String(state.overview));});
 /* the speaker button mutes or restores music and effects together; the menu sets them one by one */
 function syncSoundBtn(){const on=Sfx.on;$('#soundBtn').setAttribute('aria-pressed',String(on));$('#sndWave').style.display=on?'':'none';$('#sndOff').style.display=on?'none':'';}
+/* Wika on the title (next to the sound button): FIL or EN, the other language one tap away */
+function syncLangBtn(){const b=$('#langBtn'),en=lang()==='en';b.textContent=en?'EN':'FIL';b.setAttribute('aria-label','Wika: '+(en?'English':'Filipino')+'. Pindutin para '+(en?'Filipino':'English')+'.');}
+$('#langBtn').addEventListener('click',()=>{Sfx.init();const to=lang()==='en'?'fil':'en';setLang(to);if(to==='en')toast('English: rules and trivia only for now','#fff',1800);});
 $('#soundBtn').addEventListener('click',()=>{const on=!Sfx.on;PREFS.music=PREFS.sfx=on;savePrefs();Sfx.init();syncSoundBtn();if(on)Sfx.tick(4);});
 syncSoundBtn();
 
@@ -1550,7 +1556,7 @@ function botUsesItem(p){const it=p.item;if(!it||ITEMS[it].passive)return false;c
 const SPACE_VAL={start:2,piso:2,swerte:3,sari:1,jack:1.5,kasama:2.5,tanong:2,utang:-2,tikbalang:-3,banda:2,kampana:3,munisipyo:2,rizal:2,tawad:2,timbangan:1.5,suki:2,basa:-1.5,ulan:0,alon:1.5,huli:2.5,taog:-1.5,buko:2,araw:-1.5,tanim:1.5,ani:3,balang:-2.5,bayanihan:1.5,kalesa:1,padyak:1,bangka:1,kalabaw:1};
 function botGintoPick(p){const d=koronaDist(p)-p.allies.length;if(d<=10&&p.piso>=KCOST)return Math.max(1,d);let best=10,bv=-9;for(let n=10;n>=1;n--){const v=SPACE_VAL[SP[walkMain(p.pos,n)].type]||0;if(v>bv){bv=v;best=n;}}return best;}
 function numberPick(p){const na=p.allies.length,d=Math.max(1,koronaDist(p)-na);let h='';for(let n=1;n<=10;n++){const i=walkMain(p.pos,n),k=korona.spots.includes(i);h+='<button type="button" class="btn" data-v="'+n+'"'+(n===Math.min(10,d)?' data-primary':'')+'><b>'+n+'</b><small>'+(n>=d?CROWN_SVG:'')+esc(k?'Korona':SPACE_SHORT[SP[i].type])+'</small></button>';}
-  const c=openCard('<span class="chip">Gintong dice</span><h2>Ilang hakbang?</h2><p>Pumili ng bilang. Nakasulat kung saan ka titigil'+(d<=10?'. Kapag may maliit na korona, madadaanan mo ang korona.':'.')+(na?' Dagdag pa ng '+na+' hanggang '+2*na+' ang '+(na>1?'mga kasama':'kasama')+' mo.':'')+'</p><div class="numgrid">'+h+'</div>');return cardChoice(c).then(v=>+v);}
+  const c=openCard('<span class="chip">Gintong dice</span><h2>Ilang hakbang?</h2><p>Pumili ng bilang. Nakasulat kung saan ka titigil'+(d<=10?'. Pag may maliit na korona, madadaanan mo ang korona.':'.')+(na?' Dagdag pa ng '+na+' hanggang '+2*na+' ang '+(na>1?'mga kasama':'kasama')+' mo.':'')+'</p><div class="numgrid">'+h+'</div>');return cardChoice(c).then(v=>+v);}
 async function rollDice(p){
   dice.on=true;dice.owner=p;dice.spin=true;dice.vals=[1];dice.bonus=0;dice.gold=false;dice.counter=null;
   const active=!!p.item&&!ITEMS[p.item].passive;
@@ -1595,8 +1601,8 @@ async function moveSteps(p,n){
 }
 async function koronaStop(p,kk){
   await wait(160);
-  if(p.piso<KCOST){dbg('short',{p:p.id,piso:p.piso});if(p.ctrl==='local')tip('kulang','Kailangan ng 10 piso para sa korona. Mag-ipon sa mga asul na espasyo at sa mga laro.');await say('Kulang ang piso ('+KCOST+')','#fff',1200);return;}
-  const v=await decide(p,()=>ask({title:isYou(p)?'Korona!':'Korona, '+p.name+'!',body:'Bilhin ang korona sa halagang '+KCOST+' piso? May '+p.piso+' piso '+(isYou(p)?'ka':'si '+p.name)+'.',buttons:[{label:'Bilhin · '+KCOST+' piso',value:'y',primary:true},{label:'Huwag muna',value:'n'}]}),
+  if(p.piso<KCOST){dbg('short',{p:p.id,piso:p.piso});if(p.ctrl==='local')tip('kulang','Kailangan mo ng 10 piso para sa korona. Mag-ipon sa mga asul na space at sa mga laro.');await say('Kulang ang piso ('+KCOST+')','#fff',1200);return;}
+  const v=await decide(p,()=>ask({title:isYou(p)?'Korona!':'Korona, '+p.name+'!',body:'Bilhin ang korona sa '+KCOST+' piso? May '+p.piso+' piso '+(isYou(p)?'ka':'si '+p.name)+'.',buttons:[{label:'Bilhin · '+KCOST+' piso',value:'y',primary:true},{label:'Huwag muna',value:'n'}]}),
     async()=>{await wait(450);return'y';},'y',40000);
   if(v!=='y')return;
   p.piso-=KCOST;p.korona++;dbg('korona',{p:p.id,piso:p.piso});Sfx.fanfare();setMood(p,'cheer',1.6);hitstop=.1;cam.shake=.2;if(p.ctrl==='local')buzz([30,40,70]);
@@ -1669,7 +1675,7 @@ async function ride(p,passing){
   const near=i=>Math.min(...korona.spots.map(k=>stepsTo(i,k))),nf=near(p.pos),nt=near(r.to),spare=p.piso-r.cost>=KCOST;
   const botYes=state.cfg.diff===0?G()<.5:spare&&(nt+3<nf||(state.round>=maxR()&&nt<nf));
   if(passing&&p.ctrl==='bot'&&!botYes)return false;   // a bot that will not ride passes without a stop
-  const v=await decide(p,()=>ask({chip:name+' · '+r.cost+' piso',title:isYou(p)?'Sumakay ng '+name+'?':'Sasakay ba si '+p.name+'?',body:(passing?'Dadaan ka sa '+name+'. ':'')+'Dadalhin ka nito sa malayong bahagi ng mapa, at doon titigil ang lakad mo. Pinakamalapit na korona mula roon: '+nt+' hakbang (mula rito: '+nf+').',
+  const v=await decide(p,()=>ask({chip:name+' · '+r.cost+' piso',title:isYou(p)?'Sumakay ng '+name+'?':'Sasakay ba si '+p.name+'?',body:(passing?'Dadaan ka sa '+name+'. ':'')+'Dadalhin ka nito sa malayong dulo ng mapa, at doon ka titigil. Pinakamalapit na korona mula doon: '+nt+' hakbang (mula rito: '+nf+').',
       buttons:[{label:'Sumakay · '+r.cost+' piso',value:'y',primary:true},{label:passing?'Tuloy lang':'Huwag na',value:'n'}]}),async()=>{await wait(450);return botYes?'y':'n';},'n',40000);
   if(v!=='y')return false;
   p.piso-=r.cost;Sfx.coin();floatText('−'+r.cost,p.x,p.y-70,'#FF8A7A',20);dbg('ride',{p:p.id,to:r.to,passing:!!passing});if(p.ctrl!=='local')say('Sumakay si '+p.name+' ng '+name+'!','#FFE07A',1000);
@@ -1679,9 +1685,9 @@ async function ride(p,passing){
   const kk=korona.spots.indexOf(p.pos);if(kk>=0&&!korona.fly)await koronaStop(p,kk);   // a korona on the far stop can be bought there
   return true;
 }
-function itemTip(p){if(p.ctrl!=='local')return;if(p.item==='agimat')tip('agimat','May agimat ka: kusa itong sasalag sa susunod na Utang, Tikbalang o talo sa Jack en Poy.');else tip('item','May item ka na. Sa susunod mong turn, pindutin ang "Gamitin" bago gumulong.');}
+function itemTip(p){if(p.ctrl!=='local')return;if(p.item==='agimat')tip('agimat','May Agimat ka! Ligtas ka sa susunod na Utang, Tikbalang o talo sa Jack en Poy.');else tip('item','May item ka na. Sa susunod mong turn, pindutin ang "Gamitin" bago mag-roll.');}
 async function agimatSaves(p){if(p.item!=='agimat')return false;p.item=null;dbg('agimat',{p:p.id});Sfx.shield();if(p.ctrl==='local')buzz([20,30,20]);setMood(p,'happy',1.2);
-  burst(p.x,p.y-40,14,'star',{spd:140,size:5,color:'#BDE7A6',life:.7,g:60});floatText('Agimat!',p.x,p.y-80,'#BDE7A6',22);announce(p.name+': sinalag ng agimat.');await say('Sinalag ng agimat!','#BDE7A6',1100);return true;}
+  burst(p.x,p.y-40,14,'star',{spd:140,size:5,color:'#BDE7A6',life:.7,g:60});floatText('Agimat!',p.x,p.y-80,'#BDE7A6',22);announce(p.name+': niligtas ng Agimat.');await say('Niligtas ka ng Agimat!','#BDE7A6',1100);return true;}
 function botShop(p){const diff=state.cfg.diff;if(p.item)return'none';
   if(diff===0)return p.piso>=8?'doble':(p.piso>=3?'kendi':'none');
   const spare=p.piso-KCOST,d=koronaDist(p),lead=standings()[p.id]===1&&state.players.some(q=>q.korona<p.korona);
@@ -1692,7 +1698,7 @@ function botShop(p){const diff=state.cfg.diff;if(p.item)return'none';
   return'none';}
 async function shop(p,passing){
   await say(passing?'Dadaan sa Sari-sari':'Sari-sari store','#7FE3D9',passing?700:900);
-  const v=await decide(p,()=>{const c=openCard('<span class="chip">May '+p.piso+' piso '+(isYou(p)?'ka':'si '+esc(p.name))+'</span><h2>'+(isYou(p)?'Sari-sari store':'Sari-sari, '+esc(p.name))+'</h2><p>'+(p.item?'Isang item lang ang madadala: papalitan nito ang '+esc(ITEMS[p.item].name)+'.':(passing?'Dadaan ka sa tindahan. ':'')+'Ano ang bibilhin? Isang item lang ang madadala. Tandaan: 10 piso ang korona.')+'</p><div class="pgrid shop">'+
+  const v=await decide(p,()=>{const c=openCard('<span class="chip">May '+p.piso+' piso '+(isYou(p)?'ka':'si '+esc(p.name))+'</span><h2>'+(isYou(p)?'Sari-sari store':'Sari-sari, '+esc(p.name))+'</h2><p>'+(p.item?'Isang item lang ang madadala: papalitan nito ang '+esc(ITEMS[p.item].name)+'.':(passing?'Dadaan ka sa tindahan. ':'')+'Ano ang bibilhin mo? 1 item lang ang puwedeng dalhin. Tandaan: 10 piso ang korona.')+'</p><div class="pgrid shop">'+
         Object.keys(ITEMS).map(k=>{const it=ITEMS[k];return'<button type="button" class="btn" data-v="'+k+'"'+(p.piso<it.cost?' disabled':'')+'><span>'+esc(it.name)+' · '+it.cost+'</span><small>'+esc(it.desc)+'</small></button>';}).join('')+'</div><div class="row"><button type="button" class="btn primary" data-v="none" data-primary>'+(passing?'Tuloy lang':'Wala, salamat')+'</button></div>');return cardChoice(c);},
     async()=>{await wait(500);return botShop(p);},'none',40000);
   if(ITEMS[v]&&p.piso>=ITEMS[v].cost){p.piso-=ITEMS[v].cost;p.item=v;dbg('buy',{p:p.id,item:v});Sfx.coin();itemTip(p);setMood(p,'happy',1);floatText(ITEMS[v].name,p.x,p.y-70,'#fff',19);
@@ -1706,26 +1712,26 @@ async function kasama(p){
   const free=KASAMA.filter(k=>!state.players.some(q=>q.allies.some(a=>a.n===k.n)));const pool=free.length?free:KASAMA;const k=pool[Math.floor(G()*pool.length)];
   p.allies.push({n:k.n,look:k.look,x:p.x,y:p.y});dbg('kasama',{p:p.id,n:k.n});Sfx.fanfare();setMood(p,'cheer',1.3);if(p.ctrl==='local')buzz([20,30,20]);
   burst(p.x,p.y-40,10,'star',{spd:150,size:5,color:'#C9F2B4',g:150});
-  if(p.ctrl==='local')tip('kasama','May kasama ka na! Sa bawat gulong, magdadagdag ang bawat kasama ng 1 o 2 hakbang.');
+  if(p.ctrl==='local')tip('kasama','May kasama ka na! Bawat roll, dagdag na 1 o 2 hakbang ang bawat kasama.');
   await say(k.n+' ay '+(isYou(p)?'kasama mo na!':'kasama na ni '+p.name+'!'),'#C9F2B4',1400);
 }
 const TANONG=[
-  {q:'Ano ang ibinabato sa lata sa Tumbang Preso?',a:['Tsinelas','Bola','Holen'],f:'Tsinelas ang pamato, kaya kailangang mabilis ka ring kunin ito bago ka mataya.'},
-  {q:'Alin ang pambansang laro ng Pilipinas hanggang 2009?',a:['Sipa','Patintero','Piko'],f:'Noong 2009, idineklara ang arnis bilang pambansang sining ng pakikipaglaban at isport.'},
-  {q:'Ano ang isa pang tawag sa Patintero?',a:['Tubigan','Presohan','Sungka'],f:'Minsan tubig ang ginagamit pang-guhit ng mga linya, kaya tubigan.'},
-  {q:'Ano ang ipinapahid sa kawayan ng Palosebo?',a:['Grasa o mantika','Pandikit','Pulot'],f:'Galing sa Espanyol na palo ensebado: kawayang may grasa.'},
-  {q:'Sa Jack en Poy, ano ang tumatalo sa bato?',a:['Papel','Gunting','Tsinelas'],f:'Binabalot ng papel ang bato. Ang bato naman ang tumatalo sa gunting.'},
-  {q:'Sa Luksong Tinik, ano ang "tinik"?',a:['Mga kamay at paang pinagpapatong','Halamang may tinik','Mahabang lubid'],f:'Patataas nang patataas ang tinik habang dinadagdagan ng kamay at paa.'},
-  {q:'Sa Piko, ano ang inihahagis sa mga kahon?',a:['Pamato, gaya ng patag na bato','Barya','Bola'],f:'Lumulukso ka sa isang paa at nilalampasan ang kahong may pamato.'},
-  {q:'Ano ang holen?',a:['Maliit na bolang salamin','Laruang trumpo','Saranggola'],f:'Pinipitik ang holen gamit ang hinlalaki para tamaan ang holen ng kalaro.'},
-  {q:'Ano ang ginagamit sa Sungka?',a:['Tablang may butas at mga sigay','Baraha','Dice'],f:'Mga sigay o maliliit na kabibe ang inilalagay sa mga butas ng tabla.'},
-  {q:'Sa Agawan Base, paano nananalo?',a:['Mahawakan ang base ng kalaban','Makakuha ng pinakamaraming bola','Matapos ang takbo nang una'],f:'May dalawang base at dalawang koponan. Kapag nataya ka, bihag ka ng kalaban.'}
+  {q:'Ano ang ibinabato sa lata sa Tumbang Preso?',a:['Tsinelas','Bola','Holen'],f:'Tsinelas ang pamato. Kunin mo ito agad para hindi ka mataya.'},
+  {q:'Ano ang pambansang laro hanggang 2009?',a:['Sipa','Patintero','Piko'],f:'Noong 2009, ginawang pambansang martial art at sport natin ang arnis.'},
+  {q:'Ano ang isa pang tawag sa Patintero?',a:['Tubigan','Presohan','Sungka'],f:'Minsan, tubig ang gamit sa pagguhit ng mga linya. Kaya tubigan!'},
+  {q:'Ano ang pinapahid sa kawayan sa Palosebo?',a:['Grasa o mantika','Pandikit','Pulot'],f:'Galing ang pangalan sa Espanyol na palo ensebado. Ibig sabihin: kawayang may grasa.'},
+  {q:'Sa Jack en Poy, ano ang tumatalo sa bato?',a:['Papel','Gunting','Tsinelas'],f:'Binabalot ng papel ang bato. Ang bato naman, panalo sa gunting.'},
+  {q:'Sa Luksong Tinik, ano ang "tinik"?',a:['Mga kamay at paang pinagpapatong','Halamang may tinik','Mahabang lubid'],f:'Bawat dagdag na kamay o paa, tumataas ang tinik.'},
+  {q:'Sa Piko, ano ang hinahagis sa mga kahon?',a:['Pamato, gaya ng patag na bato','Barya','Bola'],f:'Lulukso ka sa isang paa. Lampasan mo ang kahong may pamato.'},
+  {q:'Ano ang holen?',a:['Maliit na bolang salamin','Laruang trumpo','Saranggola'],f:'Pinipitik mo ang holen gamit ang hinlalaki. Tamaan mo ang holen ng kalaro!'},
+  {q:'Ano ang ginagamit sa Sungka?',a:['Tablang may butas at mga sigay','Baraha','Dice'],f:'Sigay, o maliliit na kabibe, ang nilalagay sa mga butas ng tabla.'},
+  {q:'Sa Agawan Base, paano ka mananalo?',a:['Mahawakan ang base ng kalaban','Makuha ang pinakamaraming bola','Maunang matapos tumakbo'],f:'May 2 base at 2 team. Pag nataya ka, bihag ka na ng kalaban.'}
 ];
 async function tanong(p){
   await say('Tanong ni Lola!','#F7A8CF',900);
   const T=TANONG[Math.floor(G()*TANONG.length)];const order=[0,1,2];for(let i=2;i>0;i--){const j=Math.floor(G()*(i+1));const t=order[i];order[i]=order[j];order[j]=t;}
   const botAns=G()<[.45,.6,.8][state.cfg.diff]?'0':String(1+Math.floor(G()*2));
-  const v=await decide(p,()=>ask({chip:'Tanong ni Lola · +5 piso kapag tama',title:T.q,buttons:order.map(k=>({label:T.a[k],value:String(k)}))}),async()=>{setHint('Nag-iisip si '+p.name+'…');await wait(900);setHint('');return botAns;},'1',40000);
+  const v=await decide(p,()=>ask({chip:'Tanong ni Lola · +5 piso pag tama',title:T.q,buttons:order.map(k=>({label:T.a[k],value:String(k)}))}),async()=>{setHint('Nag-iisip si '+p.name+'…');await wait(900);setHint('');return botAns;},'1',40000);
   const ok=v==='0';dbg('tanong',{p:p.id,ok});
   if(p.ctrl==='local'){if(ok)Sfx.fanfare();else Sfx.bad();await ask({title:ok?'Tama!':'Hindi iyon',body:'Ang sagot: '+T.a[0]+'. '+T.f,buttons:[{label:'Tuloy',value:'ok',primary:true}],autoMs:NET.on?6000:0});}
   else await say(p.name+': '+(ok?'tama!':'mali'),ok?'#BDE7A6':'#FF8A7A',1100);
@@ -1737,13 +1743,13 @@ const PASS_KEY='lsu-pass';let PASS_MEM=null;
 function passGet(){if(PASS_MEM)return PASS_MEM;try{const o=JSON.parse(localStorage.getItem(PASS_KEY)||'{}');return{played:o.played||{},labas:o.labas||{}};}catch(e){return{played:{},labas:{}};}}
 function passSave(o){PASS_MEM=null;try{localStorage.setItem(PASS_KEY,JSON.stringify(o));}catch(e){PASS_MEM=o;}}
 function stampGame(kind){const o=passGet();const first=!o.played[kind];o.played[kind]=(o.played[kind]|0)+1;passSave(o);return first;}
-const SOON=[{t:'Agawan Base',d:'Dalawang koponan, dalawang base, maraming takbuhan.'},{t:'Sungka',d:'Tablang may butas at mga sigay. Laro ng diskarte.'}];
+const SOON=[{t:'Agawan Base',d:'2 team, 2 base, maraming takbuhan.'},{t:'Sungka',d:'Tablang may butas at mga sigay. Laro ng diskarte.'}];
 function labasBox(def){return def.labas?'<div class="labas"><b>Subukan sa labas</b><p>'+esc(def.labas)+'</p></div>':'';}
 async function passportFlow(){
   for(;;){const o=passGet();const done=MG_KEYS.filter(k=>o.played[k]).length,gold=MG_KEYS.filter(k=>o.labas[k]).length,tot=MG_KEYS.length*2;
     const rows=MG_KEYS.map(k=>{const d=MG[k],on=!!o.played[k],g=!!o.labas[k];return'<div class="stamp'+(g?' gold':(on?' on':''))+'"><span class="seal">'+(g?'GINTO':(on?'TATAK':'?'))+'</span><div><b>'+esc(d.title)+'</b><p>'+esc(on?d.labas:'Laruin ito sa board para makuha ang tatak.')+'</p>'+(on?'<button type="button" class="btn" data-v="labas:'+k+'">'+(g?'Nalaro ko na sa labas ✓':'Nalaro ko na ito sa labas')+'</button>':'')+'</div></div>';}).join('')
       +SOON.map(x=>'<div class="stamp lock"><span class="seal">SOON</span><div><b>'+esc(x.t)+'</b><p>'+esc(x.d)+'</p></div></div>').join('');
-    const c=openCard('<span class="chip">Pasaporte ng Laro</span><h2>'+(done+gold)+' sa '+tot+' na tatak</h2><div class="passbar"><i style="width:'+Math.round((done+gold)/tot*100)+'%"></i></div><p class="note">Pula ang tatak kapag nalaro mo sa app. Ginto kapag nalaro mo nang totoo kasama ang mga kaibigan.</p>'+rows+'<div class="row"><button type="button" class="btn primary" data-v="close" data-primary>Isara</button></div>');
+    const c=openCard('<span class="chip">Pasaporte ng Laro</span><h2>'+(done+gold)+' sa '+tot+' na tatak</h2><div class="passbar"><i style="width:'+Math.round((done+gold)/tot*100)+'%"></i></div><p class="note">Pula ang tatak pag nalaro mo sa app. Ginto pag nalaro mo nang totoo kasama ang barkada.</p>'+rows+'<div class="row"><button type="button" class="btn primary" data-v="close" data-primary>Isara</button></div>');
     let top=passportFlow.top||0;if(top)c.scrollTop=top;passportFlow.top=null;const onScroll=()=>{top=c.scrollTop;};c.addEventListener('scroll',onScroll,{passive:true});   // kept, so the card reopens where it was
     const v=await cardChoice(c);c.removeEventListener('scroll',onScroll);
     /* a gold stamp is only taken back after asking: the button reads like a tick, so a second tap (or a double tap) used to
@@ -1765,7 +1771,7 @@ function handPick(p){const c=openCard('<h2>'+(isYou(p)?'Jack en Poy!':esc(p.name
 function botRival(p,others){const diff=state.cfg.diff;if(diff===0)return gpick(others).id;
   if(diff===2){const lead=others.filter(q=>q.piso>0&&q.item!=='agimat').sort((a,b)=>b.korona-a.korona||b.piso-a.piso||a.id-b.id)[0];if(lead)return lead.id;}
   return[...others].sort((a,b)=>b.piso-a.piso||a.id-b.id)[0].id;}
-function rivalPick(p,others){const c=openCard('<span class="chip">Jack en Poy</span><h2>'+(isYou(p)?'Sino ang hahamunin mo?':esc(p.name)+', sino ang hahamunin?')+'</h2><p>Ang panalo ay kukuha ng hanggang 5 piso sa talo. Sasalagin ng agimat ang pagkatalo.</p><div class="pgrid">'+
+function rivalPick(p,others){const c=openCard('<span class="chip">Jack en Poy</span><h2>'+(isYou(p)?'Sino ang hahamunin mo?':esc(p.name)+', sino ang hahamunin?')+'</h2><p>Ang panalo, kukuha ng hanggang 5 piso sa talo. Hindi mababawasan ang may Agimat.</p><div class="pgrid">'+
     others.map((q,i)=>'<button type="button" class="btn" data-v="'+q.id+'"'+(i?'':' data-primary')+'><span><i class="sw" style="background:'+q.color+'"></i>'+esc(q.name)+'</span><small>'+q.korona+' korona · '+q.piso+' piso'+(q.item==='agimat'?' · may agimat':'')+'</small></button>').join('')+'</div>');return cardChoice(c);}
 async function jackEnPoy(p){
   const others=state.players.filter(q=>q!==p);
@@ -1806,7 +1812,7 @@ async function playTurn(p){
   await seatSync();
   state.fast=false;state.active=p;state.overview=false;mapBtn.setAttribute('aria-pressed','false');updateStatus();
   await wait(300);
-  if(p.ctrl==='local')tip('roll','Pindutin ang "Tamaan ang dice" para gumulong ng 1 hanggang 10. Ang mga espasyong may puting bilog ang maaabot mo.');
+  if(p.ctrl==='local')tip('roll','Pindutin ang "Tamaan ang dice" para mag-roll ng 1 hanggang 10. Maaabot mo ang mga space na may puting bilog.');
   else if(p.ctrl==='bot'&&locals().length&&!NET.on)tip('fast','Turn ng bot? I-tap ang board para bilisan.');
   await say(turnText(p),p.color,950);
   const steps=await rollDice(p);
@@ -2018,58 +2024,71 @@ function mkSipa(pre,mgi){
   return sc;
 }
 const MG={
-  tumbang:{labas:'Kailangan: isang lata, tig-isang tsinelas, at 3 o higit pang kalaro. Gumuhit ng bilog para sa lata at isang guhit na tatayuan ng mga babato.',title:'Tumbang Preso',aka:'Tinatawag ding presohan, tumba-lata, o tumba-patis sa Visayas',chip:'4 na manlalaro · sabay-sabay',unit:'tumba',make:(pre,mgi)=>mkTumbang(pre,mgi),
+  tumbang:{labas:'Kailangan: 1 lata, tig-isang tsinelas, at 3 o higit pang kalaro. Gumuhit ng bilog para sa lata. Gumuhit din ng guhit na tatayuan ng mga babato.',title:'Tumbang Preso',aka:'Tinatawag ding presohan, tumba-lata, o tumba-patis sa Visayas',chip:'4 na player · sabay-sabay',unit:'tumba',make:(pre,mgi)=>mkTumbang(pre,mgi),
     preroll:d=>{const pr=[.2,.35,.55][d]+G()*.32;return[0,1,2,3,4].map(()=>G()<pr);},botScore:pre=>pre.filter(Boolean).length,
-    rules:['Ihagis ang tsinelas para patumbahin ang lata.','Gumagalaw ang guhit. Tumira kapag nasa puting bahagi sa gitna.','Tig-5 tira, pabilis nang pabilis ang guhit. Pinakamaraming tumba ang panalo.'],
-    real:'Sa kalye, may isang taya na nagbabantay sa lata sa loob ng bilog. Binabato ng iba ang lata ng tsinelas mula sa guhit. Kapag tumumba ito, kukunin nila ang tsinelas habang itinatayo ng taya ang lata, at ang mataya habang kumukuha ang bagong taya.'},
-  patintero:{labas:'Gumuhit ng mga linya gamit ang chalk o tubig sa bakuran o court. Hatiin ang grupo sa dalawa: mga bantay sa linya at mga tatawid.',title:'Patintero',aka:'Tinatawag ding harang taga o tubigan',chip:'1 laban sa 3 · tig-isang takbo',unit:'puntos',
+    rules:['Ihagis ang tsinelas para matumba ang lata.','Gumagalaw ang guhit. Tumira pag nasa puting gitna ito.','5 tira bawat isa. Pabilis nang pabilis ang guhit. Pinakamaraming tumba, panalo!'],
+    real:'Sa kalye, may taya na nagbabantay sa lata sa loob ng bilog. Binabato ng iba ang lata ng tsinelas mula sa guhit. Pag natumba ang lata, kunin agad ang tsinelas mo habang itinatayo ng taya ang lata. Pag nataya ka, ikaw na ang taya!'},
+  patintero:{labas:'Gumuhit ng mga linya sa bakuran o court, gamit ang chalk o tubig. Hatiin sa 2 team: mga bantay sa linya, at mga tatawid.',title:'Patintero',aka:'Tinatawag ding harang taga o tubigan',chip:'1 laban sa 3 · tig-isang takbo',unit:'puntos',
     preroll:d=>Math.round([2,6,14][d]+G()*[10,16,20][d]),botScore:pre=>pre,
-    rules:['Tumawid sa bawat linya hanggang Dulo, tapos bumalik sa Bahay.','+2 bawat linya papunta, +3 pabalik, +5 pag-uwi.','Kapag nataya, balik sa Bahay. Walang puntos ang linyang tinawid habang kumikislap ka pa.'],
-    real:'Gumuguhit ng mga linya sa lupa, minsan gamit ang tubig, kaya tinatawag din itong tubigan. Dalawang koponan ang naglalaro: nakatayo sa mga linya ang mga bantay at doon lang sila puwedeng gumalaw, habang sinusubukan ng kabilang koponan na tumawid hanggang dulo at pabalik. Kapag may nataya, magpapalit ang dalawang koponan.'},
-  sipa:{labas:'Gumawa ng sariling sipa: isang washer o takip ng bote na may ginupit na plastik o papel. Bilangin kung ilang sipa bago bumagsak.',title:'Sipa',aka:'Pambansang laro ng Pilipinas hanggang 2009',chip:'4 na manlalaro · sabay-sabay',unit:'sipa',make:(pre,mgi)=>mkSipa(pre,mgi),
+    rules:['Tumawid sa bawat linya hanggang Dulo, tapos bumalik sa Bahay.','+2 bawat linya papunta, +3 pabalik, +5 pag-uwi.','Pag nataya ka, balik ka sa Bahay. Habang kumikislap ka pa, walang puntos ang linyang tatawirin mo.'],
+    real:'Gumuguhit ng mga linya sa lupa, minsan gamit ang tubig. Kaya tubigan din ang tawag dito. 2 team ang naglalaro. Sa mga linya lang puwedeng gumalaw ang mga bantay. Ang kabilang team ay tatawid hanggang dulo, tapos pabalik. Pag may nataya, magpapalit ang 2 team.'},
+  sipa:{labas:'Gumawa ng sariling sipa: washer o takip ng bote na may ginupit na plastik o papel. Bilangin kung ilang sipa bago ito mahulog.',title:'Sipa',aka:'Pambansang laro ng Pilipinas hanggang 2009',chip:'4 na player · sabay-sabay',unit:'sipa',make:(pre,mgi)=>mkSipa(pre,mgi),
     preroll:d=>[2,3,8][d]+Math.floor(G()*[8,14,16][d]),botScore:pre=>pre,
-    rules:['Sipain ang sipa bago ito bumagsak.','Pindutin kapag umiilaw ang bilog. Kapag masyadong maaga o pindot nang pindot, saglit na hindi makakasipa.','Pabilis nang pabilis. Pinakamaraming sipa ang panalo.'],
-    real:'Ang sipa ay maliit na pabigat, gaya ng tingga o washer, na may makukulay na papel o tela. Sinisipa ito pataas gamit ang loob ng paa o tuhod nang hindi pinababagsak. Pambansang laro ito hanggang 2009, nang ideklara ang arnis bilang pambansang sining ng pakikipaglaban at isport.'},
-  palosebo:{labas:'Pang-pista ang palosebo, kaya abangan ito sa pista ng barangay. Itanong din sa lolo o lola kung paano sila nanalo noon.',title:'Palosebo',aka:'Galing sa Espanyol na palo ensebado: kawayang pinahiran ng grasa',chip:'4 na manlalaro · sabay-sabay',unit:'puntos',make:(pre,mgi)=>mkPalosebo(pre,mgi),
+    rules:['Sipain ang sipa bago ito mahulog.','Pindutin pag umiilaw ang bilog. Pag masyadong maaga o pindot nang pindot, saglit kang hindi makakasipa.','Pabilis nang pabilis. Pinakamaraming sipa, panalo!'],
+    real:'Maliit na pabigat ang sipa, gaya ng tingga o washer, na may makukulay na papel o tela. Sinisipa ito pataas gamit ang loob ng paa o tuhod. Huwag itong hayaang mahulog! Pambansang laro ito hanggang 2009. Noon, ginawang pambansang martial art at sport ang arnis.'},
+  palosebo:{labas:'Laro sa pista ang palosebo. Abangan ito sa pista ng barangay! Tanungin din ang lolo o lola mo kung paano sila nanalo noon.',title:'Palosebo',aka:'Galing sa Espanyol na palo ensebado: kawayang pinahiran ng grasa',chip:'4 na player · sabay-sabay',unit:'puntos',make:(pre,mgi)=>mkPalosebo(pre,mgi),
     preroll:d=>Math.round([20,40,85][d]+G()*[55,75,60][d]),botScore:pre=>pre,
-    rules:['I-tap para umakyat sa kawayan. Berde ang kamay kapag puwede na.','Huwag magmadali: madudulas ka kapag sunod-sunod ang tap.','Abutin ang premyo sa tuktok sa loob ng 12 segundo. May bonus ang mabilis.'],
-    real:'Laro ito tuwing pista. Pinapahiran ng mantika o grasa ang isang mahabang kawayan, at may premyo sa tuktok gaya ng pera o bandila. Paunahan sa pag-akyat ang mga kalahok, kaya kailangan ng lakas, diskarte, at tiyaga para hindi dumulas.'},
-  luksong:{labas:'Dalawang kalaro ang uupo nang magkaharap sa damuhan. Magpapatong sila ng paa, tapos kamay, para maging tinik. Lalaktawan ito ng iba; ang sumabit ang papalit sa nakaupo.',title:'Luksong Tinik',aka:'Laro ng lukso at lakas ng loob',chip:'4 na manlalaro · sabay-sabay',unit:'antas',make:(pre,mgi)=>mkLuksong(pre,mgi),
+    rules:['I-tap para umakyat sa kawayan. Pag berde ang kamay, puwede na.','Huwag magmadali! Madudulas ka pag sunod-sunod ang tap.','Abutin ang premyo sa tuktok sa loob ng 12 segundo. May bonus pag mabilis ka.'],
+    real:'Laro ito tuwing pista. Pinapahiran ng mantika o grasa ang isang mahabang kawayan. May premyo sa tuktok, gaya ng pera o bandila. Paunahan sa pag-akyat ang mga sumali. Kailangan ng lakas, diskarte at tiyaga para hindi dumulas.'},
+  luksong:{labas:'2 kalaro ang uupo nang magkaharap sa damuhan. Pagpapatungin nila ang mga paa, tapos ang mga kamay. Iyan ang tinik! Lulundagan ito ng iba. Ang sumabit, siya ang uupo.',title:'Luksong Tinik',aka:'Laro ng lukso at lakas ng loob',chip:'4 na player · sabay-sabay',unit:'level',make:(pre,mgi)=>mkLuksong(pre,mgi),
     preroll:d=>Math.min(8,[1,2,4][d]+Math.floor(G()*[4,5,5][d])),botScore:pre=>pre,
-    rules:['Tatakbo ka papunta sa tinik. I-tap para lumukso kapag nasa dilaw na guhit ang paa mo.','Masyadong maaga o huli, sasabit ka at tapos ang laro mo.','Tataas at bibilis ang tinik bawat antas. Pinakamataas na antas ang panalo.'],
-    real:'Dalawang manlalaro ang nakaupo sa lupa at pinagpapatong ang kanilang mga paa, tapos ang mga kamay, para tumaas ang tinik. Lumulukso ang iba nang hindi sumasagi. Kapag may sumabit, siya ang papalit sa nakaupo.'},
+    rules:['Tatakbo ka papunta sa tinik. I-tap para lumukso pag nasa dilaw na guhit ang paa mo.','Pag maaga o huli ka, sasabit ka at tapos na ang laro mo.','Bawat level, tataas at bibilis ang tinik. Pinakamataas na level, panalo!'],
+    real:'2 kalaro ang nakaupo sa lupa. Pinagpapatong nila ang mga paa, tapos ang mga kamay, para tumaas ang tinik. Lumulukso ang iba nang hindi tumatama. Pag may sumabit, siya na ang uupo.'},
   /* new minigames go at the end (saves keep their round plans by key); off:true drops one from MG_KEYS without deleting it */
-  palayok:{labas:'Gumamit ng lumang kahon o supot na papel sa halip na palayok para ligtas, at lagyan ng kendi. Isabit ito sa lubid, piringan ang kalaro at paikutin nang tatlong beses bago pumalo. Lumayo ang mga nanonood sa pumapalo!',title:'Pukpok Palayok',aka:'Tinatawag ding hampas-palayok o basag-palayok',chip:'4 na manlalaro · sabay-sabay',unit:'puntos',make:(pre,mgi)=>mkPalayok(pre,mgi),
+  palayok:{labas:'Para ligtas, lumang kahon o supot na papel ang gamitin, hindi palayok. Lagyan ito ng kendi at isabit sa lubid. Piringan ang kalaro at paikutin nang 3 beses bago pumalo. Lumayo ang mga nanonood sa pumapalo!',title:'Pukpok Palayok',aka:'Tinatawag ding hampas-palayok o basag-palayok',chip:'4 na player · sabay-sabay',unit:'puntos',make:(pre,mgi)=>mkPalayok(pre,mgi),
     preroll:d=>palayokPre(d),botScore:pre=>pre.reduce((a,b)=>a+b,0),
-    rules:['Tingnan kung ilang hakbang ang palayok bago ka piringan.','Bilangin sa isip ang bawat hakbang, tapos pindutin para pumalo.','Basag: 10, sagi: 6, malapit: 3. Tatlong subok. Huwag maniwala sa sigaw ng mga nanonood!'],
-    real:'Laro ito tuwing pista at kaarawan. Isinasabit ang palayok na may kendi, barya o laruan sa lubid sa pagitan ng dalawang poste. Pipiringan ang manlalaro, paiikutin nang ilang beses at bibigyan ng patpat. Sumisigaw ang mga nanonood ng direksiyon, minsan tama, minsan panloloko. Kapag nabasag ang palayok, nag-aagawan ang lahat sa kendi.'},
-  taguan:{labas:'Kailangan ng 3 o higit pang kalaro at isang ligtas na bakuran. Pumili ng base, magbilang ang taya hanggang 20 nang nakapikit, at magtago ang iba sa lugar na kita pa ng matatanda.',title:'Taguan',aka:'Tinatawag ding tagu-taguan',chip:'4 na manlalaro · sabay-sabay',unit:'puntos',make:(pre,mgi)=>mkTaguan(pre,mgi),
+    rules:['Tingnan kung ilang hakbang ang layo ng palayok bago ka piringan.','Bilangin sa isip ang bawat hakbang. Tapos pindutin para pumalo.','Basag: 10, sagi: 6, malapit: 3. May 3 subok ka. Huwag maniwala sa sigaw ng mga nanonood!'],
+    real:'Laro ito tuwing pista at birthday. Isinasabit sa lubid, sa pagitan ng 2 poste, ang palayok na may kendi, barya o laruan. Pipiringan ang player, paiikutin nang ilang beses, at bibigyan ng patpat. Sumisigaw ang mga nanonood kung saan papalo. Minsan totoo, minsan biro lang! Pag nabasag ang palayok, nag-aagawan ang lahat sa kendi.'},
+  taguan:{labas:'Kailangan ng 3 o higit pang kalaro at ligtas na bakuran. Pumili ng base. Pipikit ang taya at bibilang hanggang 20. Magtago ang iba sa lugar na kita pa ng matatanda.',title:'Taguan',aka:'Tinatawag ding tagu-taguan',chip:'4 na player · sabay-sabay',unit:'puntos',make:(pre,mgi)=>mkTaguan(pre,mgi),
     preroll:d=>({f:[3,5,7][d]+Math.floor(G()*3),w:d>=2?0:Math.floor(G()*(d?2:3))}),botScore:pre=>Math.max(0,Math.min(100,pre.f*10-pre.w*2)),
-    rules:['Kusang naglalakad ang taya at tumitigil sa bawat taguan.','I-tap kapag may palatandaan ng bata: tsinelas, buhok, mata, anino, hagikgik, kaluskos o daliri. Hayop lang ang pusa, manok at aso!','10 bawat nahanap. Mali: −2, at hindi ka makaka-tap sa susunod na 2 taguan.'],
-    real:'Pipikit at bibilang ang taya habang nagtatago ang iba, at kinakanta ang "Tagu-taguan, maliwanag ang buwan…". Pagkatapos, hahanapin niya ang mga nagtatago. Kapag may nakita siya, uunahan niyang makabalik sa base ang nakita. Ang unang nahuli ang magiging bagong taya.'},
-  piko:{labas:'Gumuhit ng piko sa ligtas na semento o lupa gamit ang tisa o uling, at maghanap ng patag na pamato. Puwede kahit dalawa lang kayo.',title:'Piko',aka:'Tinatawag ding piko-piko; hopscotch sa Ingles',chip:'4 na manlalaro · sabay-sabay',unit:'hakbang',make:(pre,mgi)=>mkPiko(pre,mgi),
+    rules:['Kusang naglalakad ang taya at tumitigil sa bawat taguan. 10 puntos bawat mahanap.','I-tap pag may bakas ng bata: tsinelas, buhok, mata, anino, hagikgik, kaluskos o daliri.','Hayop lang ang pusa, manok at aso! Mali: −2, at bawal mag-tap sa susunod na 2 taguan.'],
+    real:'Pipikit at bibilang ang taya habang nagtatago ang iba. Kinakanta niya ang "Tagu-taguan, maliwanag ang buwan…". Tapos, hahanapin niya ang mga nagtago. Pag may nakita siya, uunahan niya itong makabalik sa base. Ang unang nahuli, siya ang bagong taya.'},
+  piko:{labas:'Gumuhit ng piko sa ligtas na semento o lupa, gamit ang tisa o uling. Maghanap ng patag na pamato. Puwede kahit 2 lang kayo.',title:'Piko',aka:'Tinatawag ding piko-piko; hopscotch sa Ingles',chip:'4 na player · sabay-sabay',unit:'hakbang',make:(pre,mgi)=>mkPiko(pre,mgi),
     preroll:d=>pikoPre(d),botScore:pre=>PIKO_CUM[pre]||0,
-    rules:['Pindot: isang paa sa iisang kahon. Diinan: dalawang paa sa magkatabing kahon.','Laktawan ang kahong may pamato. Kung nasa magkatabi ito, isang paa lang sa kabilang kahon.','Maling lukso: Patay! Balik sa simula at bawas ang hakbang sa guhit na iyon. +2 bawat tapos na guhit, 20 segundo.'],
-    real:'Iginuguhit ng tisa o uling ang mga kahon sa lupa. Ihahagis ng manlalaro ang pamato (patag na bato o piraso ng paso) sa unang kahon, lulundag sa isang paa sa iisang kahon at dalawang paa sa magkatabi, at lalaktawan ang kahong may pamato. Pagbalik, pupulutin niya ang pamato nang hindi natutumba. Patay kapag tumapak sa guhit, natumba o nagkamali ng kahon.'}
+    rules:['Pindot: 1 paa sa iisang kahon. Diinan: 2 paa sa magkatabing kahon.','Laktawan ang kahong may pamato. Pag nasa magkatabing kahon ito, 1 paa lang sa kabila.','Maling lukso? Patay! Balik sa simula, bawas ang hakbang sa guhit na iyon. +2 bawat tapos na guhit. 20 segundo.'],
+    real:'Iginuguhit ng tisa o uling ang mga kahon sa lupa. Ihahagis ng player ang pamato (patag na bato o piraso ng paso) sa unang kahon. Lulukso siya: 1 paa sa iisang kahon, 2 paa sa magkatabi. Lalaktawan niya ang kahong may pamato. Pagbalik, pupulutin niya ang pamato nang hindi natutumba. Patay pag tumapak sa guhit, natumba o nagkamali ng kahon.'}
 };
 const MG_KEYS=Object.keys(MG).filter(k=>!MG[k].off);
 /* online needs every phone on the same build: the round plan comes from the seed and MG_KEYS, so a phone on an older
    cached copy would pick other minigames and fall out of step. Change BUILD_VER whenever a game's rules change; the
    list of minigames (with any switched off) is part of the id. window.LSU_NET.build overrides it (tests) */
 const BUILD_VER='2026-10-25b',BUILD=(window.LSU_NET&&window.LSU_NET.build)||BUILD_VER+'/'+MG_KEYS.join('.');
-/* F9.1: trivia, real-street rules and Subukan sa labas text live in content/fil.json so
-   writers edit that file, not this one. The arrays above stay as a built-in fallback if
-   the fetch fails (offline first load, file:// preview, etc.); whichever resolves first wins. */
+/* F9.1: trivia, real-street rules and Subukan sa labas text live in content/fil.json so writers edit that file, not
+   this one. Phase 2 (Simpler Filipino and English PRD): content/en.json holds the same entries in English. The arrays
+   above stay as the built-in text if a file doesn't load (offline first load, file:// preview, etc.): an English entry
+   that is missing falls back to Filipino, then to the built-in text, so a gap never shows a blank card.
+   ?lang=en or ?lang=fil opens that language for this visit without saving it (for testers). */
+let LANG_Q=(/[?&]lang=(en|fil)\b/.exec(location.search)||[])[1]||null;
+const lang=()=>LANG_Q||PREFS.lang;
+const CTXT=['title','aka','chip','unit','labas','rules','real'],CONTENT={fil:null,en:null};
+const BUILTIN={tanong:TANONG.map(t=>({q:t.q,a:t.a.slice(),f:t.f})),soon:SOON.map(s=>({t:s.t,d:s.d})),mg:{}};
+for(const k in MG){BUILTIN.mg[k]={};for(const x of CTXT)if(MG[k][x]!=null)BUILTIN.mg[k][x]=MG[k][x];}
+async function fetchContent(l){try{const res=await fetch('content/'+l+'.json');return res.ok?await res.json():null;}catch(e){console.warn('content/'+l+'.json not loaded',e);return null;}}
+/* the Filipino list decides how many questions and games there are, so every phone in an online room has the same
+   list whatever its language (the seed picks a question by its number); each English entry replaces its Filipino twin */
+function applyContent(){
+  const F=CONTENT.fil||{},E=lang()==='en'&&CONTENT.en||{},has=v=>v!=null&&v!==''&&!(Array.isArray(v)&&!v.length),pick=(e,f,b)=>has(e)?e:(has(f)?f:b);
+  const qs=Array.isArray(F.trivia)&&F.trivia.length?F.trivia:BUILTIN.tanong;TANONG.length=0;
+  qs.forEach((t,i)=>{const e=(E.trivia||[])[i]||{};TANONG.push({q:pick(e.q,t.q),a:Array.isArray(e.a)&&e.a.length===t.a.length?e.a:t.a,f:pick(e.f,t.f)});});
+  for(const k in MG){const f=(F.minigames||{})[k]||{},e=(E.minigames||{})[k]||{};for(const x of CTXT){const v=pick(e[x],f[x],BUILTIN.mg[k][x]);if(v!=null)MG[k][x]=v;}}
+  const ss=Array.isArray(F.soon)&&F.soon.length?F.soon:BUILTIN.soon;SOON.length=0;ss.forEach((t,i)=>{const e=(E.soon||[])[i]||{};SOON.push({t:t.t,d:pick(e.d,t.d)});});
+  document.documentElement.lang=lang();
+}
 const CONTENT_P=(async function loadContent(){
-  try{
-    const res=await fetch('content/fil.json');
-    if(!res.ok)return;
-    const c=await res.json();
-    if(Array.isArray(c.trivia)&&c.trivia.length){TANONG.length=0;c.trivia.forEach(t=>TANONG.push({q:t.q,a:t.a,f:t.f}));}
-    if(c.minigames)for(const k in c.minigames)if(MG[k])Object.assign(MG[k],c.minigames[k]);
-    if(Array.isArray(c.soon)&&c.soon.length){SOON.length=0;c.soon.forEach(s=>SOON.push(s));}
-  }catch(e){console.warn('content/fil.json not loaded, using built-in fallback text',e);}
+  const [f,e]=await Promise.all([fetchContent('fil'),lang()==='en'?fetchContent('en'):null]);CONTENT.fil=f;CONTENT.en=e;applyContent();syncLangBtn();
 })();
+/* the Wika switch: saved with the other settings; for now it changes the cards only (rules, trivia, Pasaporte) */
+async function setLang(l){if(l!=='fil'&&l!=='en')return;LANG_Q=null;PREFS.lang=l;savePrefs();if(l==='en'&&!CONTENT.en)CONTENT.en=await fetchContent('en');applyContent();syncLangBtn();}
 function mgCtrl(kind){const L=locals();if(kind==='patintero')return L.length>1&&!NET.on?'Isa-isang tatakbo ang mga tao. I-drag ang daliri o arrow keys / WASD.':'I-drag ang daliri kahit saan, o arrow keys / WASD.';
   if(L.length>1)return'Bawat tao: i-tap ang sariling hanay, o pindutin ang '+L.map(p=>'['+keyLabel(p)+'] '+p.name).join(', ')+'.';if(kind==='piko')return'Pindot = isang paa, diinan = dalawang paa: tap, Space, o ang Lukso! na button.';return'Tap, Space, o ang '+({sipa:'Sipa!',palosebo:'Akyat!',luksong:'Talon!',palayok:'Palo!',taguan:'Hanap!'}[kind]||'Tira!')+' na button.';}
 /* the minigame order for a whole game, fixed by the seed (same on every device), no game twice in a row */
@@ -2125,7 +2144,7 @@ function mkLuksong(pre,mgi){
       list.push({y:L.y,f:()=>drawKid(g,L.p,L.x,L.y,{lift:L.lift,dir:(L.st==='out'||L.st==='done')?'front':'back',walk:L.st==='run'?L.run*.7:null,mood:L.p.mood,blink:L.p.blink>0,sy:L.st==='jump'&&L.jt<.06?.85:1})});}
     list.sort((a,b)=>a.y-b.y).forEach(o=>o.f());
     for(const L of lanes){g.beginPath();g.arc(L.x-30,206,14,0,TAU);fs(g,L.p.color,INK,2.5);otext(g,String(L.lvl),L.x-30,207,16,'#fff',4);
-      g.font='900 13px '+BODY;g.textAlign='left';g.textBaseline='middle';g.fillStyle=INK;g.fillText(L.p.name,L.x-12,201);g.font='800 10px '+BODY;g.fillStyle='rgba(59,35,22,.65)';g.fillText('antas',L.x-12,214);laneTag(g,L.p,L.x,232);}
+      g.font='900 13px '+BODY;g.textAlign='left';g.textBaseline='middle';g.fillStyle=INK;g.fillText(L.p.name,L.x-12,201);g.font='800 10px '+BODY;g.fillStyle='rgba(59,35,22,.65)';g.fillText('level',L.x-12,214);laneTag(g,L.p,L.x,232);}
   };
   sc.v3={lanes,SY,MAXL,win,inZone,zTop};
   sc.peek=()=>lanes.map(L=>({st:L.st,inZone:inZone(L),lvl:L.lvl,cd:sc.cd}));
@@ -2561,7 +2580,7 @@ async function runMinigame(kind,opt){
   await wait(300);
   for(const p of P){if(pay[p.id]>0){p.piso+=pay[p.id];coinFly(p,pay[p.id]);burst(p.x,p.y-30,8,'coin',{up:true,spd:220,g:520,size:5});floatText('+'+pay[p.id],p.x,p.y-70,'#FFE07A',22);setMood(p,'happy',1);}}
   if(isTorneo()&&top.length){for(const p of top){p.korona++;floatText('+1 korona',p.x,p.y-104,'#FFC93C',22);setMood(p,'cheer',1.4);burst(p.x,p.y-90,10,'star',{spd:160,size:6,color:'#FFC93C'});}Sfx.fanfare();}
-  tip('pay',isTorneo()?'Sa Torneo, may korona ang mananalo sa bawat laro. Piso ang batayan kapag tabla.':'Sa bawat laro: +10 piso sa una, +5 sa ikalawa, +3 sa ikatlo. Gamitin ang piso para sa korona.');
+  tip('pay',isTorneo()?'Sa Torneo, may korona ang panalo sa bawat laro. Pag tabla, ang may mas maraming piso ang panalo.':'Bawat laro: +10 piso sa una, +5 sa ikalawa, +3 sa ikatlo. Ipunin ang piso para sa korona.');
   Sfx.coin();await wait(1100);state.focus=null;
 }
 
@@ -2639,10 +2658,10 @@ async function gameLoop(startRound,startTurn,token){
   for(let r=startRound;r<=maxR();r++){
     if(token!==gameToken)return;state.round=r;updateStatus();
     if(isTorneo()){
-      if(r===1&&startTurn!==4)tip('torneo','Torneo: walang dice. Bawat panalo sa laro ay isang korona; piso ang batayan kapag tabla.');
+      if(r===1&&startTurn!==4)tip('torneo','Torneo: walang dice. Bawat panalo sa laro, 1 korona. Pag tabla, ang may mas maraming piso ang panalo.');
       await say(r===maxR()?'Huling laro!':'Laro '+r+' ng '+maxR(),'#FFC93C',1100);if(token!==gameToken)return;
       state.turn=4;checkpoint();await runMinigame(state.plan[r-1]);startTurn=0;continue;}
-    if(r===1&&startTurn===0){tip('goal','Layunin: pinakamaraming korona sa dulo ng laro. Dumaan sa korona na may 10 piso para bumili.');await say('Bunutan: una si '+state.players[state.order[0]].name+'!','#FFE07A',1300);if(token!==gameToken)return;}
+    if(r===1&&startTurn===0){tip('goal','Layunin: pinakamaraming korona sa dulo ng laro. Pag may 10 piso ka, dumaan sa korona para bilhin ito.');await say('Bunutan: una si '+state.players[state.order[0]].name+'!','#FFE07A',1300);if(token!==gameToken)return;}
     if(startTurn===0&&r>1)await say(r===maxR()?'Huling ikot!':'Ikot '+r,'#FFC93C',1100);
     if(startTurn===0&&r===maxR()&&maxR()>=3)await hulingHirit();
     for(let i=startTurn;i<4;i++){if(token!==gameToken)return;state.turn=i;checkpoint();await playTurn(state.players[state.order[i]]);}
@@ -2705,7 +2724,7 @@ function startOnline(pr,cp,log){
 }
 
 /* ================= screens & menus ================= */
-function setScreen(s){if(s!=='gallery')galDrop();APP.screen=s;$('#scrTitle').hidden=s!=='title';$('#scrGallery').hidden=s!=='gallery';$('#scrMaps').hidden=s!=='maps';$('#mapView').hidden=s!=='maps';titleScene(s);$('#hudTop').hidden=s!=='game';mapBtn.hidden=s!=='game';$('#menuBtn').hidden=s!=='game';$('#soundBtn').hidden=s==='game';$('#hudBottom').hidden=s==='gallery'||s==='maps';$('#hudBottom').classList.toggle('ontitle',s==='title');closeMenu();
+function setScreen(s){if(s!=='gallery')galDrop();APP.screen=s;$('#scrTitle').hidden=s!=='title';$('#scrGallery').hidden=s!=='gallery';$('#scrMaps').hidden=s!=='maps';$('#mapView').hidden=s!=='maps';titleScene(s);$('#hudTop').hidden=s!=='game';mapBtn.hidden=s!=='game';$('#menuBtn').hidden=s!=='game';$('#soundBtn').hidden=s==='game';$('#langBtn').hidden=s==='game';$('#hudBottom').hidden=s==='gallery'||s==='maps';$('#hudBottom').classList.toggle('ontitle',s==='title');closeMenu();
   if(s!=='game'){actionBtn.hidden=true;itemBtn.hidden=true;setHint('');clearTips();}measureHud();Music.play(s==='game'?'board':'title');}
 function demoPlayers(){state.players=makePlayers(CHARS.map(c=>({name:c.name,ctrl:'bot'})));state.players.forEach((p,i)=>{p.pos=[0,1,0,1][i];});state.active=null;}
 function toTitle(){gameToken++;loadBar(-1);scene=null;closeCard();clearRun();if(NET.rm)netLeave();netUnsave();state.party=false;state.ended=false;state.checkpoint=null;state.cfg=normCfg({});setBoard('ulap');demoPlayers();resetKorona();setScreen('title');refreshResume();setTimeout(()=>{try{($('#mResume').hidden?$('#mLocal'):$('#mResume')).focus({preventScroll:true});}catch(e){}},50);}
@@ -2725,7 +2744,7 @@ function renderSettings(box,cfg,after,withMap){
 async function localFlow(){
   try{if(!localFlow.pre){localFlow.pre=new Image();localFlow.pre.src='maps/world/world.jpg';}}catch(e){}   // the map screen comes next
   const prev=state.setup&&state.setup.n?state.setup:{};let n=prev.n||1;const names=prev.names?prev.names.slice():CHARS.map(c=>c.name);const cfg=normCfg(prev.cfg);if(cfg.mode==='hamon')cfg.mode='party';
-  const render=c=>{const box=c.querySelector('#nmBox');box.innerHTML=CHARS.map((ch,i)=>i<n?'<div class="field"><span class="dot" style="background:'+ch.color+'"></span><input id="nm'+i+'" maxlength="12" autocomplete="off" aria-label="Pangalan ng manlalaro '+(i+1)+'" value="'+esc(names[i]||ch.name)+'"></div>':'<div class="field"><span class="dot" style="background:'+ch.color+'"></span><span class="bot">'+esc(ch.name)+' · bot</span></div>').join('');
+  const render=c=>{const box=c.querySelector('#nmBox');box.innerHTML=CHARS.map((ch,i)=>i<n?'<div class="field"><span class="dot" style="background:'+ch.color+'"></span><input id="nm'+i+'" maxlength="12" autocomplete="off" aria-label="Pangalan ng player '+(i+1)+'" value="'+esc(names[i]||ch.name)+'"></div>':'<div class="field"><span class="dot" style="background:'+ch.color+'"></span><span class="bot">'+esc(ch.name)+' · bot</span></div>').join('');
     c.querySelectorAll('#nSeg button').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.n===n)));};
   const c=openCard('<h2>Maglaro</h2><div id="setBox"></div><div class="setrow"><span class="setlbl">Ilang tao</span><div class="seg sm" id="nSeg" role="group" aria-label="Bilang ng tao">'+[1,2,3,4].map(k=>'<button type="button" data-n="'+k+'">'+k+'</button>').join('')+'</div></div><div id="nmBox"></div><p class="note">Lahat ng tao ay sa iisang phone o computer; bot ang iba. Sa laro, may sariling hanay ang bawat tao.</p><div class="row"><button type="button" class="btn" data-v="back">Balik</button><button type="button" class="btn primary" data-v="go" data-primary>Simulan</button></div>');
   renderSettings(c.querySelector('#setBox'),cfg);render(c);
@@ -2813,7 +2832,7 @@ async function onlineFlow(){
   if(!roomAvailable()){
     const c=openCard('<span class="chip">Online</span><h2>Wala pang online dito</h2><p>Sa ngayon, gumagana lang ang online room kapag binuksan ang laro sa claude.ai, naka-sign in, at naka-share sa mga kalaro.</p><p>Puwede pa rin kayong maglaro nang sabay sa iisang phone o computer: hanggang 4 na tao.</p><div class="row"><button type="button" class="btn" data-v="back">Balik</button><button type="button" class="btn primary" data-v="local" data-primary>Maglaro sa isang device</button></div>');
     if(await cardChoice(c)==='local')localFlow();return;}
-  const c=openCard('<span class="chip">Online</span><h2>Maglaro online</h2><p>Hanggang 4 na manlalaro, bawat isa sa sariling phone. Bot ang papalit sa kulang.</p><div class="pgrid"><button type="button" class="btn" data-v="host" data-primary><span>Gumawa ng room</span><small>Ikaw ang host: ipa-scan ang QR o ibigay ang code</small></button><button type="button" class="btn" data-v="join"><span>Sumali</span><small>Gamit ang 4-letrang code ng room</small></button></div><div class="row"><button type="button" class="btn" data-v="back">Balik</button></div>');
+  const c=openCard('<span class="chip">Online</span><h2>Maglaro online</h2><p>Hanggang 4 na player, tig-isang phone. Bot ang papalit sa kulang.</p><div class="pgrid"><button type="button" class="btn" data-v="host" data-primary><span>Gumawa ng room</span><small>Ikaw ang host: ipa-scan ang QR o ibigay ang code</small></button><button type="button" class="btn" data-v="join"><span>Sumali</span><small>Gamit ang 4-letrang code ng room</small></button></div><div class="row"><button type="button" class="btn" data-v="back">Balik</button></div>');
   const v=await cardChoice(c);if(v==='host')hostFlow();else if(v==='join')joinFlow('');
 }
 function netFail(){const c=openCard('<h2>Hindi makakonekta</h2><p>'+esc(netHelp())+'</p><div class="row"><button type="button" class="btn primary" data-v="ok" data-primary>Sige</button></div>');cardChoice(c);}
@@ -2909,13 +2928,13 @@ async function hamonResult(res){
 function guidePages(){
   const sw=(c,t,d)=>'<li><span class="sw" style="background:'+c+'"></span><b>'+esc(t)+'</b> '+esc(d)+'</li>';
   return[
-    {t:'Layunin',h:'<p>Maging <b>Bida ng Isla</b>: ang may pinakamaraming <b>korona</b> sa dulo ng laro ang panalo. Kapag tabla, piso ang batayan.</p><p>Hanggang 4 na tao sa iisang phone o computer, o online gamit ang QR o code. Bot ang papalit sa kulang na manlalaro. Bunutan kung sino ang unang titira.</p>'},
-    {t:'Sa iyong turn',h:'<ol class="steps"><li>Pindutin ang <b>Tamaan ang dice</b>. Lalabas ang 1 hanggang 10.</li><li>May puting bilog ang mga espasyong maaabot mo, at nakasulat sa korona kung ilang hakbang ito.</li><li>Kapag <b>dumaan</b> ka sa korona na may 10 piso, puwede mo itong bilhin. Lilipat ito sa ibang lugar pagkatapos.</li><li>May <b>kasama</b>? Bawat isa ay magdadagdag ng 1 o 2 hakbang sa gulong mo.</li><li>May item? Pindutin ang <b>Gamitin</b> bago gumulong.</li></ol>'},
-    {t:'Mga espasyo',h:'<ul class="legend">'+sw(SPACE.piso.c,'Piso','+3 piso')+sw(SPACE.utang.c,'Utang','−3 piso')+sw(SPACE.swerte.c,'Swerte','bonus na piso o libreng item')+sw(SPACE.tikbalang.c,'Tikbalang','atras ng 3 espasyo')+sw(SPACE.sari.c,'Sari-sari','bumili ng item; puwede ring dumaan lang')+sw(SPACE.kasama.c,'Kasama','may sasama sa barkada mo, +1 o +2 sa bawat gulong')+sw(SPACE.tanong.c,'Tanong ni Lola','tanong tungkol sa larong Pilipino, +5 kapag tama')+sw(SPACE.jack.c,'Jack en Poy','hamunin ang sinuman: hanggang 5 piso')+sw('#FFC93C','Korona','10 piso, dumaan para bumili')+'</ul>'},
-    {t:'Mga mapa',h:'<p>Pumili ng isla bago maglaro: <b>Plaza, Palengke, Aplaya</b> o <b>Palayan</b>. May <b>4 na korona</b> sa bawat mapa.</p><ul><li><b>Sangandaan:</b> may daan na humihiwalay at bumabalik sa ikot. Ikaw ang pipili kung saan dadaan.</li><li><b>Sakay:</b> ang hintuan ng kalesa, padyak, bangka o kariton ng kalabaw ay malapit sa simula. Tumigil o dumaan doon at magbayad (8 piso; bangka 6) para makarating sa malayong bahagi ng mapa; doon titigil ang lakad mo.</li><li><b>Espasyo ng isla:</b> may sariling espasyo ang bawat mapa, gaya ng Banda at Kampana sa Plaza, Tawad at Basa sa Palengke, Alon at Huli sa Aplaya, Ani at Balang sa Palayan. Sasabihin ng tip kung ano ang ginagawa nito sa unang tapak mo rito.</li></ul>'},
-    {t:'Mga item',h:'<p>Isang item lang ang madadala. Bilhin sa Sari-sari store, o makuha sa Swerte.</p><ul class="legend items">'+Object.keys(ITEMS).map(k=>'<li><span class="iic">'+ITEM_ICON[k]+'</span><span><b>'+esc(ITEMS[k].name)+' · '+ITEMS[k].cost+' piso</b><br>'+esc(ITEMS[k].desc)+'</span></li>').join('')+'</ul><p class="note">Itira ang 10 piso para sa korona bago bumili!</p>'},
-    {t:'Mga laro',h:'<p>Pagkatapos ng bawat ikot, maglalaro ang lahat ng isang larong kalye: '+(t=>'<b>'+t.slice(0,-1).join(', ')+'</b> o <b>'+t[t.length-1]+'</b>')(MG_KEYS.map(k=>esc(MG[k].title)))+'.</p><p>Premyo: <b>+10</b> piso sa una, <b>+5</b> sa ikalawa, <b>+3</b> sa ikatlo.</p><p><b>Huling Hirit:</b> sa huling ikot, doble ang premyo at may tulong ang nasa huli.</p><p><b>Bonus na korona</b> sa dulo: <b>Hari ng Laro</b> (pinakamaraming panalo sa mga laro), <b>Mayaman</b> (pinakamaraming piso) at <b>Malas sa Dice</b> (pinakamababang average ng dice).</p>'},
-    {t:'Mga paraan ng paglaro',h:'<ul><li><b>Party</b>: board, dice at laro, 3, 5 o 8 ikot.</li><li><b>Torneo</b>: laro lang, walang dice. Bawat panalo ay isang korona, kaya galing ang batayan.</li><li><b>Hamon ng Araw</b>: solo laban sa mahihirap na bot. Iisang hamon para sa lahat ngayong araw, may talaan ng iskor.</li><li><b>Online</b>: gumawa ng room at ipa-scan ang QR, o ibigay ang 4-letrang code.</li></ul>'},
+    {t:'Layunin',h:'<p>Maging <b>Bida ng Isla</b>! Ang may pinakamaraming <b>korona</b> sa dulo, panalo. Pag tabla, ang may mas maraming piso ang panalo.</p><p>Hanggang 4 na tao sa iisang phone o computer, o online gamit ang QR o code. Bot ang papalit sa kulang na player. Bunutan kung sino ang unang titira.</p>'},
+    {t:'Sa iyong turn',h:'<ol class="steps"><li>Pindutin ang <b>Tamaan ang dice</b>. Lalabas ang 1 hanggang 10.</li><li>May puting bilog ang mga space na maaabot mo. Nakasulat sa korona kung ilang hakbang ito.</li><li>Pag <b>dumaan</b> ka sa korona at may 10 piso ka, puwede mo itong bilhin. Tapos, lilipat ito sa ibang lugar.</li><li>May <b>kasama</b> ka? Bawat isa, dagdag na 1 o 2 hakbang sa roll mo.</li><li>May item ka? Pindutin ang <b>Gamitin</b> bago mag-roll.</li></ol>'},
+    {t:'Mga space',h:'<ul class="legend">'+sw(SPACE.piso.c,'Piso','+3 piso')+sw(SPACE.utang.c,'Utang','−3 piso')+sw(SPACE.swerte.c,'Swerte','bonus na piso o libreng item')+sw(SPACE.tikbalang.c,'Tikbalang','atras ng 3')+sw(SPACE.sari.c,'Sari-sari','bumili ng item. Puwede ring dumaan lang')+sw(SPACE.kasama.c,'Kasama','may sasama sa barkada mo, +1 o +2 bawat roll')+sw(SPACE.tanong.c,'Tanong ni Lola','tanong tungkol sa larong Pilipino, +5 pag tama')+sw(SPACE.jack.c,'Jack en Poy','hamunin ang kahit sino: hanggang 5 piso')+sw('#FFC93C','Korona','10 piso, dumaan para bumili')+'</ul>'},
+    {t:'Mga mapa',h:'<p>Pumili ng isla bago maglaro: <b>Plaza, Palengke, Aplaya</b> o <b>Palayan</b>. May <b>4 na korona</b> sa bawat mapa.</p><ul><li><b>Sangandaan:</b> may daan na humihiwalay, tapos bumabalik sa ikot. Ikaw ang pipili kung saan dadaan.</li><li><b>Sakay:</b> malapit sa simula ang hintuan ng Kalesa, Padyak, Bangka o Kariton ng kalabaw. Tumigil o dumaan doon at magbayad (8 piso; Bangka 6). Dadalhin ka nito sa malayong dulo ng mapa, at doon ka titigil.</li><li><b>Space ng isla:</b> may sariling space ang bawat mapa, gaya ng Banda at Kampana sa Plaza, Tawad at Basa sa Palengke, Alon at Huli sa Aplaya, Ani at Balang sa Palayan. Pag unang tapak mo rito, sasabihin ng tip kung ano ang ginagawa nito.</li></ul>'},
+    {t:'Mga item',h:'<p>1 item lang ang puwedeng dalhin. Bilhin ito sa Sari-sari store, o makuha sa Swerte.</p><ul class="legend items">'+Object.keys(ITEMS).map(k=>'<li><span class="iic">'+ITEM_ICON[k]+'</span><span><b>'+esc(ITEMS[k].name)+' · '+ITEMS[k].cost+' piso</b><br>'+esc(ITEMS[k].desc)+'</span></li>').join('')+'</ul><p class="note">Bago bumili, magtira ng 10 piso para sa korona!</p>'},
+    {t:'Mga laro',h:'<p>Pagkatapos ng bawat ikot, maglalaro ang lahat ng isang larong kalye: '+(t=>'<b>'+t.slice(0,-1).join(', ')+'</b> o <b>'+t[t.length-1]+'</b>')(MG_KEYS.map(k=>esc(MG[k].title)))+'.</p><p>Premyo: <b>+10</b> piso sa una, <b>+5</b> sa ikalawa, <b>+3</b> sa ikatlo.</p><p><b>Huling Hirit:</b> sa huling ikot, doble ang premyo. May tulong pa ang nasa huli.</p><p><b>Bonus na korona</b> sa dulo: <b>Hari ng Laro</b> (pinakamaraming panalo sa mga laro), <b>Mayaman</b> (pinakamaraming piso) at <b>Malas sa Dice</b> (pinakamababang average ng dice).</p>'},
+    {t:'Mga paraan ng paglaro',h:'<ul><li><b>Party</b>: board, dice at laro, 3, 5 o 8 ikot.</li><li><b>Torneo</b>: laro lang, walang dice. Bawat panalo, 1 korona. Kaya galing ang labanan dito.</li><li><b>Hamon ng Araw</b>: solo laban sa mahihirap na bot. Pare-pareho ang hamon ng lahat ngayong araw. May listahan ng score.</li><li><b>Online</b>: gumawa ng room at ipa-scan ang QR, o ibigay ang 4-letrang code.</li></ul>'},
     {t:'Album ng Laro',h:'<p>Ganito nilalaro ang mga ito sa totoong kalye at pista.</p>'+MG_KEYS.map(k=>'<div class="real"><b>'+esc(MG[k].title)+'</b><p>'+esc(MG[k].real)+'</p></div>').join('')+'<div class="row"><button type="button" class="btn small" data-v="tips">Ipakita ulit ang mga tip</button></div>'}
   ];
 }
@@ -2936,9 +2955,11 @@ function prefRow(key,label){return segRow(key,label,[{v:1,l:'Bukas'},{v:0,l:'Sar
 /* the settings rows and their buttons: the in-game menu uses them, and a settings screen on the title (F3.2) can too.
    Kalidad (graphics quality: Mababa, Katamtaman, Mataas) changes how heavy the 3D is; every quality stays 3D */
 function settingsRows(){return prefRow('music','Musika')+prefRow('sfx','Tunog')+(navigator.vibrate?prefRow('vib','Vibrate'):'')+
-  (B3.ok?segRow('gq','Kalidad',[{v:'low',l:'Mababa'},{v:'mid',l:'Katamtaman'},{v:'high',l:'Mataas'}],PREFS.gq):'');}
+  (B3.ok?segRow('gq','Kalidad',[{v:'low',l:'Mababa'},{v:'mid',l:'Katamtaman'},{v:'high',l:'Mataas'}],PREFS.gq):'')+
+  segRow('lang','Wika',[{v:'fil',l:'Filipino'},{v:'en',l:'English'}],lang())+'<p class="note" id="langNote"'+(lang()==='en'?'':' hidden')+'>Rules and trivia only for now.</p>';}
 function wireSettings(c){c.querySelectorAll('button[data-k]').forEach(b=>b.addEventListener('click',()=>{const k=b.dataset.k;
   if(k==='gq'){if(!GQ[b.dataset.val])return;const was=B3.island&&B3.island.q;PREFS.gq=b.dataset.val;if(was&&was!==gqIsland())toast('Inaayos ang isla para sa bagong kalidad…','#fff',1800);}
+  else if(k==='lang'){setLang(b.dataset.val);const n=c.querySelector('#langNote');if(n)n.hidden=b.dataset.val!=='en';}
   else PREFS[k]=b.dataset.val==='1';
   savePrefs();Sfx.init();syncSoundBtn();
   c.querySelectorAll('button[data-k="'+k+'"]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));if(k==='sfx'&&PREFS.sfx)Sfx.tick(4);if(k==='vib'&&PREFS.vib)buzz(30);}));}
@@ -3395,7 +3416,7 @@ function init3D(){
         pose(o.sit.at(0),L.x-30,SY,{mood:'sit',dir:'side',face:1},.8);pose(o.sit.at(1),L.x+30,SY,{mood:'sit',dir:'side',face:-1},.8);
         const fin=L.st==='out'||L.st==='done';pose(kidOf(L.p),L.x,L.y,{lift:L.lift,dir:fin?'front':'back',walk:L.st==='run'?L.run*.7:null,mood:L.p.mood,blink:L.p.blink>0,sy:L.st==='jump'&&L.jt<.06?.85:1},1.05);
         const show=L.mode==='local'&&(L.st==='run'||L.st==='wait')&&!(sc.cd>.6);o.zone.visible=show;if(show){const w=v.win(L);o.zone.scale.z=w;o.zone.position.z=v.zTop+w/2;o.zm.opacity=L.st==='run'&&v.inZone(L)?.8:.38;}}};
-      over=g=>{for(const o of L3){const L=o.L;badge(g,L.x-28,0,206,L.p.color,L.lvl,L.p.name,'antas',tagOf(L.p));}};}
+      over=g=>{for(const o of L3){const L=o.L;badge(g,L.x-28,0,206,L.p.color,L.lvl,L.p.name,'level',tagOf(L.p));}};}
     else if(kind==='palosebo'){const TOP=v.TOP,PX=v.PX,PZ=-20,HT=TOP*PX;
       const L3=v.lanes.map(L=>{const g=new T3.Group();g.position.set(L.x,0,PZ);root.add(g);
         g.add(mesh(new T3.CylinderGeometry(30,34,6,20),M('#B08455'),0,3,0));const pole=mesh(new T3.CylinderGeometry(7,7.5,HT+14,14),M('#C9B865'),0,(HT+14)/2,0);ol(pole,.08);g.add(pole);
@@ -3710,7 +3731,7 @@ function start(data){
     setInterval(()=>{const s=perfStats();d.textContent=s.fps+' fps  p50 '+s.p50+'  p95 '+s.p95+' ms\n'+s.mode+(s.mode==='3d'?' '+s.q+'  pr '+s.pr+'  calls '+s.calls+'  tris '+s.tris+'\ngeo '+s.geo+'  tex '+s.tex+'  shadow '+s.shadow:'');},500);}
 }
 if(DEBUG){const m=/[?&]speed=(\d+)/.exec(location.search);if(m)SPEED=clamp(+m[1],1,60);
-  window.__lsu={get title(){return TS;},get cam(){return cam;},get hero(){return HERO;},get splash(){return SPLASH;},get gal(){return GAL;},state,NET,MG,get SP(){return SP;},get N(){return N;},get board(){return BOARD;},korona,DBG,get scene(){return scene;},get screen(){return APP.screen;},setSpeed:v=>{SPEED=clamp(v|0,1,60);},startLocal:(s,cp)=>startLocal(s,cp),toTitle:()=>toTitle(),bot:{usesItem:botUsesItem,shop:botShop,rival:botRival,ginto:botGintoPick},hamon:{fetchTop:fetchDailyTop,sync:syncDailyScore,dayKey,dailyKind,on:HAMON_ONLINE},b3:B3,toWorld:(x,y)=>toWorld(x,y),toScreen:(x,y)=>worldToScreen(x,y),spacePos:i=>spacePos(i),bench:n=>{const t=performance.now();for(let i=0;i<n;i++){draw();if(B3.on&&B3.finish)B3.finish();}return(performance.now()-t)/n;},perf:()=>perfStats(),perfReset:()=>{FT.length=0;},
+  window.__lsu={get title(){return TS;},get cam(){return cam;},get hero(){return HERO;},get splash(){return SPLASH;},get gal(){return GAL;},state,NET,MG,TANONG,SOON,lang:()=>lang(),get SP(){return SP;},get N(){return N;},get board(){return BOARD;},korona,DBG,get scene(){return scene;},get screen(){return APP.screen;},setSpeed:v=>{SPEED=clamp(v|0,1,60);},startLocal:(s,cp)=>startLocal(s,cp),toTitle:()=>toTitle(),bot:{usesItem:botUsesItem,shop:botShop,rival:botRival,ginto:botGintoPick},hamon:{fetchTop:fetchDailyTop,sync:syncDailyScore,dayKey,dailyKind,on:HAMON_ONLINE},b3:B3,toWorld:(x,y)=>toWorld(x,y),toScreen:(x,y)=>worldToScreen(x,y),spacePos:i=>spacePos(i),bench:n=>{const t=performance.now();for(let i=0;i<n;i++){draw();if(B3.on&&B3.finish)B3.finish();}return(performance.now()-t)/n;},perf:()=>perfStats(),perfReset:()=>{FT.length=0;},
     GQ,setQ:q=>{PREFS.gq=q;},resultPng:()=>buildResultImage([...state.players].map((p,k)=>Object.assign({},p,{rank:k})),'Test ang Bida ng Isla!').toDataURL()};}
 try{window.claude&&window.claude.hot&&window.claude.hot.snapshot&&window.claude.hot.snapshot(()=>({checkpoint:NET.on?null:state.checkpoint}));}catch(e){}
 /* ================= title scene: the Plaza at golden hour behind the main menu (maps/title.js) =================
@@ -3823,6 +3844,13 @@ const boot=()=>{const h=window.claude&&window.claude.hot;if(h&&h.ready)h.ready(s
 const fontsP=document.fonts&&document.fonts.load?Promise.race([Promise.all([document.fonts.load('20px "Bagel Fat One"'),document.fonts.load('900 12px "Nunito"')]),new Promise(r=>setTimeout(r,1200))]).catch(()=>{}):Promise.resolve();
 fontsP.then(boot,boot);
 if(SPLASH.on)splashLoad(fontsP);
+
+/* F10 offline: on https (Vercel, GitHub Pages) or localhost, sw.js keeps a copy of every game file, so after one visit
+   online the game opens and plays on one device without internet. Not inside Claude, and under ?debug only with &sw
+   (the tests block files on purpose, which a worker would serve anyway). 10 s after the page loads, the worker checks
+   its copy against the server, away from the splash's own loading */
+const OFFLINE_OK='serviceWorker' in navigator&&!inClaude()&&(location.protocol==='https:'||/^(localhost|127\.0\.0\.1)$/.test(location.hostname))&&(!DEBUG||/[?&]sw\b/.test(location.search));
+if(OFFLINE_OK)addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').then(()=>navigator.serviceWorker.ready).then(r=>setTimeout(()=>{if(navigator.onLine&&r.active)r.active.postMessage('check');},10000)).catch(e=>console.warn('offline copy',e));});
 
 })();
 </script>

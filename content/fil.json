@@ -10,15 +10,15 @@
       "id": "tumbang-pamato",
       "q": "Ano ang ibinabato sa lata sa Tumbang Preso?",
       "a": ["Tsinelas", "Bola", "Holen"],
-      "f": "Tsinelas ang pamato, kaya kailangang mabilis ka ring kunin ito bago ka mataya.",
+      "f": "Tsinelas ang pamato. Kunin mo ito agad para hindi ka mataya.",
       "reviewed_by": null,
       "reviewed_at": null
     },
     {
       "id": "sipa-national-game",
-      "q": "Alin ang pambansang laro ng Pilipinas hanggang 2009?",
+      "q": "Ano ang pambansang laro hanggang 2009?",
       "a": ["Sipa", "Patintero", "Piko"],
-      "f": "Noong 2009, idineklara ang arnis bilang pambansang sining ng pakikipaglaban at isport.",
+      "f": "Noong 2009, ginawang pambansang martial art at sport natin ang arnis.",
       "reviewed_by": null,
       "reviewed_at": null
     },
@@ -26,15 +26,15 @@
       "id": "patintero-aka",
       "q": "Ano ang isa pang tawag sa Patintero?",
       "a": ["Tubigan", "Presohan", "Sungka"],
-      "f": "Minsan tubig ang ginagamit pang-guhit ng mga linya, kaya tubigan.",
+      "f": "Minsan, tubig ang gamit sa pagguhit ng mga linya. Kaya tubigan!",
       "reviewed_by": null,
       "reviewed_at": null
     },
     {
       "id": "palosebo-grease",
-      "q": "Ano ang ipinapahid sa kawayan ng Palosebo?",
+      "q": "Ano ang pinapahid sa kawayan sa Palosebo?",
       "a": ["Grasa o mantika", "Pandikit", "Pulot"],
-      "f": "Galing sa Espanyol na palo ensebado: kawayang may grasa.",
+      "f": "Galing ang pangalan sa Espanyol na palo ensebado. Ibig sabihin: kawayang may grasa.",
       "reviewed_by": null,
       "reviewed_at": null
     },
@@ -42,7 +42,7 @@
       "id": "jackenpoy-bato",
       "q": "Sa Jack en Poy, ano ang tumatalo sa bato?",
       "a": ["Papel", "Gunting", "Tsinelas"],
-      "f": "Binabalot ng papel ang bato. Ang bato naman ang tumatalo sa gunting.",
+      "f": "Binabalot ng papel ang bato. Ang bato naman, panalo sa gunting.",
       "reviewed_by": null,
       "reviewed_at": null
     },
@@ -50,15 +50,15 @@
       "id": "luksong-tinik",
       "q": "Sa Luksong Tinik, ano ang \"tinik\"?",
       "a": ["Mga kamay at paang pinagpapatong", "Halamang may tinik", "Mahabang lubid"],
-      "f": "Patataas nang patataas ang tinik habang dinadagdagan ng kamay at paa.",
+      "f": "Bawat dagdag na kamay o paa, tumataas ang tinik.",
       "reviewed_by": null,
       "reviewed_at": null
     },
     {
       "id": "piko-pamato",
-      "q": "Sa Piko, ano ang inihahagis sa mga kahon?",
+      "q": "Sa Piko, ano ang hinahagis sa mga kahon?",
       "a": ["Pamato, gaya ng patag na bato", "Barya", "Bola"],
-      "f": "Lumulukso ka sa isang paa at nilalampasan ang kahong may pamato.",
+      "f": "Lulukso ka sa isang paa. Lampasan mo ang kahong may pamato.",
       "reviewed_by": null,
       "reviewed_at": null
     },
@@ -66,7 +66,7 @@
       "id": "holen-what",
       "q": "Ano ang holen?",
       "a": ["Maliit na bolang salamin", "Laruang trumpo", "Saranggola"],
-      "f": "Pinipitik ang holen gamit ang hinlalaki para tamaan ang holen ng kalaro.",
+      "f": "Pinipitik mo ang holen gamit ang hinlalaki. Tamaan mo ang holen ng kalaro!",
       "reviewed_by": null,
       "reviewed_at": null
     },
@@ -74,31 +74,31 @@
       "id": "sungka-equipment",
       "q": "Ano ang ginagamit sa Sungka?",
       "a": ["Tablang may butas at mga sigay", "Baraha", "Dice"],
-      "f": "Mga sigay o maliliit na kabibe ang inilalagay sa mga butas ng tabla.",
+      "f": "Sigay, o maliliit na kabibe, ang nilalagay sa mga butas ng tabla.",
       "reviewed_by": null,
       "reviewed_at": null
     },
     {
       "id": "agawan-base-win",
-      "q": "Sa Agawan Base, paano nananalo?",
-      "a": ["Mahawakan ang base ng kalaban", "Makakuha ng pinakamaraming bola", "Matapos ang takbo nang una"],
-      "f": "May dalawang base at dalawang koponan. Kapag nataya ka, bihag ka ng kalaban.",
+      "q": "Sa Agawan Base, paano ka mananalo?",
+      "a": ["Mahawakan ang base ng kalaban", "Makuha ang pinakamaraming bola", "Maunang matapos tumakbo"],
+      "f": "May 2 base at 2 team. Pag nataya ka, bihag ka na ng kalaban.",
       "reviewed_by": null,
       "reviewed_at": null
     },
     {
       "id": "palayok-laman",
-      "q": "Sa Pukpok Palayok, ano ang karaniwang laman ng palayok?",
+      "q": "Sa Pukpok Palayok, ano ang madalas na laman ng palayok?",
       "a": ["Kendi, barya o maliliit na laruan", "Tubig", "Bigas"],
-      "f": "Kapag nabasag ang palayok, nag-aagawan ang mga bata sa kendi at baryang nalalaglag.",
+      "f": "Pag nabasag ang palayok, nag-aagawan ang mga bata sa kendi at baryang nahulog.",
       "reviewed_by": null,
       "reviewed_at": null
     },
     {
       "id": "taguan-kanta",
-      "q": "Anong awit ang kinakanta habang nagbibilang ang taya sa Taguan?",
+      "q": "Ano ang kinakanta ng taya sa Taguan?",
       "a": ["Tagu-taguan, maliwanag ang buwan", "Bahay Kubo", "Leron, Leron Sinta"],
-      "f": "Kinakanta ito ng taya habang nakapikit at nagbibilang, para may oras magtago ang iba.",
+      "f": "Kinakanta ito ng taya habang nakapikit at nagbibilang. Para may oras magtago ang iba.",
       "reviewed_by": null,
       "reviewed_at": null
     },
@@ -106,16 +106,16 @@
       "id": "piko-pamato",
       "q": "Sa Piko, ano ang ginagawa sa kahong may pamato?",
       "a": ["Nilalaktawan ito", "Tinatapakan ito nang dalawang paa", "Doon nagpapahinga"],
-      "f": "Hindi tinatapakan ang kahong may pamato; pupulutin lang ito pagbalik, nang hindi natutumba.",
+      "f": "Hindi tinatapakan ang kahong may pamato. Pupulutin mo lang ito pagbalik, nang hindi natutumba.",
       "reviewed_by": null,
       "reviewed_at": null
     },
     {
       "id": "plaza-kiosko",
       "island": "plaza",
-      "q": "Ano ang kiosko na madalas makikita sa gitna ng plaza ng bayan?",
-      "a": ["Tambayan ng banda tuwing may pista", "Palengke ng bayan", "Himpilan ng pulis"],
-      "f": "Ang kiosko ay istrukturang parang maliit na tanghalan, kinatatayuan ng banda ng bayan tuwing may pista o pagdiriwang sa plaza.",
+      "q": "Ano ang kiosko sa gitna ng plaza ng bayan?",
+      "a": ["Tambayan ng banda tuwing may pista", "Palengke ng bayan", "Istasyon ng pulis"],
+      "f": "Parang maliit na stage ang kiosko. Dito tumutugtog ang banda ng bayan tuwing may pista o handaan sa plaza.",
       "reviewed_by": null,
       "reviewed_at": null
     },
@@ -124,7 +124,7 @@
       "island": "plaza",
       "q": "Ano ang kalesa?",
       "a": ["Karwaheng hila ng kabayo", "Bangkang de-layag", "Traysikel na pedal"],
-      "f": "Ang kalesa ay tradisyonal na sasakyang hila ng kabayo, ginamit noon bilang pangunahing transportasyon at makikita pa rin ngayon sa ilang lugar tulad ng Intramuros.",
+      "f": "Hila ng kabayo ang kalesa, madalas na sakayan noon. May kalesa pa rin ngayon, gaya sa Intramuros.",
       "reviewed_by": null,
       "reviewed_at": null
     },
@@ -132,8 +132,8 @@
       "id": "palengke-tawad",
       "island": "palengke",
       "q": "Ano ang tawad sa palengke?",
-      "a": ["Paghingi na babaan ang presyo", "Pagtitimbang ng paninda", "Pagbalot ng isda"],
-      "f": "Karaniwan sa palengke ang pagtawad, kung saan hinihingi ng mamimili na babaan ng tindera ang presyo ng paninda.",
+      "a": ["Paghingi ng mas mababang presyo", "Pagtimbang ng paninda", "Pagbalot ng isda"],
+      "f": "Madalas tumawad ang mga mamimili sa palengke. Hinihingi nila sa tindera na babaan ang presyo.",
       "reviewed_by": null,
       "reviewed_at": null
     },
@@ -142,7 +142,7 @@
       "island": "palengke",
       "q": "Ano ang padyak?",
       "a": ["Sasakyang pedal, walang motor", "Bangkang de-layag", "Karwaheng hila ng kabayo"],
-      "f": "Ang padyak ay sasakyang pedal na walang makina, karaniwang ginagamit para sa maikling biyahe malapit sa palengke o sa kalapit baranggay.",
+      "f": "Pedal ang padyak, walang makina. Pang-maikling biyahe ito: sa palengke o sa kalapit na barangay.",
       "reviewed_by": null,
       "reviewed_at": null
     },
@@ -150,17 +150,17 @@
       "id": "aplaya-bangka",
       "island": "aplaya",
       "q": "Ano ang bangka?",
-      "a": ["Sasakyang-tubig na gawa sa kahoy para mangisda", "Karwaheng hila ng kabayo", "Kariton na hila ng kalabaw"],
-      "f": "Ang bangka ay tradisyonal na sasakyang-tubig na ginagamit ng mga mangingisda sa pangingisda malapit sa baybayin.",
+      "a": ["Sasakyang-tubig na kahoy, pang-isda", "Karwaheng hila ng kabayo", "Kariton na hila ng kalabaw"],
+      "f": "Sasakyang-tubig ang bangka. Gamit ito ng mga mangingisda sa pangingisda malapit sa tabing-dagat.",
       "reviewed_by": null,
       "reviewed_at": null
     },
     {
       "id": "aplaya-patuyo",
       "island": "aplaya",
-      "q": "Bakit ipinapatuyo sa araw ang isda sa mga baybaying bayan?",
+      "q": "Bakit pinapatuyo sa araw ang isda?",
       "a": ["Para hindi masira at tumagal", "Para lumambot", "Para lumaki"],
-      "f": "Pinapatuyo ang isda sa init ng araw bilang tradisyonal na paraan ng pangangalaga nito, lalo na sa mga lugar na walang palamig.",
+      "f": "Pinapatuyo ang isda sa init ng araw para hindi ito masira. Lumang paraan ito, lalo na sa mga lugar na walang ref.",
       "reviewed_by": null,
       "reviewed_at": null
     },
@@ -169,7 +169,7 @@
       "island": "palayan",
       "q": "Ano ang gamit ng kalabaw sa palayan?",
       "a": ["Pag-araro ng lupa bago itanim ang bigas", "Pagbantay sa bukid sa gabi", "Panggiling ng bigas"],
-      "f": "Ginagamit ang kalabaw para hilahin ang araro at lupain ang lupa bago magtanim ng palay.",
+      "f": "Hinihila ng kalabaw ang araro. Inaararo nila ang lupa bago magtanim ng palay.",
       "reviewed_by": null,
       "reviewed_at": null
     },
@@ -177,8 +177,8 @@
       "id": "palayan-bayanihan",
       "island": "palayan",
       "q": "Ano ang bayanihan?",
-      "a": ["Sama-samang pagtutulungan ng komunidad", "Opisyal na piyesta ng bayan", "Uri ng sayawang pambansa"],
-      "f": "Ang bayanihan ay tradisyong Pilipino ng pagtutulungan, gaya ng sama-samang paglipat ng bahay, na nagmula sa salitang 'bayan.'",
+      "a": ["Tulong-tulong ng buong komunidad", "Opisyal na pista ng bayan", "Isang uri ng pambansang sayaw"],
+      "f": "Bayanihan ang tulong-tulong ng mga Pilipino, gaya ng paglipat ng bahay. Galing ito sa salitang 'bayan.'",
       "reviewed_by": null,
       "reviewed_at": null
     }
@@ -187,15 +187,15 @@
     "tumbang": {
       "title": "Tumbang Preso",
       "aka": "Tinatawag ding presohan, tumba-lata, o tumba-patis sa Visayas",
-      "chip": "4 na manlalaro · sabay-sabay",
+      "chip": "4 na player · sabay-sabay",
       "unit": "tumba",
-      "labas": "Kailangan: isang lata, tig-isang tsinelas, at 3 o higit pang kalaro. Gumuhit ng bilog para sa lata at isang guhit na tatayuan ng mga babato.",
+      "labas": "Kailangan: 1 lata, tig-isang tsinelas, at 3 o higit pang kalaro. Gumuhit ng bilog para sa lata. Gumuhit din ng guhit na tatayuan ng mga babato.",
       "rules": [
-        "Ihagis ang tsinelas para patumbahin ang lata.",
-        "Gumagalaw ang guhit. Tumira kapag nasa puting bahagi sa gitna.",
-        "Tig-5 tira, pabilis nang pabilis ang guhit. Pinakamaraming tumba ang panalo."
+        "Ihagis ang tsinelas para matumba ang lata.",
+        "Gumagalaw ang guhit. Tumira pag nasa puting gitna ito.",
+        "5 tira bawat isa. Pabilis nang pabilis ang guhit. Pinakamaraming tumba, panalo!"
       ],
-      "real": "Sa kalye, may isang taya na nagbabantay sa lata sa loob ng bilog. Binabato ng iba ang lata ng tsinelas mula sa guhit. Kapag tumumba ito, kukunin nila ang tsinelas habang itinatayo ng taya ang lata, at ang mataya habang kumukuha ang bagong taya.",
+      "real": "Sa kalye, may taya na nagbabantay sa lata sa loob ng bilog. Binabato ng iba ang lata ng tsinelas mula sa guhit. Pag natumba ang lata, kunin agad ang tsinelas mo habang itinatayo ng taya ang lata. Pag nataya ka, ikaw na ang taya!",
       "reviewed_by": null,
       "reviewed_at": null
     },
@@ -204,109 +204,109 @@
       "aka": "Tinatawag ding harang taga o tubigan",
       "chip": "1 laban sa 3 · tig-isang takbo",
       "unit": "puntos",
-      "labas": "Gumuhit ng mga linya gamit ang chalk o tubig sa bakuran o court. Hatiin ang grupo sa dalawa: mga bantay sa linya at mga tatawid.",
+      "labas": "Gumuhit ng mga linya sa bakuran o court, gamit ang chalk o tubig. Hatiin sa 2 team: mga bantay sa linya, at mga tatawid.",
       "rules": [
         "Tumawid sa bawat linya hanggang Dulo, tapos bumalik sa Bahay.",
         "+2 bawat linya papunta, +3 pabalik, +5 pag-uwi.",
-        "Kapag nataya, balik sa Bahay. Walang puntos ang linyang tinawid habang kumikislap ka pa."
+        "Pag nataya ka, balik ka sa Bahay. Habang kumikislap ka pa, walang puntos ang linyang tatawirin mo."
       ],
-      "real": "Gumuguhit ng mga linya sa lupa, minsan gamit ang tubig, kaya tinatawag din itong tubigan. Dalawang koponan ang naglalaro: nakatayo sa mga linya ang mga bantay at doon lang sila puwedeng gumalaw, habang sinusubukan ng kabilang koponan na tumawid hanggang dulo at pabalik. Kapag may nataya, magpapalit ang dalawang koponan.",
+      "real": "Gumuguhit ng mga linya sa lupa, minsan gamit ang tubig. Kaya tubigan din ang tawag dito. 2 team ang naglalaro. Sa mga linya lang puwedeng gumalaw ang mga bantay. Ang kabilang team ay tatawid hanggang dulo, tapos pabalik. Pag may nataya, magpapalit ang 2 team.",
       "reviewed_by": null,
       "reviewed_at": null
     },
     "sipa": {
       "title": "Sipa",
       "aka": "Pambansang laro ng Pilipinas hanggang 2009",
-      "chip": "4 na manlalaro · sabay-sabay",
+      "chip": "4 na player · sabay-sabay",
       "unit": "sipa",
-      "labas": "Gumawa ng sariling sipa: isang washer o takip ng bote na may ginupit na plastik o papel. Bilangin kung ilang sipa bago bumagsak.",
+      "labas": "Gumawa ng sariling sipa: washer o takip ng bote na may ginupit na plastik o papel. Bilangin kung ilang sipa bago ito mahulog.",
       "rules": [
-        "Sipain ang sipa bago ito bumagsak.",
-        "Pindutin kapag umiilaw ang bilog. Kapag masyadong maaga o pindot nang pindot, saglit na hindi makakasipa.",
-        "Pabilis nang pabilis. Pinakamaraming sipa ang panalo."
+        "Sipain ang sipa bago ito mahulog.",
+        "Pindutin pag umiilaw ang bilog. Pag masyadong maaga o pindot nang pindot, saglit kang hindi makakasipa.",
+        "Pabilis nang pabilis. Pinakamaraming sipa, panalo!"
       ],
-      "real": "Ang sipa ay maliit na pabigat, gaya ng tingga o washer, na may makukulay na papel o tela. Sinisipa ito pataas gamit ang loob ng paa o tuhod nang hindi pinababagsak. Pambansang laro ito hanggang 2009, nang ideklara ang arnis bilang pambansang sining ng pakikipaglaban at isport.",
+      "real": "Maliit na pabigat ang sipa, gaya ng tingga o washer, na may makukulay na papel o tela. Sinisipa ito pataas gamit ang loob ng paa o tuhod. Huwag itong hayaang mahulog! Pambansang laro ito hanggang 2009. Noon, ginawang pambansang martial art at sport ang arnis.",
       "reviewed_by": null,
       "reviewed_at": null
     },
     "palosebo": {
       "title": "Palosebo",
       "aka": "Galing sa Espanyol na palo ensebado: kawayang pinahiran ng grasa",
-      "chip": "4 na manlalaro · sabay-sabay",
+      "chip": "4 na player · sabay-sabay",
       "unit": "puntos",
-      "labas": "Pang-pista ang palosebo, kaya abangan ito sa pista ng barangay. Itanong din sa lolo o lola kung paano sila nanalo noon.",
+      "labas": "Laro sa pista ang palosebo. Abangan ito sa pista ng barangay! Tanungin din ang lolo o lola mo kung paano sila nanalo noon.",
       "rules": [
-        "I-tap para umakyat sa kawayan. Berde ang kamay kapag puwede na.",
-        "Huwag magmadali: madudulas ka kapag sunod-sunod ang tap.",
-        "Abutin ang premyo sa tuktok sa loob ng 12 segundo. May bonus ang mabilis."
+        "I-tap para umakyat sa kawayan. Pag berde ang kamay, puwede na.",
+        "Huwag magmadali! Madudulas ka pag sunod-sunod ang tap.",
+        "Abutin ang premyo sa tuktok sa loob ng 12 segundo. May bonus pag mabilis ka."
       ],
-      "real": "Laro ito tuwing pista. Pinapahiran ng mantika o grasa ang isang mahabang kawayan, at may premyo sa tuktok gaya ng pera o bandila. Paunahan sa pag-akyat ang mga kalahok, kaya kailangan ng lakas, diskarte, at tiyaga para hindi dumulas.",
+      "real": "Laro ito tuwing pista. Pinapahiran ng mantika o grasa ang isang mahabang kawayan. May premyo sa tuktok, gaya ng pera o bandila. Paunahan sa pag-akyat ang mga sumali. Kailangan ng lakas, diskarte at tiyaga para hindi dumulas.",
       "reviewed_by": null,
       "reviewed_at": null
     },
     "luksong": {
       "title": "Luksong Tinik",
       "aka": "Laro ng lukso at lakas ng loob",
-      "chip": "4 na manlalaro · sabay-sabay",
-      "unit": "antas",
-      "labas": "Dalawang kalaro ang uupo nang magkaharap sa damuhan. Magpapatong sila ng paa, tapos kamay, para maging tinik. Lalaktawan ito ng iba; ang sumabit ang papalit sa nakaupo.",
+      "chip": "4 na player · sabay-sabay",
+      "unit": "level",
+      "labas": "2 kalaro ang uupo nang magkaharap sa damuhan. Pagpapatungin nila ang mga paa, tapos ang mga kamay. Iyan ang tinik! Lulundagan ito ng iba. Ang sumabit, siya ang uupo.",
       "rules": [
-        "Tatakbo ka papunta sa tinik. I-tap para lumukso kapag nasa dilaw na guhit ang paa mo.",
-        "Masyadong maaga o huli, sasabit ka at tapos ang laro mo.",
-        "Tataas at bibilis ang tinik bawat antas. Pinakamataas na antas ang panalo."
+        "Tatakbo ka papunta sa tinik. I-tap para lumukso pag nasa dilaw na guhit ang paa mo.",
+        "Pag maaga o huli ka, sasabit ka at tapos na ang laro mo.",
+        "Bawat level, tataas at bibilis ang tinik. Pinakamataas na level, panalo!"
       ],
-      "real": "Dalawang manlalaro ang nakaupo sa lupa at pinagpapatong ang kanilang mga paa, tapos ang mga kamay, para tumaas ang tinik. Lumulukso ang iba nang hindi sumasagi. Kapag may sumabit, siya ang papalit sa nakaupo.",
+      "real": "2 kalaro ang nakaupo sa lupa. Pinagpapatong nila ang mga paa, tapos ang mga kamay, para tumaas ang tinik. Lumulukso ang iba nang hindi tumatama. Pag may sumabit, siya na ang uupo.",
       "reviewed_by": null,
       "reviewed_at": null
     },
     "palayok": {
       "title": "Pukpok Palayok",
       "aka": "Tinatawag ding hampas-palayok o basag-palayok",
-      "chip": "4 na manlalaro · sabay-sabay",
+      "chip": "4 na player · sabay-sabay",
       "unit": "puntos",
-      "labas": "Gumamit ng lumang kahon o supot na papel sa halip na palayok para ligtas, at lagyan ng kendi. Isabit ito sa lubid, piringan ang kalaro at paikutin nang tatlong beses bago pumalo. Lumayo ang mga nanonood sa pumapalo!",
+      "labas": "Para ligtas, lumang kahon o supot na papel ang gamitin, hindi palayok. Lagyan ito ng kendi at isabit sa lubid. Piringan ang kalaro at paikutin nang 3 beses bago pumalo. Lumayo ang mga nanonood sa pumapalo!",
       "rules": [
-        "Tingnan kung ilang hakbang ang palayok bago ka piringan.",
-        "Bilangin sa isip ang bawat hakbang, tapos pindutin para pumalo.",
-        "Basag: 10, sagi: 6, malapit: 3. Tatlong subok. Huwag maniwala sa sigaw ng mga nanonood!"
+        "Tingnan kung ilang hakbang ang layo ng palayok bago ka piringan.",
+        "Bilangin sa isip ang bawat hakbang. Tapos pindutin para pumalo.",
+        "Basag: 10, sagi: 6, malapit: 3. May 3 subok ka. Huwag maniwala sa sigaw ng mga nanonood!"
       ],
-      "real": "Laro ito tuwing pista at kaarawan. Isinasabit ang palayok na may kendi, barya o laruan sa lubid sa pagitan ng dalawang poste. Pipiringan ang manlalaro, paiikutin nang ilang beses at bibigyan ng patpat. Sumisigaw ang mga nanonood ng direksiyon, minsan tama, minsan panloloko. Kapag nabasag ang palayok, nag-aagawan ang lahat sa kendi.",
+      "real": "Laro ito tuwing pista at birthday. Isinasabit sa lubid, sa pagitan ng 2 poste, ang palayok na may kendi, barya o laruan. Pipiringan ang player, paiikutin nang ilang beses, at bibigyan ng patpat. Sumisigaw ang mga nanonood kung saan papalo. Minsan totoo, minsan biro lang! Pag nabasag ang palayok, nag-aagawan ang lahat sa kendi.",
       "reviewed_by": null,
       "reviewed_at": null
     },
     "taguan": {
       "title": "Taguan",
       "aka": "Tinatawag ding tagu-taguan",
-      "chip": "4 na manlalaro · sabay-sabay",
+      "chip": "4 na player · sabay-sabay",
       "unit": "puntos",
-      "labas": "Kailangan ng 3 o higit pang kalaro at isang ligtas na bakuran. Pumili ng base, magbilang ang taya hanggang 20 nang nakapikit, at magtago ang iba sa lugar na kita pa ng matatanda.",
+      "labas": "Kailangan ng 3 o higit pang kalaro at ligtas na bakuran. Pumili ng base. Pipikit ang taya at bibilang hanggang 20. Magtago ang iba sa lugar na kita pa ng matatanda.",
       "rules": [
-        "Kusang naglalakad ang taya at tumitigil sa bawat taguan.",
-        "I-tap kapag may palatandaan ng bata: tsinelas, buhok, mata, anino, hagikgik, kaluskos o daliri. Hayop lang ang pusa, manok at aso!",
-        "10 bawat nahanap. Mali: −2, at hindi ka makaka-tap sa susunod na 2 taguan."
+        "Kusang naglalakad ang taya at tumitigil sa bawat taguan. 10 puntos bawat mahanap.",
+        "I-tap pag may bakas ng bata: tsinelas, buhok, mata, anino, hagikgik, kaluskos o daliri.",
+        "Hayop lang ang pusa, manok at aso! Mali: −2, at bawal mag-tap sa susunod na 2 taguan."
       ],
-      "real": "Pipikit at bibilang ang taya habang nagtatago ang iba, at kinakanta ang \"Tagu-taguan, maliwanag ang buwan…\". Pagkatapos, hahanapin niya ang mga nagtatago. Kapag may nakita siya, uunahan niyang makabalik sa base ang nakita. Ang unang nahuli ang magiging bagong taya.",
+      "real": "Pipikit at bibilang ang taya habang nagtatago ang iba. Kinakanta niya ang \"Tagu-taguan, maliwanag ang buwan…\". Tapos, hahanapin niya ang mga nagtago. Pag may nakita siya, uunahan niya itong makabalik sa base. Ang unang nahuli, siya ang bagong taya.",
       "reviewed_by": null,
       "reviewed_at": null
     },
     "piko": {
       "title": "Piko",
       "aka": "Tinatawag ding piko-piko; hopscotch sa Ingles",
-      "chip": "4 na manlalaro · sabay-sabay",
+      "chip": "4 na player · sabay-sabay",
       "unit": "hakbang",
-      "labas": "Gumuhit ng piko sa ligtas na semento o lupa gamit ang tisa o uling, at maghanap ng patag na pamato. Puwede kahit dalawa lang kayo.",
+      "labas": "Gumuhit ng piko sa ligtas na semento o lupa, gamit ang tisa o uling. Maghanap ng patag na pamato. Puwede kahit 2 lang kayo.",
       "rules": [
-        "Pindot: isang paa sa iisang kahon. Diinan: dalawang paa sa magkatabing kahon.",
-        "Laktawan ang kahong may pamato. Kung nasa magkatabi ito, isang paa lang sa kabilang kahon.",
-        "Maling lukso: Patay! Balik sa simula at bawas ang hakbang sa guhit na iyon. +2 bawat tapos na guhit, 20 segundo."
+        "Pindot: 1 paa sa iisang kahon. Diinan: 2 paa sa magkatabing kahon.",
+        "Laktawan ang kahong may pamato. Pag nasa magkatabing kahon ito, 1 paa lang sa kabila.",
+        "Maling lukso? Patay! Balik sa simula, bawas ang hakbang sa guhit na iyon. +2 bawat tapos na guhit. 20 segundo."
       ],
-      "real": "Iginuguhit ng tisa o uling ang mga kahon sa lupa. Ihahagis ng manlalaro ang pamato (patag na bato o piraso ng paso) sa unang kahon, lulundag sa isang paa sa iisang kahon at dalawang paa sa magkatabi, at lalaktawan ang kahong may pamato. Pagbalik, pupulutin niya ang pamato nang hindi natutumba. Patay kapag tumapak sa guhit, natumba o nagkamali ng kahon.",
+      "real": "Iginuguhit ng tisa o uling ang mga kahon sa lupa. Ihahagis ng player ang pamato (patag na bato o piraso ng paso) sa unang kahon. Lulukso siya: 1 paa sa iisang kahon, 2 paa sa magkatabi. Lalaktawan niya ang kahong may pamato. Pagbalik, pupulutin niya ang pamato nang hindi natutumba. Patay pag tumapak sa guhit, natumba o nagkamali ng kahon.",
       "reviewed_by": null,
       "reviewed_at": null
     }
   },
   "soon": [
-    { "t": "Agawan Base", "d": "Dalawang koponan, dalawang base, maraming takbuhan." },
+    { "t": "Agawan Base", "d": "2 team, 2 base, maraming takbuhan." },
     { "t": "Sungka", "d": "Tablang may butas at mga sigay. Laro ng diskarte." }
   ],
   "islands": {
