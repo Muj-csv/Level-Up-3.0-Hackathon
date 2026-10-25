@@ -5,6 +5,7 @@
 //    Laktawan, seen once, shown again from Paano maglaro; not in Torneo or for a returning player
 //  - Kalidad (graphics quality): a new setting rebuilds the island in the background (the old one stays, no 2D board
 //    in between), the new island has the new quality, and the setting is kept
+// The guide is skipped under ?debug (like the splash), so the other suites are not stopped by it; ?debug&tour shows it.
 // Run: node tests/ux.mjs [pass|tour|quality]
 import { chromium, serve, watchErrors, check, done, renderer } from './lib.mjs';
 
@@ -76,7 +77,7 @@ if (!only || only === 'pass') {
 async function startParty(page, cfg) { await page.evaluate(c => window.__lsu.startLocal({ n: 1, names: ['Ian'], cfg: Object.assign({ mode: 'party', rounds: 3, diff: 1, map: 'plaza' }, c) }), cfg || {}); }
 const tourStep = page => page.evaluate(() => { const c = document.querySelector('#card'), ch = c && c.querySelector('.chip'); return ch && /Unang laro/.test(ch.textContent) && !document.querySelector('#modal').hidden ? { n: ch.textContent.replace(/\D+/, '').split('/')[0] | 0, t: c.querySelector('h2').textContent } : null; });
 if (!only || only === 'tour') {
-  const page = await newPage('2d', '?debug&speed=3');
+  const page = await newPage('2d', '?debug&speed=3&tour');
   await startParty(page);
   await page.waitForFunction(() => /Unang laro/.test((document.querySelector('#card .chip') || {}).textContent || ''), null, { timeout: 30000 });
   const seen = [], st0 = await tourStep(page); seen.push(st0);
@@ -115,7 +116,7 @@ if (!only || only === 'tour') {
   check(!reset.tour && !reset.tips && again, '"Ipakita ulit ang gabay at mga tip" shows the guide again in the next game', JSON.stringify(reset));
   await page.context().close();
   // Torneo has no dice: no guide (its own tip explains it)
-  const tp = await newPage('2d', '?debug&speed=3');
+  const tp = await newPage('2d', '?debug&speed=3&tour');
   await startParty(tp, { mode: 'torneo' }); await tp.waitForTimeout(4000);
   check(!(await tourStep(tp)) && (await tp.evaluate(() => localStorage.getItem('lsu-tour'))) === null, 'Torneo does not show the board guide (nor mark it seen)');
   await tp.context().close();

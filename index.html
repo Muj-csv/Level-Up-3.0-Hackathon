@@ -2686,7 +2686,7 @@ async function gameLoop(startRound,startTurn,token){
       if(r===1&&startTurn!==4)tip('torneo','Torneo: walang dice. Bawat panalo sa laro ay isang korona; piso ang batayan kapag tabla.');
       await say(r===maxR()?'Huling laro!':'Laro '+r+' ng '+maxR(),'#FFC93C',1100);if(token!==gameToken)return;
       state.turn=4;checkpoint();await runMinigame(state.plan[r-1]);startTurn=0;continue;}
-    if(r===1&&startTurn===0&&isParty()&&!NET.on&&locals().length&&!tourSeen()){await firstGameTour(locals()[0]);if(token!==gameToken)return;}
+    if(r===1&&startTurn===0&&TOUR_ON&&isParty()&&!NET.on&&locals().length&&!tourSeen()){await firstGameTour(locals()[0]);if(token!==gameToken)return;}
     if(r===1&&startTurn===0){tip('goal','Layunin: pinakamaraming korona sa dulo ng laro. Dumaan sa korona na may 10 piso para bumili.');await say('Bunutan: una si '+state.players[state.order[0]].name+'!','#FFE07A',1300);if(token!==gameToken)return;}
     if(startTurn===0&&r>1)await say(r===maxR()?'Huling ikot!':'Ikot '+r,'#FFC93C',1100);
     if(startTurn===0&&r===maxR()&&maxR()>=3)await hulingHirit();
@@ -2976,7 +2976,7 @@ async function guideFlow(open){
    The card sits at the bottom without dimming the board, the part being explained is shown or outlined, and
    Balik / Susunod / Laktawan move through it. Seen once (lsu-tour); "Ipakita ulit ang gabay at mga tip" in Paano
    maglaro shows it again on the next game. The tips that pop up during play (first roll, first space, …) still come */
-const TOUR_KEY='lsu-tour';
+const TOUR_KEY='lsu-tour',TOUR_ON=!DEBUG||/[?&]tour\b/.test(location.search);   // like the splash: the tests open the game with ?debug, and ?debug&tour shows the guide
 function tourSeen(){try{return localStorage.getItem(TOUR_KEY)==='1';}catch(e){return!!tourSeen.mem;}}
 function tourMark(v){try{if(v)localStorage.setItem(TOUR_KEY,'1');else localStorage.removeItem(TOUR_KEY);}catch(e){tourSeen.mem=v;}}
 function tourSteps(p){const ic=k=>'<span class="iic">'+ITEM_ICON[k]+'</span>';
