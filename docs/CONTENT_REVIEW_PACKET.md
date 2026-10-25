@@ -21,7 +21,7 @@ copy your name and the date into each item's `reviewed_by`/`reviewed_at` fields.
 
 ---
 
-## Part 1 — Tanong ni Lola trivia (18 questions)
+## Part 1 — Tanong ni Lola trivia (19 questions)
 
 Each question is multiple choice; the **first (bolded) answer is always the one the
 game marks correct**. The "why" line is the explanation shown after answering.
@@ -118,9 +118,14 @@ game marks correct**. The "why" line is the explanation shown after answering.
     Why: "Ang bayanihan ay tradisyong Pilipino ng pagtutulungan, gaya ng sama-samang paglipat ng bahay, na nagmula sa salitang 'bayan.'"
     ⬜ Correct  ⬜ Needs a fix  ⬜ Flag
 
+19. **[Pukpok Palayok] Sa Pukpok Palayok, ano ang karaniwang laman ng palayok?**
+    Answers: **Kendi, barya o maliliit na laruan** / Tubig / Bigas
+    Why: "Kapag nabasag ang palayok, nag-aagawan ang mga bata sa kendi at baryang nalalaglag."
+    ⬜ Correct  ⬜ Needs a fix  ⬜ Flag
+
 ---
 
-## Part 2 — Minigame facts (5 games currently in the app)
+## Part 2 — Minigame facts (6 games currently in the app)
 
 For each game: the in-app name, other names it's known by, what you need to play it
 for real ("Subukan sa labas"), the simplified in-app rules, and how it's really played
@@ -184,6 +189,20 @@ and faster each level.
 *How it's really played:* two players sit on the ground and stack their feet, then
 their hands, to raise the "tinik." Others jump over without touching it. Whoever snags
 it swaps places with one of the seated players.
+⬜ Correct  ⬜ Needs a fix  ⬜ Flag
+
+### Pukpok Palayok
+*Also known as:* hampas-palayok or basag-palayok
+*To play for real:* use an old box or paper bag instead of a clay pot so it's safe, and
+fill it with candy; hang it from a rope, blindfold a player and spin them three times
+before they swing; everyone watching stays away from the swinger.
+*In-app rules:* look at how many steps away the pot is before the blindfold goes on;
+count every step in your head, then tap to swing; a break is 10 points, a graze 6, close 3;
+three tries; don't trust what the crowd shouts.
+*How it's really played:* a game at fiestas and birthdays. A clay pot (palayok) with candy,
+coins or toys is hung from a rope between two posts. The player is blindfolded, spun a few
+times and given a stick. The crowd shouts directions, sometimes true, sometimes tricks.
+When the pot breaks, everyone scrambles for the candy.
 ⬜ Correct  ⬜ Needs a fix  ⬜ Flag
 
 ---

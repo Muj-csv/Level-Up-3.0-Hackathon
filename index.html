@@ -1254,6 +1254,8 @@ let scene=null,gameToken=0,hitstop=0,decK=0,mgSeq=0;
 const HALT=new Promise(()=>{});
 /* test hook: "?debug" logs game events and allows "&speed=N" (N simulation steps per frame) for automated play-tests; inert otherwise */
 const DEBUG=/[?&]debug\b/.test(location.search),DBG=[];let SPEED=1;
+/* test hook: "?debug&mg=<key>" plays that minigame every round (both phones of an online test load the same address) */
+const DEBUG_MG=DEBUG&&(/[?&]mg=([a-z]+)/.exec(location.search)||[])[1]||null;
 /* F10 developer readout: ?perf shows frame rate, frame times and 3D renderer counts in a corner; players never see it.
    Frame times are the gaps between animation frames, so they include the GPU when it holds the page back */
 const PERF=/[?&]perf\b/.test(location.search),FT=[];
@@ -1436,14 +1438,18 @@ function netTerminal(){if(APP.screen==='game'&&NET.on&&!NET.gone){NET.gone=true;
 function onNetPeers(ch){
   NET.peers=ch.peers;const me=ch.peers.find(q=>q.sameTab);if(me)NET.my=me.peer;const t=Date.now();for(const q of ch.peers)if(!NET.seen.has(q.peer))NET.seen.set(q.peer,t);
   if(NET.host){if(!NET.on)hostRoster();}
-  else{const h=netHost();if(h){NET.hostPeer=h.peer;NET.hostSeenAt=t;const pr=h.presence;
+  else{const h=netHost();if(h&&h.presence.build!==BUILD){netWrongBuild();return;}if(h){NET.hostPeer=h.peer;NET.hostSeenAt=t;const pr=h.presence;
       if(pr.log&&NET.gid&&pr.gid===NET.gid)mergeLog(pr.log);
       if(pr.st==='play'&&pr.gid&&pr.gid!==NET.started&&(APP.screen!=='game'||state.ended)){NET.started=pr.gid;const mine=(pr.roster||[]).some(e=>e.p===NET.my);if(mine)startOnline(pr);else joinFull();}}}
   if(NET.onUpdate)NET.onUpdate();
 }
+/* a guest on another build can't join: the host never seats it, and the guest is told to reload and leaves the room */
+function netWrongBuild(){if(NET.badBuild)return;NET.badBuild=true;NET.onUpdate=null;NET.rejoin='';netLeave();netUnsave();dbg('build',{mine:BUILD});
+  const c=openCard('<h2>Ibang bersiyon</h2><p>Iba ang bersiyon ng laro mo. I-refresh para makasali.</p><div class="row"><button type="button" class="btn" data-v="back">Balik</button><button type="button" class="btn primary" data-v="reload" data-primary>I-refresh</button></div>');
+  cardChoice(c).then(v=>{NET.badBuild=false;if(v==='reload')location.reload();else toTitle();});}
 function mergeLog(lg){for(const key in lg){const k=+key.slice(1);if(k&&NET.log[k]===undefined){NET.log[k]=lg[key];if(k>NET.logMax)NET.logMax=k;}}}
 function hostRoster(){
-  const guests=NET.peers.filter(q=>!q.sameTab&&q.presence&&q.presence.app===APPID&&q.presence.role==='guest'&&!q.presence.gid).sort((a,b)=>(NET.seen.get(a.peer)||0)-(NET.seen.get(b.peer)||0)).slice(0,3);
+  const guests=NET.peers.filter(q=>!q.sameTab&&q.presence&&q.presence.app===APPID&&q.presence.role==='guest'&&q.presence.build===BUILD&&!q.presence.gid).sort((a,b)=>(NET.seen.get(a.peer)||0)-(NET.seen.get(b.peer)||0)).slice(0,3);
   const roster=[{n:NET.name,p:myPeer()}].concat(guests.map(q=>({n:cleanName(q.presence.name)||'Kalaro',p:q.peer})));
   const key=JSON.stringify(roster);if(key!==NET.rosterKey){NET.rosterKey=key;NET.roster=roster;netPres({roster});}
 }
@@ -1463,10 +1469,10 @@ function netCheckpoint(cp){if(NET.host){NET.cp=cp;netPres({cp});}netSave();}
 async function netResume(o){
   showMsg('Bumabalik sa online na laro…','Room '+o.code+'.');
   try{NET.host=!!o.host;NET.name=o.name;await netJoin(o.code);NET.host=!!o.host;NET.name=o.name;}catch(e){netLeave();return netFail();}
-  if(o.host){NET.roster=o.roster;NET.cfg=o.cfg;netPres({app:APPID,role:'host',name:o.name,st:'play',gid:o.gid,seed:o.seed,roster:o.roster,cfg:o.cfg,cp:o.cp||null,inp:null,mg:null});
+  if(o.host){NET.roster=o.roster;NET.cfg=o.cfg;netPres({app:APPID,role:'host',build:BUILD,name:o.name,st:'play',gid:o.gid,seed:o.seed,roster:o.roster,cfg:o.cfg,cp:o.cp||null,inp:null,mg:null});
     startOnline(o,o.cp,o.log);netPubLog();return;}
   /* a guest waits for the host's presence: onNetPeers then starts the game from the host's checkpoint (see startOnline) */
-  NET.rejoin=o.gid;netPres({app:APPID,role:'guest',name:o.name,gid:''});NET.hostSeenAt=Date.now();
+  NET.rejoin=o.gid;netPres({app:APPID,role:'guest',build:BUILD,name:o.name,gid:''});NET.hostSeenAt=Date.now();
   setTimeout(()=>{if(NET.rejoin!==o.gid||APP.screen==='game')return;NET.rejoin='';netLeave();
     const c=openCard('<h2>Hindi na makabalik</h2><p>Wala na ang larong ito sa room '+esc(o.code)+'.</p><div class="row"><button type="button" class="btn primary" data-v="ok" data-primary>Sige</button></div>');cardChoice(c).then(()=>toTitle());},20000);
 }
@@ -2021,9 +2027,18 @@ const MG={
   luksong:{labas:'Dalawang kalaro ang uupo nang magkaharap sa damuhan. Magpapatong sila ng paa, tapos kamay, para maging tinik. Lalaktawan ito ng iba; ang sumabit ang papalit sa nakaupo.',title:'Luksong Tinik',aka:'Laro ng lukso at lakas ng loob',chip:'4 na manlalaro · sabay-sabay',unit:'antas',make:(pre,mgi)=>mkLuksong(pre,mgi),
     preroll:d=>Math.min(8,[1,2,4][d]+Math.floor(G()*[4,5,5][d])),botScore:pre=>pre,
     rules:['Tatakbo ka papunta sa tinik. I-tap para lumukso kapag nasa dilaw na guhit ang paa mo.','Masyadong maaga o huli, sasabit ka at tapos ang laro mo.','Tataas at bibilis ang tinik bawat antas. Pinakamataas na antas ang panalo.'],
-    real:'Dalawang manlalaro ang nakaupo sa lupa at pinagpapatong ang kanilang mga paa, tapos ang mga kamay, para tumaas ang tinik. Lumulukso ang iba nang hindi sumasagi. Kapag may sumabit, siya ang papalit sa nakaupo.'}
+    real:'Dalawang manlalaro ang nakaupo sa lupa at pinagpapatong ang kanilang mga paa, tapos ang mga kamay, para tumaas ang tinik. Lumulukso ang iba nang hindi sumasagi. Kapag may sumabit, siya ang papalit sa nakaupo.'},
+  /* new minigames go at the end (saves keep their round plans by key); off:true drops one from MG_KEYS without deleting it */
+  palayok:{labas:'Gumamit ng lumang kahon o supot na papel sa halip na palayok para ligtas, at lagyan ng kendi. Isabit ito sa lubid, piringan ang kalaro at paikutin nang tatlong beses bago pumalo. Lumayo ang mga nanonood sa pumapalo!',title:'Pukpok Palayok',aka:'Tinatawag ding hampas-palayok o basag-palayok',chip:'4 na manlalaro · sabay-sabay',unit:'puntos',make:(pre,mgi)=>mkPalayok(pre,mgi),
+    preroll:d=>palayokPre(d),botScore:pre=>pre.reduce((a,b)=>a+b,0),
+    rules:['Tingnan kung ilang hakbang ang palayok bago ka piringan.','Bilangin sa isip ang bawat hakbang, tapos pindutin para pumalo.','Basag: 10, sagi: 6, malapit: 3. Tatlong subok. Huwag maniwala sa sigaw ng mga nanonood!'],
+    real:'Laro ito tuwing pista at kaarawan. Isinasabit ang palayok na may kendi, barya o laruan sa lubid sa pagitan ng dalawang poste. Pipiringan ang manlalaro, paiikutin nang ilang beses at bibigyan ng patpat. Sumisigaw ang mga nanonood ng direksiyon, minsan tama, minsan panloloko. Kapag nabasag ang palayok, nag-aagawan ang lahat sa kendi.'}
 };
-const MG_KEYS=Object.keys(MG);
+const MG_KEYS=Object.keys(MG).filter(k=>!MG[k].off);
+/* online needs every phone on the same build: the round plan comes from the seed and MG_KEYS, so a phone on an older
+   cached copy would pick other minigames and fall out of step. Change BUILD_VER whenever a game's rules change; the
+   list of minigames (with any switched off) is part of the id. window.LSU_NET.build overrides it (tests) */
+const BUILD_VER='2026-10-25',BUILD=(window.LSU_NET&&window.LSU_NET.build)||BUILD_VER+'/'+MG_KEYS.join('.');
 /* F9.1: trivia, real-street rules and Subukan sa labas text live in content/fil.json so
    writers edit that file, not this one. The arrays above stay as a built-in fallback if
    the fetch fails (offline first load, file:// preview, etc.); whichever resolves first wins. */
@@ -2038,7 +2053,7 @@ const MG_KEYS=Object.keys(MG);
   }catch(e){console.warn('content/fil.json not loaded, using built-in fallback text',e);}
 })();
 function mgCtrl(kind){const L=locals();if(kind==='patintero')return L.length>1&&!NET.on?'Isa-isang tatakbo ang mga tao. I-drag ang daliri o arrow keys / WASD.':'I-drag ang daliri kahit saan, o arrow keys / WASD.';
-  if(L.length>1)return'Bawat tao: i-tap ang sariling hanay, o pindutin ang '+L.map(p=>'['+keyLabel(p)+'] '+p.name).join(', ')+'.';return kind==='sipa'?'Tap, Space, o ang Sipa! na button.':(kind==='palosebo'?'Tap, Space, o ang Akyat! na button.':kind==='luksong'?'Tap, Space, o ang Talon! na button.':'Tap, Space, o ang Tira! na button.');}
+  if(L.length>1)return'Bawat tao: i-tap ang sariling hanay, o pindutin ang '+L.map(p=>'['+keyLabel(p)+'] '+p.name).join(', ')+'.';return'Tap, Space, o ang '+({sipa:'Sipa!',palosebo:'Akyat!',luksong:'Talon!',palayok:'Palo!'}[kind]||'Tira!')+' na button.';}
 /* the minigame order for a whole game, fixed by the seed (same on every device), no game twice in a row */
 function mgPlan(seed,n){const r=seeded((seed^0x2545F491)|0),out=[];let bag=[];while(out.length<n){if(!bag.length){bag=MG_KEYS.slice();for(let i=bag.length-1;i>0;i--){const j=Math.floor(r()*(i+1));const t=bag[i];bag[i]=bag[j];bag[j]=t;}if(out.length&&bag[0]===out[out.length-1])bag.push(bag.shift());}out.push(bag.shift());}return out;}
 function realBox(def){return def.real?'<div class="real"><b>Sa totoong kalye</b><p>'+esc(def.real)+'</p></div>':'';}
@@ -2154,6 +2169,96 @@ function mkPalosebo(pre,mgi){
   sc.v3={lanes,TOP,PX,GREASE,GAP};
   return sc;
 }
+
+/* Pukpok Palayok: look at the pot, get blindfolded and spun, then count your steps and swing once. Three tries; every
+   lane walks on one clock, and a try starts when every lane is done with the last one. The pots' offsets and the
+   crowd's fake calls come from the game's seeded numbers, so every phone has the same ones */
+const PALAYOK={LOOK:2,SPIN:.8,STEP:.55,RES:1.2,MAXS:12,SS:30,START:196,POTS:[5,7,9],CALLS:['Ayan na!','Palo na!','Ngayon na!','Hampas!','Dito na!','Sige, pukpok!']};
+const palayokScore=d=>d<=.35?10:d<=1?6:d<=2?3:0;
+/* a bot's three tries: points (0, 3, 6 or 10 each) adding up to the total nearest a target in its level's range
+   (6–15, 12–21, 18–27), never outside that range */
+function palayokPre(d){const R0=[[6,15],[12,21],[18,27]][d]||[12,21],t=R0[0]+Math.floor(G()*(R0[1]-R0[0]+1)),V=[0,3,6,10],c=[];let best=1e9;
+  for(const a of V)for(const b of V)for(const e of V){const n=a+b+e;if(n<R0[0]||n>R0[1])continue;const s=Math.abs(n-t);if(s<best){best=s;c.length=0;}if(s===best)c.push([a,b,e]);}return c[Math.floor(G()*c.length)];}
+function mkPalayok(pre,mgi){
+  const P=PALAYOK;let resolve;const L1=locals(),keys=localKeyMap();
+  const sc={kind:'palayok',view:{w:600,h:520},focusY:-6,t:0,cd:3.6,ended:false,actionLabel:L1.length===1?'Palo!':null,hint:L1.length===1?'Bilangin ang hakbang, tapos pumalo':'I-tap ang sarili mong hanay para pumalo'};sc.done=new Promise(r=>resolve=r);
+  const tries=P.POTS.map((b,k)=>{const pot=b+G()*.9,calls=[];
+    if(k>0){const pick=()=>P.CALLS[Math.floor(G()*P.CALLS.length)],late=G()<.5;calls.push({at:pot-3.2+G()*1.6,txt:pick()},{at:late?pot+1.1+G()*.7:pot-1.45+G()*.5,txt:pick()});}
+    return{pot,calls};});
+  const lanes=state.players.map((p,i)=>({p,i,mode:p.ctrl,x:(i-1.5)*135,res:[],taps:[],tap:null,out:null,rt:0,done:false,plan:undefined,rip:0,sw:0,broke:0}));
+  let tri=0,ph='look',pt=0,wt=0,lastStep=0;const bubbles=[];
+  const steps=()=>Math.min(P.MAXS,wt/P.STEP),pos=L=>L.tap!=null?L.tap:steps(),total=L=>L.res.reduce((a,b)=>a+(b||0),0);
+  const potY=()=>P.START-tries[tri].pot*P.SS,kidY=L=>P.START-(ph==='walk'?pos(L):0)*P.SS;
+  const publish=L=>{if(NET.on&&L.mode==='local')netMg({i:mgi,tp:L.taps.slice(),r:L.res.slice(),s:total(L),d:L.res.length>=3&&L.done?1:0});};
+  const LABEL={10:'BASAG!',6:'Sagi!',3:'Malapit!',0:'Wala!'};
+  function result(L,at,given){const s=given!=null?given:at==null?0:palayokScore(Math.abs(at-tries[tri].pot));L.out={s,at};L.res[tri]=s;L.taps[tri]=at==null?-1:Math.round(at*100);L.rt=0;
+    if(at!=null){L.tap=at;L.sw=1;}const x=L.x,y=potY()-44,me=L.mode==='local';
+    if(s===10){L.broke=1;Sfx.clang();hitstop=.07;if(!RM)cam.shake=.22;if(me)buzz([30,40,30]);burst(x,y,14,'confetti',{spd:190,g:330,life:1.1,size:6});burst(x,y,8,'star',{spd:150,size:6,color:'#FFE07A',life:.7,g:150});setMood(L.p,'cheer',1.4);}
+    else if(s>0){Sfx.thud();if(me)buzz(25);setMood(L.p,'happy',1);}else{if(me)Sfx.bad();setMood(L.p,'sad',1);}
+    floatText(LABEL[s]+(s?' +'+s:''),x,y-34,s?L.p.color:'#fff',s===10?19:16);publish(L);}
+  function act(pid){if(sc.cd>.6||ph!=='walk')return;const L=lanes[pid];if(!L||L.mode!=='local'||L.out)return;result(L,steps());}
+  sc.action=()=>{if(L1.length===1)act(L1[0].id);};
+  sc.pointerDown=(x,y)=>{if(L1.length===1){act(L1[0].id);return;}const w=toWorld(x,y);act(clamp(Math.round(w.x/135+1.5),0,3));};
+  sc.key=(e,down)=>{if(!down||e.repeat)return;const pid=keys[e.code];if(pid!=null){e.preventDefault();act(pid);}};
+  /* what a player can know: the pot only while looking, then only the steps heard */
+  sc.peek=()=>lanes.map(L=>({ph,tri,pot:ph==='look'?tries[tri].pot:null,steps:ph==='walk'?Math.floor(steps()):0,out:!!L.out,score:total(L),cd:sc.cd}));
+  /* a bot swings where its rolled points for this try put it */
+  function plan(L){const want=L.mode==='bot'?pre[L.i][tri]:null,pot=tries[tri].pot,sg=R()<.5?-1:1;
+    if(want===10)return pot+(R()-.5)*.6;if(want===6)return pot+sg*(.42+R()*.5);if(want===3)return pot+sg*(1.08+R()*.85);return R()<.5?null:pot-(2.3+R()*1.4);}
+  function nextTry(){if(tri>=2){sc.ended=true;lanes.forEach(publish);setTimeout(()=>resolve({scores:lanes.map(total)}),900);return;}
+    tri++;ph='look';pt=0;wt=0;lastStep=0;lanes.forEach(L=>{L.tap=null;L.out=null;L.rt=0;L.done=false;L.plan=undefined;L.broke=0;L.sw=0;});}
+  sc.update=dt=>{
+    if(cdTick(sc,dt))return;sc.t+=dt;if(sc.ended)return;pt+=dt;
+    for(const L of lanes){L.rip=Math.max(0,L.rip-dt);L.sw=Math.max(0,L.sw-dt*2.4);}
+    for(let i=bubbles.length-1;i>=0;i--){bubbles[i].t+=dt;if(bubbles[i].t>1.15)bubbles.splice(i,1);}
+    if(ph==='look'){if(pt>=P.LOOK){ph='spin';pt=0;Sfx.whoosh();}return;}
+    if(ph==='spin'){if(pt>=P.SPIN){ph='walk';pt=0;wt=0;lastStep=0;lanes.forEach(L=>{if(L.mode==='bot')L.plan=plan(L);});}return;}
+    wt+=dt;const n=Math.floor(steps());
+    if(n>lastStep){lastStep=n;let mine=false;for(const L of lanes)if(!L.out){L.rip=.4;if(L.mode==='local')mine=true;}if(mine){Sfx.tick(n%8);buzz(12);}}
+    for(const c of tries[tri].calls)if(!c.said&&steps()>=c.at){c.said=1;const k=Math.floor(R()*SPECT.length);bubbles.push({txt:c.txt,x:SPECT[k].x,y:SPECT[k].y,t:0});Sfx.tone(820,.12,'triangle',.03,620);Sfx.tone(700,.14,'triangle',.025,520,.1);}
+    for(const L of lanes){
+      if(L.out){L.rt+=dt;if(L.rt>=P.RES)L.done=true;continue;}
+      if(L.mode==='bot'){if(L.plan!=null&&steps()>=L.plan)result(L,L.plan);else if(steps()>=P.MAXS)result(L,null);}
+      else if(L.mode==='remote'){const m=netPeerMg(L.p.peer,mgi),v=m&&Array.isArray(m.tp)?m.tp[tri]:null,r=m&&Array.isArray(m.r)?m.r[tri]:null;   // the remote phone's own points for the try
+        if(v!=null&&v>=0&&steps()>=v/100)result(L,v/100,r);else if((v!=null&&v<0&&steps()>=P.MAXS)||wt>=P.MAXS*P.STEP+2.5)result(L,null,r);}
+      else if(steps()>=P.MAXS)result(L,null);}
+    if(lanes.every(L=>L.done))nextTry();
+  };
+  sc.phase=()=>({ph,tri,pt});
+  function drawPot(g,x,y,L){if(L.broke){for(let k=0;k<5;k++){const a=k*1.3;g.save();g.translate(x+Math.cos(a)*18,y+26+Math.sin(a)*5);g.rotate(a);g.beginPath();g.moveTo(-7,0);g.lineTo(5,-4);g.lineTo(7,3);g.closePath();fs(g,'#B8643A',INK,1.6);g.restore();}return;}
+    const sw=L.out&&L.out.s===6&&!RM?Math.sin(sc.t*14)*.25*(1-Math.min(1,L.rt)):0;g.save();g.translate(x,y-22);g.rotate(sw);g.beginPath();g.moveTo(0,-22);g.lineTo(0,0);g.strokeStyle=INK;g.lineWidth=2;g.stroke();
+    ell(g,0,18,19,17);fs(g,'#C8743F',INK,2.4);rr(g,-10,-2,20,7,3);fs(g,'#A85A2C',INK,2);ell(g,-6,13,5,8);g.fillStyle='rgba(255,230,190,.35)';g.fill();g.beginPath();g.moveTo(-16,22);g.quadraticCurveTo(0,30,16,22);g.strokeStyle='#F2B21B';g.lineWidth=2.5;g.stroke();g.restore();}
+  function drawPoles(g,L,y){for(const s of [-1,1]){rr(g,L.x+s*48-4,y-92,8,96,4);fs(g,'#B7A04A',INK,2);for(let k=1;k<4;k++){g.fillStyle='rgba(59,35,22,.35)';g.fillRect(L.x+s*48-4,y-92+k*24,8,2);}}
+    g.beginPath();g.moveTo(L.x-48,y-86);g.quadraticCurveTo(L.x,y-74,L.x+48,y-86);g.strokeStyle='#8A6A3A';g.lineWidth=2.5;g.stroke();}
+  sc.draw=g=>{
+    const list=drawArenaBase(g),looking=ph==='look';
+    g.save();g.strokeStyle='rgba(255,255,255,.8)';g.lineWidth=3;
+    for(const L of lanes){g.setLineDash([10,8]);rr(g,L.x-60,-200,120,P.START+24+200,12);g.stroke();g.setLineDash([]);g.beginPath();g.moveTo(L.x-50,P.START+10);g.lineTo(L.x+50,P.START+10);g.lineWidth=4;g.stroke();g.lineWidth=3;}
+    g.restore();
+    if(L1.length>1)for(const L of lanes)if(L.mode==='local'){rr(g,L.x-58,-198,116,P.START+20+198,11);g.fillStyle=tint(L.p.color,.5).replace('rgb','rgba').replace(')',',.22)');g.fill();}
+    for(const L of lanes){const show=looking||!!L.out,py=potY();
+      if(looking){const n=Math.floor(tries[tri].pot);for(let k=1;k<=n;k++){const yy=P.START-k*P.SS;g.beginPath();g.arc(L.x,yy,3.5,0,TAU);g.fillStyle='rgba(255,255,255,.85)';g.fill();g.font='800 10px '+BODY;g.textAlign='left';g.textBaseline='middle';g.fillStyle='rgba(59,35,22,.55)';g.fillText(String(k),L.x+8,yy);}}
+      if(L.rip>0){const k=1-L.rip/.4;ell(g,L.x,kidY(L)+2,10+k*22,4+k*8);g.strokeStyle='rgba(255,255,255,'+(.8*(1-k))+')';g.lineWidth=2.5;g.stroke();}
+      if(show)list.push({y:py,f:()=>{drawPoles(g,L,py);drawPot(g,L.x,py-50,L);}});
+      const ky=kidY(L),walking=ph==='walk'&&!L.out,spin=ph==='spin'&&!RM?Math.floor(pt*10)%4:-1;
+      list.push({y:ky,f:()=>{drawKid(g,L.p,L.x,ky,{dir:spin>=0?['front','side','back','side'][spin]:(walking||ph==='walk'?'back':'front'),face:spin===3?-1:1,walk:walking?wt*11.4:null,mood:L.out?L.p.mood:'idle',blink:L.p.blink>0});
+        if(ph!=='look'){const hy=ky-(walking?40:40);rr(g,L.x-13.5,hy-4,27,6,3);fs(g,'#C9372A',INK,1.4);}
+        const a=L.sw>0?-1.6+2.4*(1-L.sw):-.35;g.save();g.translate(L.x+10,ky-26);g.rotate(a);rr(g,-2,-44,4,44,2);fs(g,'#A87442',INK,1.4);g.restore();}});}
+    list.sort((a,b)=>a.y-b.y).forEach(o=>o.f());
+    for(const b of bubbles)drawBubble(g,b.x,b.y-40,b.txt,b.t);
+    for(const L of lanes){g.beginPath();g.arc(L.x-34,P.START+44,14,0,TAU);fs(g,L.p.color,INK,2.5);otext(g,String(total(L)),L.x-34,P.START+45,16,'#fff',4);
+      g.font='900 13px '+BODY;g.textAlign='left';g.textBaseline='middle';g.fillStyle=INK;g.fillText(L.p.name,L.x-15,P.START+39);
+      for(let k=0;k<3;k++){g.beginPath();g.arc(L.x-12+k*10,P.START+53,3.4,0,TAU);fs(g,k<L.res.length&&(k<tri||L.out)?(L.res[k]?L.p.color:'rgba(59,35,22,.25)'):'#FFF6E6',INK,1.2);}
+      laneTag(g,L.p,L.x,P.START+72);}
+  };
+  sc.drawScreen=g=>{const t=ph==='look'?'Subok '+(tri+1)+'/3 · Tingnan ang palayok!':ph==='spin'?'Piring at ikot…':'Bilangin ang hakbang!';if(sc.ended||sc.cd>.6)return;
+    g.font='900 14px '+BODY;const w=g.measureText(t).width+28,x=W/2-w/2,y=topH+4;rr(g,x,y,w,30,15);fs(g,PAPER,INK,2.5);g.fillStyle=INK;g.textAlign='center';g.textBaseline='middle';g.fillText(t,W/2,y+15.5);};
+  sc.v3={lanes,tries,P,get tri(){return tri;},get ph(){return ph;},get pt(){return pt;},get wt(){return wt;},pos,potY,kidY,bubbles,total};
+  return sc;
+}
+/* a crowd call: a speech bubble that pops in and fades after about a second */
+function drawBubble(g,x,y,txt,t){const a=t<.12?t/.12:Math.max(0,1-(t-.8)/.35);if(a<=0)return;g.save();g.globalAlpha=a;g.font='900 13px '+BODY;const w=g.measureText(txt).width+18;
+  rr(g,x-w/2,y-14,w,26,12);fs(g,'#FFFFFF',INK,2);g.beginPath();g.moveTo(x-6,y+11);g.lineTo(x,y+20);g.lineTo(x+5,y+11);g.closePath();fs(g,'#FFFFFF');g.fillStyle=INK;g.textAlign='center';g.textBaseline='middle';g.fillText(txt,x,y);g.restore();}
 
 async function runMinigame(kind,opt){
   opt=opt||{};
@@ -2294,7 +2399,7 @@ function clearRun(){tweens.length=0;parts.length=0;floats.length=0;flyers.length
 function beginGame(spec,seed,cp,cfg){
   gameToken++;const tok=gameToken;scene=null;closeCard();clearRun();
   state.cfg=normCfg(cfg);gs=seed|0;decK=0;mgSeq=0;state.ended=false;
-  state.plan=isHamon()?[MG[state.cfg.mg]?state.cfg.mg:'tumbang']:mgPlan(seed|0,maxR());
+  state.plan=isHamon()?[MG[state.cfg.mg]?state.cfg.mg:'tumbang']:mgPlan(seed|0,maxR());if(DEBUG_MG&&MG[DEBUG_MG]&&!isHamon())state.plan=state.plan.map(()=>DEBUG_MG);
   state.order=[0,1,2,3];if(!isHamon())for(let i=3;i>0;i--){const j=Math.floor(G()*(i+1)),t=state.order[i];state.order[i]=state.order[j];state.order[j]=t;}
   setBoard(isParty()?state.cfg.map:'ulap');state.players=makePlayers(spec);state.players.forEach(p=>{p.pos=BOARD.start;});resetKorona();state.round=1;state.turn=0;state.overview=false;state.active=null;state.party=false;mapBtn.setAttribute('aria-pressed','false');
   let r0=1,t0=0;
@@ -2413,7 +2518,7 @@ async function hostFlow(){
   showMsg('Kumokonekta…','Ginagawa ang room.');
   const code=makeCode();
   try{NET.host=true;NET.name=nm;await netJoin(code);NET.host=true;NET.name=nm;}catch(e){netLeave();return netFail();}
-  netPres({app:APPID,role:'host',name:nm,st:'lobby',roster:[],gid:''});
+  netPres({app:APPID,role:'host',build:BUILD,name:nm,st:'lobby',roster:[],gid:''});
   setTimeout(hostRoster,300);
   const link=SHARE_URL+'#'+code;
   const c=openCard('<h2>Online room</h2><p class="note">Ipa-scan ang QR, o ipasok ng kalaro ang code sa Maglaro online → Sumali.</p><div class="codebig">'+code+'</div><canvas class="qr" id="lbQr" width="344" height="344" aria-label="QR code ng room"></canvas><div class="linkrow"><code id="lbLink">'+esc(link)+'</code><button type="button" class="btn small" id="lbCopy">Kopyahin</button></div>'+rosterHTML(NET.roster)+'<div id="setBox"></div><p class="note">'+esc(netHelp())+'</p><div class="row"><button type="button" class="btn" data-v="back">Kanselahin</button><button type="button" class="btn primary" data-v="start" data-primary>Simulan ang laro</button></div>');
@@ -2447,7 +2552,7 @@ async function joinFlow(pref){
   if(code.length!==4){const c2=openCard('<h2>Mali ang code</h2><p>Apat na letra o numero ang code ng room.</p><div class="row"><button type="button" class="btn primary" data-v="ok" data-primary>Ulitin</button></div>');await cardChoice(c2);return joinFlow(code);}
   showMsg('Kumokonekta…','Hinahanap ang room '+code+'.');
   try{NET.host=false;NET.name=nm;await netJoin(code);NET.host=false;NET.name=nm;}catch(e){netLeave();return netFail();}
-  netPres({app:APPID,role:'guest',name:nm,gid:''});NET.hostSeenAt=Date.now();
+  netPres({app:APPID,role:'guest',build:BUILD,name:nm,gid:''});NET.hostSeenAt=Date.now();
   const w=openCard('<h2>Nasa room '+esc(code)+'</h2><p id="jwMsg">Hinahanap ang host…</p><div id="jwRoster"></div><div class="row"><button type="button" class="btn" data-v="leave">Umalis</button></div>');
   const t0=Date.now();
   NET.onUpdate=()=>{const h=netHost();const m=document.getElementById('jwMsg'),r=document.getElementById('jwRoster');if(!m)return;
@@ -2537,7 +2642,7 @@ function guidePages(){
     {t:'Mga espasyo',h:'<ul class="legend">'+sw(SPACE.piso.c,'Piso','+3 piso')+sw(SPACE.utang.c,'Utang','−3 piso')+sw(SPACE.swerte.c,'Swerte','bonus na piso o libreng item')+sw(SPACE.tikbalang.c,'Tikbalang','atras ng 3 espasyo')+sw(SPACE.sari.c,'Sari-sari','bumili ng item; puwede ring dumaan lang')+sw(SPACE.kasama.c,'Kasama','may sasama sa barkada mo, +1 o +2 sa bawat gulong')+sw(SPACE.tanong.c,'Tanong ni Lola','tanong tungkol sa larong Pilipino, +5 kapag tama')+sw(SPACE.jack.c,'Jack en Poy','hamunin ang sinuman: hanggang 5 piso')+sw('#FFC93C','Korona','10 piso, dumaan para bumili')+'</ul>'},
     {t:'Mga mapa',h:'<p>Pumili ng isla bago maglaro: <b>Plaza, Palengke, Aplaya</b> o <b>Palayan</b>. May <b>4 na korona</b> sa bawat mapa.</p><ul><li><b>Sangandaan:</b> may daan na humihiwalay at bumabalik sa ikot. Ikaw ang pipili kung saan dadaan.</li><li><b>Sakay:</b> sa espasyo ng kalesa, padyak, bangka o kariton ng kalabaw, magbayad ng 6 piso para makarating sa malayong bahagi ng mapa.</li><li><b>Espasyo ng isla:</b> may sariling espasyo ang bawat mapa, gaya ng Banda at Kampana sa Plaza, Tawad at Basa sa Palengke, Alon at Huli sa Aplaya, Ani at Balang sa Palayan. Sasabihin ng tip kung ano ang ginagawa nito sa unang tapak mo rito.</li></ul>'},
     {t:'Mga item',h:'<p>Isang item lang ang madadala. Bilhin sa Sari-sari store, o makuha sa Swerte.</p><ul class="legend items">'+Object.keys(ITEMS).map(k=>'<li><span class="iic">'+ITEM_ICON[k]+'</span><span><b>'+esc(ITEMS[k].name)+' · '+ITEMS[k].cost+' piso</b><br>'+esc(ITEMS[k].desc)+'</span></li>').join('')+'</ul><p class="note">Itira ang 10 piso para sa korona bago bumili!</p>'},
-    {t:'Mga laro',h:'<p>Pagkatapos ng bawat ikot, maglalaro ang lahat ng isang larong kalye: <b>Tumbang Preso, Patintero, Sipa, Palosebo</b> o <b>Luksong Tinik</b>.</p><p>Premyo: <b>+10</b> piso sa una, <b>+5</b> sa ikalawa, <b>+3</b> sa ikatlo.</p><p><b>Huling Hirit:</b> sa huling ikot, doble ang premyo at may tulong ang nasa huli.</p><p><b>Bonus na korona</b> sa dulo: <b>Hari ng Laro</b> (pinakamaraming panalo sa mga laro), <b>Mayaman</b> (pinakamaraming piso) at <b>Malas sa Dice</b> (pinakamababang average ng dice).</p>'},
+    {t:'Mga laro',h:'<p>Pagkatapos ng bawat ikot, maglalaro ang lahat ng isang larong kalye: '+(t=>'<b>'+t.slice(0,-1).join(', ')+'</b> o <b>'+t[t.length-1]+'</b>')(MG_KEYS.map(k=>esc(MG[k].title)))+'.</p><p>Premyo: <b>+10</b> piso sa una, <b>+5</b> sa ikalawa, <b>+3</b> sa ikatlo.</p><p><b>Huling Hirit:</b> sa huling ikot, doble ang premyo at may tulong ang nasa huli.</p><p><b>Bonus na korona</b> sa dulo: <b>Hari ng Laro</b> (pinakamaraming panalo sa mga laro), <b>Mayaman</b> (pinakamaraming piso) at <b>Malas sa Dice</b> (pinakamababang average ng dice).</p>'},
     {t:'Mga paraan ng paglaro',h:'<ul><li><b>Party</b>: board, dice at laro, 3, 5 o 8 ikot.</li><li><b>Torneo</b>: laro lang, walang dice. Bawat panalo ay isang korona, kaya galing ang batayan.</li><li><b>Hamon ng Araw</b>: solo laban sa mahihirap na bot. Iisang hamon para sa lahat ngayong araw, may talaan ng iskor.</li><li><b>Online</b>: gumawa ng room at ipa-scan ang QR, o ibigay ang 4-letrang code.</li></ul>'},
     {t:'Album ng Laro',h:'<p>Ganito nilalaro ang mga ito sa totoong kalye at pista.</p>'+MG_KEYS.map(k=>'<div class="real"><b>'+esc(MG[k].title)+'</b><p>'+esc(MG[k].real)+'</p></div>').join('')+'<div class="row"><button type="button" class="btn small" data-v="tips">Ipakita ulit ang mga tip</button></div>'}
   ];
@@ -2825,7 +2930,7 @@ function init3D(){
     const sw=walk!=null?Math.sin(walk):0,m=o.mood||'idle';
     K.legs[0].rotation.x=sw*.75;K.legs[1].rotation.x=-sw*.75;
     let ax=[-sw*.7,sw*.7],az=[-.2,.2];
-    if(m==='cheer'){az=[-2.7+Math.sin(now*10)*.2,2.7-Math.sin(now*10)*.2];ax=[0,0];}else if(m==='hop'){az=[-1.2,1.2];}else if(m==='guard'){ax=[-1.4,-1.4];az=[-.4,.4];}else if(m==='sad'){az=[-.08,.08];ax=[.2,.2];}else if(m==='climb'){const c=Math.sin(walk||0)*.35;az=[-2.5+c,2.5+c];ax=[-.5,-.5];}else if(m==='sit'){ax=[-1.3,-1.3];az=[-.5,.5];}
+    if(m==='cheer'){az=[-2.7+Math.sin(now*10)*.2,2.7-Math.sin(now*10)*.2];ax=[0,0];}else if(m==='swing'){ax=[-.3,-2.5+2.7*(o.st||0)];az=[-.2,.15];}else if(m==='hop'){az=[-1.2,1.2];}else if(m==='guard'){ax=[-1.4,-1.4];az=[-.4,.4];}else if(m==='sad'){az=[-.08,.08];ax=[.2,.2];}else if(m==='climb'){const c=Math.sin(walk||0)*.35;az=[-2.5+c,2.5+c];ax=[-.5,-.5];}else if(m==='sit'){ax=[-1.3,-1.3];az=[-.5,.5];}
     if(m==='kick')K.legs.at(1).rotation.x=-1.4;if(m==='sit'){K.legs.forEach(l=>l.rotation.x=-1.5);K.body.position.y=-8;}else K.body.position.y=0;if(m==='climb'){K.legs.at(0).rotation.x=-.5+sw*.4;K.legs.at(1).rotation.x=-.5-sw*.4;}
     K.arms.forEach((a,i)=>{a.rotation.x=ax[i];a.rotation.z=az[i];});
     K.head.rotation.x=m==='sad'?.32:0;K.head.rotation.z=m==='dizzy'?Math.sin(now*8)*.3:0;
@@ -2853,6 +2958,7 @@ function init3D(){
     else if(md==='cheer')d=at('victory',tm);
     else if(md==='sad')d=at('defeat',tm);
     else if(md==='kick')d=at('kick',.55);
+    else if(md==='swing')d=at('throw',.4+.45*(o.st||0));   // Pukpok Palayok: o.st runs 0 to 1 over the swing
     else if((o.lift||0)>3)d=at('jump',.56);
     else d=at('idle',tm);
     if(md==='guard')d=Object.assign({},d,{'upperArm_L.z':1.3,'upperArm_R.z':-1.3,'lowerArm_L.x':-.35,'lowerArm_R.x':-.35});
@@ -3018,6 +3124,35 @@ function init3D(){
         pose(kidOf(L.p),L.x+sway,PZ+10,{lift:hh,dir:L.done?'front':'back',walk:L.done||L.stun>0?null:L.taps*.9,mood:L.done?'cheer':(L.stun>0?'sad':'climb'),blink:L.p.blink>0},1);}};
       over=g=>{for(const o of L3){const L=o.L;badge(g,L.x-34,0,PZ+60,L.p.color,Math.min(TOP,L.h).toFixed(1),L.p.name,'metro',tagOf(L.p));
         if(L.mode==='local'&&!L.done&&!sc.ended&&!(sc.cd>.6)){const s=B3.proj(L.x+34,Math.min(TOP,L.h)*PX+50,PZ+10),early=sc.t-L.last<v.GAP,k=clamp(s.k*1.2,.7,1.3);g.save();g.translate(s.x,s.y);g.scale(k,k);g.beginPath();g.arc(0,0,13,0,TAU);fs(g,L.stun>0?'#9AA3AE':(early?'#E2452E':'#2FA35A'),INK,2.2);otext(g,early||L.stun>0?'!':'↑',0,1,15,'#fff',3);g.restore();}}};}
+    else if(kind==='palayok'){const PP=v.P,CANDY=['#E2452E','#F2B21B','#2E6FD8','#2FA35A','#F28DB2','#FFF6E6'],candyG=new T3.BoxGeometry(5,3.2,3.2),shardG=new T3.BoxGeometry(7,2,6),bits=[];
+      /* the blindfold and the stick follow the kid's head and right hand (the rigged kids are shared between scenes, so nothing is attached to them) */
+      const follow=(o,K)=>{if(o.K===K)return;o.K=K;const nk=!!K.nk;o.head=nk?(K.m.group.getObjectByName('skull')||K.m.joints.head):K.head;o.hand=nk?K.m.joints.hand_R:K.arms[1];
+        o.blind.geometry.dispose();o.blind.geometry=nk?new T3.CylinderGeometry(.19,.19,.065,24,1,true):new T3.CylinderGeometry(13.6,13.6,3.6,20,1,true);o.bOff.makeTranslation(0,nk?.035:.8,0);
+        o.stick.geometry.dispose();o.stick.geometry=nk?new T3.CylinderGeometry(.016,.016,.55,6):new T3.CylinderGeometry(1.1,1.1,32,6);o.sOff.makeTranslation(0,nk?-.3:-26,0);};
+      const L3=v.lanes.map(L=>{dashRect(root,L.x-60,-200,L.x+60,PP.START+24);flatBox(root,L.x-50,PP.START+10,L.x+50,PP.START+10,5);
+        const dots=[];for(let k=1;k<=10;k++)dots.push(flatRing(root,L.x,PP.START-k*PP.SS,0,4,WHITE,1.4));
+        const rig=new T3.Group();rig.position.x=L.x;root.add(rig);
+        for(const sd of [-1,1]){const pl=mesh(new T3.CylinderGeometry(3.2,3.6,104,10),M('#B7A04A'),sd*48,52,0);ol(pl,.1);rig.add(pl);for(let k=1;k<4;k++)rig.add(mesh(new T3.CylinderGeometry(3.8,3.8,1.6,10),M('#8A7A30'),sd*48,k*26,0));}
+        rig.add(new T3.Mesh(new T3.TubeGeometry(new T3.CatmullRomCurve3([new T3.Vector3(-48,101,0),new T3.Vector3(0,93,0),new T3.Vector3(48,101,0)]),12,.8,5),M('#8A6A3A')));
+        const pot=new T3.Group();pot.position.set(0,93,0);rig.add(pot);pot.add(mesh(new T3.CylinderGeometry(.6,.6,20,5),M('#5A3A22'),0,-10,0));
+        const body=mesh(new T3.SphereGeometry(15,18,14),M('#C8743F'),0,-36,0);body.scale.y=.92;ol(body,.05);pot.add(body,mesh(new T3.CylinderGeometry(8,10,6,16),M('#A85A2C'),0,-22,0));
+        const bandP=mesh(new T3.TorusGeometry(14.2,1.2,6,20),M('#F2B21B'),0,-36,0);bandP.rotation.x=Math.PI/2;pot.add(bandP);
+        const blind=new T3.Mesh(new T3.BufferGeometry(),new T3.MeshToonMaterial({color:'#C9372A',gradientMap:gm,side:T3.DoubleSide}));blind.matrixAutoUpdate=false;root.add(blind);
+        const stick=new T3.Mesh(new T3.BufferGeometry(),M('#A87442'));stick.matrixAutoUpdate=false;root.add(stick);
+        return{L,dots,rig,pot,blind,stick,bOff:new T3.Matrix4(),sOff:new T3.Matrix4(),K:null,head:null,hand:null,burst:0};});
+      function spill(x,z){for(let k=0;k<22;k++){const shard=k>=16,m=new T3.Mesh(shard?shardG:candyG,shard?M('#B8643A'):M(CANDY[k%6]));m.position.set(x+(R()-.5)*10,58,z);root.add(m);
+        bits.push({m,vx:(R()-.5)*120,vy:60+R()*90,vz:(R()-.5)*70+20,vr:(R()-.5)*12,t:0});}}
+      upd=dt=>{const ph=v.ph,look=ph==='look',T=v.tries[Math.min(2,v.tri)],pz=v.potY(),n=Math.floor(T.pot);
+        for(const o of L3){const L=o.L,show=look||!!L.out;o.rig.visible=show;o.rig.position.z=pz;o.pot.visible=!L.broke;o.pot.rotation.z=L.out&&L.out.s===6&&!RM?Math.sin(now*14)*.3*Math.max(0,1-L.rt):0;
+          o.dots.forEach((d,k)=>d.visible=look&&k<n);
+          if(L.broke&&!o.burst){o.burst=1;spill(L.x,pz);}if(!L.broke)o.burst=0;
+          const walking=ph==='walk'&&!L.out,sp=ph==='spin'&&!RM?Math.floor(v.pt*10)%4:-1,K=kidOf(L.p);
+          pose(K,L.x,v.kidY(L),{dir:sp>=0?['front','side','back','side'][sp]:(look?'front':'back'),face:sp===3?-1:1,walk:walking?v.wt*11.4:null,mood:L.sw>0?'swing':(L.out?L.p.mood:'idle'),st:1-L.sw,blink:L.p.blink>0},1.1);
+          follow(o,K);K.g.updateMatrixWorld(true);o.blind.visible=!look;o.blind.matrix.multiplyMatrices(o.head.matrixWorld,o.bOff);o.stick.matrix.multiplyMatrices(o.hand.matrixWorld,o.sOff);}
+        for(let i=bits.length-1;i>=0;i--){const b=bits[i];b.t+=dt;b.vy-=320*dt;b.m.position.x+=b.vx*dt;b.m.position.y=Math.max(1.6,b.m.position.y+b.vy*dt);b.m.position.z+=b.vz*dt;if(b.m.position.y>1.6)b.m.rotation.x+=b.vr*dt;else{b.vx*=.9;b.vz*=.9;}
+          if(b.t>1.6){root.remove(b.m);bits.splice(i,1);}}};
+      over=g=>{for(const o of L3){const L=o.L;badge(g,L.x-30,0,PP.START+44,L.p.color,v.total(L),L.p.name,'subok '+Math.min(3,v.tri+1)+'/3',tagOf(L.p));}
+        for(const b of v.bubbles){const s=B3.proj(b.x,70,b.y);drawBubble(g,s.x,s.y,b.txt,b.t);}};}
     shadowAll(root);
     const updAll=dt=>{spect.forEach(({s,K})=>{const j=RM?0:Math.max(0,Math.sin(now*4+s.n*1.7))*8;pose(K,s.x,s.y,{lift:j,mood:j>4?'cheer':'happy',dir:'front'},.9);});upd(dt);};
     return{root,upd:updAll,over,cam};}
