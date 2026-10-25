@@ -2423,9 +2423,9 @@ function mkTaguan(pre,mgi){
   /* the screen: counters for bots and online players on top, then one strip per local player (the whole area for one) */
   function strips(){const others=P.filter(pl=>pl.mode!=='local'),loc=P.filter(pl=>pl.mode==='local'),top=topH+(others.length?34:4)+26,bot=H-botH-6,n=Math.max(1,loc.length),h=(bot-top)/n;
     return(loc.length?loc:[P[0]]).map((pl,j)=>({pl,x:0,y:top+j*h,w:W,h:h-(n>1?4:0)}));}
-  sc.layout=()=>strips().map(s=>({x:s.x,y:s.y,w:s.w,h:s.h,scale:Math.min(s.h/190,s.w/440)}));
+  sc.layout=()=>strips().map(s=>({x:s.x,y:s.y,w:s.w,h:s.h,scale:Math.min(s.h/190,s.w/300)}));
   const camX=()=>tayaX()+34;
-  function strip2d(g,st){const sc2=Math.min(st.h/190,st.w/440),vw=st.w/sc2,x0=camX()-vw*.4,gy=Math.min(st.y+st.h*.82,st.y+st.h*.5+190*sc2*.3);
+  function strip2d(g,st){const sc2=Math.min(st.h/190,st.w/300),vw=st.w/sc2,x0=camX()-vw*.4,gy=Math.min(st.y+st.h*.82,st.y+st.h*.5+190*sc2*.3);
     g.save();g.beginPath();g.rect(st.x,st.y,st.w,st.h);g.clip();
     const sky=g.createLinearGradient(0,st.y,0,gy);sky.addColorStop(0,'#FBD7A0');sky.addColorStop(1,'#FFF0D2');g.fillStyle=sky;g.fillRect(st.x,st.y,st.w,gy-st.y);
     g.fillStyle='#E9C995';for(let hx=Math.floor(x0*.5/160)*160;hx<x0*.5+vw;hx+=160){const sx=st.x+(hx-x0*.5)*sc2;rr(g,sx,gy-72*sc2,110*sc2,72*sc2,4);g.fill();g.beginPath();g.moveTo(sx-8*sc2,gy-70*sc2);g.lineTo(sx+55*sc2,gy-104*sc2);g.lineTo(sx+118*sc2,gy-70*sc2);g.closePath();g.fill();}
@@ -2446,10 +2446,13 @@ function mkTaguan(pre,mgi){
     if(pl.msg){const m=pl.msg,a=Math.min(1,(1.1-m.t)/.3);g.save();g.globalAlpha=a;otext(g,m.txt,st.x+st.w*.5,st.y+st.h*.3-m.t*16,sm?17:21,m.col,4);g.restore();}
     if(P.filter(q=>q.mode==='local').length>1){g.strokeStyle=pl.p.color;g.lineWidth=3;g.strokeRect(st.x+1.5,st.y+1.5,st.w-3,st.h-3);}}
   function topHud(g){const S=yard[r].spots,w=Math.min(W-32,420),x=W/2-w/2,y=topH+2;rr(g,x,y,w,22,11);fs(g,PAPER,INK,2);
-    const u=clamp((tayaX()-S[0].x+T.GAP*.8)/(S[S.length-1].x-S[0].x+T.GAP*.8),0,1);S.forEach((s,k)=>{const sx=x+14+(w-28)*(k/(S.length-1));g.beginPath();g.arc(sx,y+11,2.4,0,TAU);g.fillStyle='rgba(59,35,22,.35)';g.fill();});
-    g.beginPath();g.arc(x+14+(w-28)*u,y+11,6,0,TAU);fs(g,'#FFC93C',INK,2);g.font='900 11px '+BODY;g.fillStyle=INK;g.textAlign='left';g.textBaseline='middle';g.fillText('Ikot '+(r+1)+'/2',x-2-g.measureText('Ikot 2/2').width-6<0?x+4:x-62,y+11);
-    const others=P.filter(pl=>pl.mode!=='local');if(others.length){let cx=W/2-others.length*62;g.font='900 12px '+BODY;
-      others.forEach(pl=>{const n=pl.mode==='remote'?(pl.rf|0):pl.found.size,t=pl.p.name+': '+n+' nahanap',tw=g.measureText(t).width+20;rr(g,cx,y+28,tw,22,11);fs(g,tint(pl.p.color,.25),INK,1.8);g.fillStyle=INK;g.textAlign='left';g.fillText(t,cx+10,y+39.5);cx+=tw+6;});}
+    g.font='900 11px '+BODY;g.textBaseline='middle';const lab='Ikot '+(r+1)+'/2',lw=g.measureText(lab).width+16,bx=x+lw,bw=w-lw-14;g.fillStyle=INK;g.textAlign='left';g.fillText(lab,x+9,y+11.5);
+    const u=clamp((tayaX()-S[0].x+T.GAP*.8)/(S[S.length-1].x-S[0].x+T.GAP*.8),0,1);S.forEach((s,k)=>{const sx=bx+bw*(k/(S.length-1));g.beginPath();g.arc(sx,y+11,2.4,0,TAU);g.fillStyle='rgba(59,35,22,.35)';g.fill();});
+    g.beginPath();g.arc(bx+bw*u,y+11,6,0,TAU);fs(g,'#FFC93C',INK,2);
+    /* bots and online players as counters, centred; the word "nahanap" goes when they don't fit */
+    const others=P.filter(pl=>pl.mode!=='local');if(others.length){g.font='900 12px '+BODY;const cnt=pl=>pl.mode==='remote'?(pl.rf|0):pl.found.size;
+      let txt=others.map(pl=>pl.p.name+': '+cnt(pl)+' nahanap'),ws=txt.map(t=>g.measureText(t).width+20);if(ws.reduce((a,b)=>a+b+6,-6)>W-16){txt=others.map(pl=>pl.p.name+': '+cnt(pl));ws=txt.map(t=>g.measureText(t).width+20);}
+      let cx=W/2-ws.reduce((a,b)=>a+b+6,-6)/2;others.forEach((pl,j)=>{rr(g,cx,y+28,ws[j],22,11);fs(g,tint(pl.p.color,.25),INK,1.8);g.fillStyle=INK;g.textAlign='left';g.fillText(txt[j],cx+10,y+39.5);cx+=ws[j]+6;});}
     if(rt<T.INTRO&&!(sc.cd>.6)){const t=r?'Ikalawang ikot: mas mabilis!':'Isa, dalawa, tatlo… Taguan!';otext(g,t,W/2,topH+(H-topH-botH)*.32,22,'#fff',5);}}
   sc.draw=()=>{};
   sc.drawScreen=g=>{const ss=strips();if(!B3.on)for(const st of ss)strip2d(g,st);for(const st of ss)stripHud(g,st);topHud(g);};
@@ -3352,7 +3355,7 @@ function init3D(){
         for(const b of v.bubbles){const s=B3.proj(b.x,70,b.y);drawBubble(g,s.x,s.y,b.txt,b.t);}};}
     else if(kind==='taguan'){const TT=v.T,GAPT=TT.GAP;root.remove(arenaGroup());spect.forEach(o=>root.remove(o.K.g));
       /* a long yard: grass, a dirt path, houses at the back; the 24 spots from TG_SPOTS in code-drawn 3D */
-      const len=(18+6)*GAPT,yg=new T3.PlaneGeometry(len,520);yg.rotateX(-Math.PI/2);const gm2=mesh(yg,grassM,len/2-GAPT*3,0,0);gm2.receiveShadow=true;root.add(gm2);
+      const len=(18+6)*GAPT,yg=new T3.PlaneGeometry(len,2400);yg.rotateX(-Math.PI/2);const gm2=mesh(yg,grassM,len/2-GAPT*3,0,0);gm2.receiveShadow=true;root.add(gm2);
       const pg=new T3.PlaneGeometry(len,40);pg.rotateX(-Math.PI/2);const path=mesh(pg,dirtM,len/2-GAPT*3,.6,30);path.receiveShadow=true;root.add(path);
       for(let x=-GAPT*3;x<len-GAPT*3;x+=170){const hs=mesh(new T3.BoxGeometry(120,70,60),M(['#F4E3C3','#F2C9A0','#CFE6E0','#F6D6C8'][Math.abs(Math.round(x/170))%4]),x,35,-170);ol(hs,.02);const rf=mesh(new T3.ConeGeometry(92,40,4),M(['#C8553D','#2F8F8A','#B86B3F'][Math.abs(Math.round(x/170))%3]),x,90,-170);rf.rotation.y=Math.PI/4;rf.scale.z=.6;root.add(hs,rf);}
       function tg3(t){const g=new T3.Group(),nm=TG_SPOTS[t][0],w=TG_SPOTS[t][1],h=TG_SPOTS[t][2],add=(m,k)=>{if(k!==0)ol(m,k||.04);g.add(m);return m;};
@@ -3389,7 +3392,7 @@ function init3D(){
           if(s.kid){kid=npc(NPCS.at(s.kid.look),{parent:grp});kid.base={x:s.x+TG_SPOTS[s.t][1]*.5+14,z:4};kid.g.visible=false;}return{s,m,kid,key:r+':'+k};});
         return{grp,spots};});
       const cams=[0,1,2,3].map(()=>new T3.PerspectiveCamera(40,1,10,6000)),TAN=Math.tan(20*Math.PI/180),VV=new T3.Vector3();let views=[];
-      const camAt=(cm,st)=>{const as=st.w/st.h,d=Math.max(240,440/(2*TAN*as)),cx=v.camX()+.2*as*d*TAN;cm.aspect=as;cm.position.set(cx,62+d*.06,d);cm.lookAt(cx,30,0);cm.updateProjectionMatrix();cm.updateMatrixWorld();};   // the taya about 40% from the left, at least 440 units of yard across
+      const camAt=(cm,st)=>{const as=st.w/st.h,d=Math.max(240,300/(2*TAN*as)),cx=v.camX()+.2*as*d*TAN;cm.aspect=as;cm.position.set(cx,64+d*.2,d);cm.lookAt(cx,30,0);cm.updateProjectionMatrix();cm.updateMatrixWorld();};   // the taya about 40% from the left, at least 300 units of yard across (as in 2D), looking a little down so the yard fills a tall phone
       upd=()=>{const r=v.r;rounds.forEach((R2,j)=>{R2.grp.visible=j===r;});const k=v.cur();
         for(const o of rounds[r].spots){const sh=o.s.kid&&o.s.kid.clue==='kaluskos'&&v.clueOn(k)&&o===rounds[r].spots[k]&&!RM?Math.sin(v.rt*50)*2:0;o.m.position.x=o.s.x+sh;
           if(o.kid)pose(o.kid,o.kid.base.x,o.kid.base.z,{mood:'cheer',dir:'front'},.9);}
