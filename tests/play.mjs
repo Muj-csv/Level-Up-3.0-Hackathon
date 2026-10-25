@@ -159,7 +159,7 @@ for (const [label, w, h] of [['phone', 390, 844], ['landscape phone', 844, 390]]
   await page.click('#mapBack'); await page.click('#card [data-v="back"]');
   await page.click('#mGuide'); await page.click('#card [data-v="next"]'); await page.click('#card [data-v="next"]');
   const lap = await page.evaluate(() => [...document.querySelectorAll('#card .legend li')].filter(li => { const b = li.querySelector('b'), d = li.lastElementChild; if (!b || !d || b === d) return false; const r1 = b.getBoundingClientRect(), r2 = d.getBoundingClientRect(); return r1.right > r2.left + 1 && r1.bottom > r2.top && r2.bottom > r1.top; }).map(li => li.textContent.slice(0, 20)));
-  check(/Mga espasyo/.test(await page.textContent('#card h2')) && lap.length === 0, 'guide page 3: no space name runs into its description at 360 px', lap.join(' | '));
+  check(/Mga space/.test(await page.textContent('#card h2')) && lap.length === 0, 'guide page 3: no space name runs into its description at 360 px', lap.join(' | '));
   await page.keyboard.press('Escape'); if (await page.isVisible('#card [data-v="back"]')) await page.click('#card [data-v="back"]');
   if (!(await page.evaluate(() => document.querySelector('#modal').hidden))) { const b = await page.$('#card [data-v="close"],#card [data-v="next"]'); if (b) await b.click(); }
   await page.evaluate(() => window.__lsu.startLocal({ n: 1, names: ['Ian'], cfg: { mode: 'party', rounds: 3, diff: 1 } }));
