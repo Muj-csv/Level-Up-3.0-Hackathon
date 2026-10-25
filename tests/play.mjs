@@ -166,12 +166,12 @@ for (const [label, w, h] of [['phone', 390, 844], ['landscape phone', 844, 390]]
   await page.waitForTimeout(800); await page.click('#menuBtn');
   check((await small(page)).length === 0, 'pause menu: every button is at least 44 px tall', (await small(page)).join(', '));
   await page.context().close();
-  // a landscape phone: Pagsasanay's five games all sit above its closing buttons, none hidden behind them
+  // a landscape phone: every Pagsasanay game sits above its closing buttons, none hidden behind them
   const land = await newPage({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true });
   await land.click('#mHamon'); await land.click('#card [data-v="practice"]');
   const cover = await land.evaluate(() => { const row = document.querySelector('#card > .row:last-child').getBoundingClientRect(), card = document.querySelector('#card').getBoundingClientRect();
     return [...document.querySelectorAll('#card .pgrid .btn')].filter(b => { const r = b.getBoundingClientRect(); return r.bottom > row.top + 1 || r.bottom > card.bottom; }).map(b => b.dataset.v); });
-  check(cover.length === 0, 'landscape phone: all five Pagsasanay games are fully visible above Balik', cover.join(','));
+  check(cover.length === 0, 'landscape phone: every Pagsasanay game is fully visible above Balik', cover.join(','));
   await land.click('#card [data-v="patintero"]'); await land.click('#card [data-v="go"]');
   await land.waitForFunction(() => window.__lsu.scene && window.__lsu.scene.peek, null, { timeout: 10000 });
   check(await land.textContent('#roundPill') === 'Pagsasanay', 'Pagsasanay shows "Pagsasanay" in the top bar, not "Hamon"', await land.textContent('#roundPill'));
