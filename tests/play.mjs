@@ -53,6 +53,20 @@ for (const [label, w, h] of [['phone 360x740', 360, 740], ['phone landscape 740x
   await page.context().close();
 }
 
+// ---------- 1b. Taguan: four people on one 360 px phone each get a readable strip of the yard ----------
+{
+  const page = await newPage({ viewport: { width: 360, height: 740 }, isMobile: true, hasTouch: true }, '?debug&mg=taguan');
+  await lsu(page, () => window.__lsu.startLocal({ n: 4, names: ['Ana', 'Ben', 'Cel', 'Dan'], cfg: { mode: 'torneo', rounds: 3, diff: 1 } }));
+  await page.waitForSelector('#card [data-v="go"]', { timeout: 15000 }); await page.click('#card [data-v="go"]');
+  await page.waitForFunction(() => window.__lsu.scene && window.__lsu.scene.kind === 'taguan' && !(window.__lsu.scene.cd > 0), null, { timeout: 15000 });
+  const L = await page.evaluate(() => ({ strips: window.__lsu.scene.layout(), vh: innerHeight, vw: innerWidth, sw: document.documentElement.scrollWidth }));
+  const s = L.strips, apart = s.every((a, i) => i === 0 || a.y >= s[i - 1].y + s[i - 1].h - 0.5);
+  check(s.length === 4 && s.every(a => a.h >= 100 && a.scale >= 0.5 && a.y >= 0 && a.y + a.h <= L.vh && a.w <= L.vw) && apart && L.sw <= L.vw,
+    'Taguan: four stacked strips stay readable on a 360 px wide phone (each at least 100 px tall, yard at half size or more, no overlap)', s.map(a => Math.round(a.h) + 'px x' + a.scale.toFixed(2)).join(', '));
+  await page.screenshot({ path: 'test-results/play-taguan-4-strips.png' }).catch(() => {});
+  await page.context().close();
+}
+
 // ---------- 2. every title button does something ----------
 {
   const page = await newPage();

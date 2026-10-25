@@ -35,7 +35,10 @@ const PLAYERS = {
   // pukpok palayok: remember how many steps away the pot is while looking, then swing on that step
   palayok: `sc => { const L = sc.peek()[0], m = window.__pp || (window.__pp = {}); if (L.ph === 'look' && L.pot != null) m[L.tri] = Math.round(L.pot); if (L.ph === 'walk' && !L.out && m[L.tri] != null && L.steps >= m[L.tri]) sc.action(); }`,
   palayokOnce: `sc => { const L = sc.peek()[0]; if (L.ph === 'walk' && !L.out) sc.action(); }`,
-  palayokNever: `sc => {}`
+  palayokNever: `sc => {}`,
+  // taguan: tap only while a kid's clue is showing (never on cats, chickens and dogs); the other taps at every stop
+  taguan: `sc => { const v = sc.peek(); if (v.clue === 'kid' && !v.tapped && !v.locked) sc.action(); }`,
+  taguanEvery: `sc => { const v = sc.peek(); if (v.k >= 0 && !v.tapped && !v.locked) sc.action(); }`
 };
 
 async function practice(kind, player) {
@@ -69,7 +72,8 @@ async function practice(kind, player) {
 const results = {}, runs = {};
 const only = process.argv[2];
 for (const [kind, player] of [['tumbang', 'tumbang'], ['sipa', 'sipa'], ['sipa', 'sipaMash'], ['palosebo', 'palosebo'], ['palosebo', 'paloseboMash'], ['patintero', 'patintero'], ['patintero', 'patinteroStraight'], ['luksong', 'luksong'], ['luksong', 'luksongMash'],
-  ['palayok', 'palayok'], ['palayok', 'palayok'], ['palayok', 'palayok'], ['palayok', 'palayokOnce'], ['palayok', 'palayokNever']].filter(([k]) => !only || k === only)) {
+  ['palayok', 'palayok'], ['palayok', 'palayok'], ['palayok', 'palayok'], ['palayok', 'palayokOnce'], ['palayok', 'palayokNever'],
+  ['taguan', 'taguan'], ['taguan', 'taguanEvery']].filter(([k]) => !only || k === only)) {
   const r = await practice(kind, player);
   results[player] = r.score; (runs[player] || (runs[player] = [])).push(r.score);
   check(r.score >= 0 && r.back === 'title', `${player}: starts, takes input, ends and returns to the menu`, 'score ' + r.score);
@@ -93,6 +97,15 @@ if (!only || only === 'palayok') {
   const avg = runs.palayok.reduce((a, b) => a + b, 0) / runs.palayok.length;
   check(avg >= 20, 'Pukpok Palayok: counting the steps averages 20 points or more', runs.palayok.join(', ') + ' (average ' + avg.toFixed(1) + ')');
   check(results.palayokOnce === 0 && results.palayokNever === 0, 'Pukpok Palayok: swinging at once or never swinging scores 0', results.palayokOnce + ' / ' + results.palayokNever);
+}
+if (!only || only === 'taguan') {
+  check(results.taguan >= 80, 'Taguan: tapping only on real clues finds at least 8 of 10 kids', results.taguan + ' points');
+  check(results.taguan > results.taguanEvery, 'Taguan: reading the clues beats tapping at every spot', results.taguan + ' vs ' + results.taguanEvery);
+  const page = await browser.newPage(); await renderer(page, '2d'); await page.goto(srv.url + '?debug'); await page.waitForFunction(() => window.__lsu);
+  const bots = await page.evaluate(() => [0, 1, 2].map(d => { const M = window.__lsu.MG.taguan, a = []; for (let i = 0; i < 400; i++) a.push(M.preroll(d)); return { f: [Math.min(...a.map(p => p.f)), Math.max(...a.map(p => p.f))], w: [Math.min(...a.map(p => p.w)), Math.max(...a.map(p => p.w))], s: M.botScore({ f: 9, w: 1 }) }; }));
+  await page.close();
+  check(bots[0].f[0] === 3 && bots[0].f[1] === 5 && bots[0].w[1] === 2 && bots[1].f[0] === 5 && bots[1].f[1] === 7 && bots[1].w[1] === 1 && bots[2].f[0] === 7 && bots[2].f[1] === 9 && bots[2].w[1] === 0 && bots[0].s === 88,
+    'Taguan: bots find 3–5 / 5–7 / 7–9 kids with 0–2 / 0–1 / 0 wrong taps, scored found × 10 − wrong × 2', JSON.stringify(bots));
 }
 console.log('scores', JSON.stringify(results));
 await browser.close(); srv.close(); done();

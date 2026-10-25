@@ -11,7 +11,7 @@ themes: **Philippine Games and Sports**, and **Board Games / Brain Games**.
 
 Four barrio kids pick one of four island maps (**Plaza, Palengke, Aplaya, Palayan**),
 race around its board, collect piso, buy korona (crowns), and play a street-game minigame
-after every round: Tumbang Preso, Patintero, Sipa, Palosebo, Luksong Tinik and Pukpok Palayok.
+after every round: Tumbang Preso, Patintero, Sipa, Palosebo, Luksong Tinik, Pukpok Palayok and Taguan.
 
 The game is **3D**: the island, the kids and every minigame arena are drawn with
 Three.js. When WebGL or Three.js is not available, it falls back to a 2D canvas board,

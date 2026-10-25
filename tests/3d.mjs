@@ -115,7 +115,8 @@ const MASH = {
   palosebo: `sc => { if (Math.random() < 0.3) sc.action(); }`,
   patintero: `sc => { const v = sc.peek(); const up = v.run.dir < 0; sc.key({ code: 'ArrowUp', preventDefault() {} }, up); sc.key({ code: 'ArrowDown', preventDefault() {} }, !up); }`,
   luksong: `sc => { const L = sc.peek()[0]; if (L.st === 'run' && L.inZone) sc.action(); }`,
-  palayok: `sc => { const L = sc.peek()[0]; if (L.ph === 'walk' && !L.out && L.steps >= 6) sc.action(); }`
+  palayok: `sc => { const L = sc.peek()[0]; if (L.ph === 'walk' && !L.out && L.steps >= 6) sc.action(); }`,
+  taguan: `sc => { const v = sc.peek(); if (v.clue === 'kid' && !v.tapped && !v.locked) sc.action(); }`
 };
 for (const kind of Object.keys(MASH)) {
   const page = await newPage('3d', '?debug&speed=3');

@@ -11,6 +11,10 @@ const GAMES = {
   palayok: {
     player: `(sc, i) => { const L = sc.peek()[i], m = window.__pp || (window.__pp = {}); if (L.ph === 'look' && L.pot != null) m[L.tri] = Math.round(L.pot); if (L.ph === 'walk' && !L.out && m[L.tri] != null && L.steps >= m[L.tri]) sc.action(); }`,
     totals: `sc => sc.v3.lanes.map(L => sc.v3.total(L))`
+  },
+  taguan: {
+    player: `(sc, i) => { const v = sc.peek(); if (v.clue === 'kid' && !v.tapped && !v.locked) sc.action(); }`,
+    totals: `sc => sc.v3.P.map(pl => pl.mode === 'remote' ? Math.max(0, Math.min(100, (pl.rf | 0) * 10 - (pl.rw | 0) * 2)) : sc.v3.score(pl))`
   }
 };
 
