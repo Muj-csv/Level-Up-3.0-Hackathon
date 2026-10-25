@@ -27,7 +27,7 @@ const FIL = JSON.parse(fs.readFileSync(path.join(ROOT, 'content/fil.json'), 'utf
 
 // ---------- 1. default, the title button, saving, reload ----------
 {
-  const page = await newPage('', { prefs: JSON.stringify({ music: false, sfx: true, vib: false, g3d: true, gq: 'low' }) });
+  const page = await newPage('', { prefs: JSON.stringify({ music: false, sfx: true, vib: false, gq: 'low' }) });
   const a = await cards(page);
   check(a.lang === 'fil' && a.html === 'fil' && a.btn === 'FIL' && a.rule === FIL.minigames.tumbang.rules[0] && a.q === FIL.trivia[0].q, 'Filipino by default: cards, <html lang> and the title button', JSON.stringify(a).slice(0, 160));
   await page.click('#langBtn'); await page.waitForTimeout(600);
@@ -35,7 +35,7 @@ const FIL = JSON.parse(fs.readFileSync(path.join(ROOT, 'content/fil.json'), 'utf
   check(b.lang === 'en' && b.html === 'en' && b.btn === 'EN', 'the title button switches to English', JSON.stringify({ lang: b.lang, html: b.html, btn: b.btn }));
   check(b.rule === EN.minigames.tumbang.rules[0] && b.q === EN.trivia[0].q && b.soon === EN.soon[0].d && b.real === EN.minigames.sipa.real, 'rules, Tanong ni Lola, Sa totoong kalye and soon games are in English', b.rule);
   check(b.n === a.n, 'English keeps the same number of questions (same list on every phone online)', a.n + ' / ' + b.n);
-  check(p.lang === 'en' && p.music === false && p.sfx === true && p.vib === false && p.g3d === true && p.gq === 'low', 'saved as lang next to the other settings, which stay as they were', JSON.stringify(p));
+  check(p.lang === 'en' && p.music === false && p.sfx === true && p.vib === false && p.gq === 'low', 'saved as lang next to the other settings, which stay as they were', JSON.stringify(p));
   await page.reload(); await page.waitForFunction(() => window.__lsu && window.__lsu.screen === 'title'); await page.waitForTimeout(800);
   const c = await cards(page);
   check(c.lang === 'en' && c.btn === 'EN' && c.rule === EN.minigames.tumbang.rules[0], 'English is still picked after a reload');

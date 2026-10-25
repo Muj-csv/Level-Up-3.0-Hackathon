@@ -246,7 +246,7 @@ function ribbonY(name, pts, w, m, dy = 0) { const n = pts.length, Pp = [], idx =
 const LA = 16, LB = 10, LZ = -1, lagR = a => 1 + .06 * Math.cos(3 * a + .4) + .04 * Math.cos(5 * a + 1.3);
 const lagPt = (a, s) => V(Math.cos(a) * LA * s * lagR(a), LZ - Math.sin(a) * LB * s * lagR(a));
 const inLagoon = (x, z, s = 1) => { const a = Math.atan2(-(z - LZ) / LB, x / LA); return Math.hypot(x / LA, (z - LZ) / LB) < lagR(a) * s; };
-const MA = 27, MB = 19, NM = 80, NW = 26, FORK = 20, MERGE = 60, BOAT_A = 2, BOAT_B = 27;
+const MA = 27, MB = 19, NM = 80, NW = 26, FORK = 20, MERGE = 60, BOAT_A = 12, BOAT_B = 40;   // the bangka: M12 to M40 (it was M02, passed only once, with the first 10 piso)
 const mainPt = t => { const k = 1 + .04 * Math.cos(3 * t + .5); return V(MA * Math.sin(t) * k, MB * Math.cos(t) * k); };
 const mainCurve = new THREE.CatmullRomCurve3(Array.from({ length: 120 }, (_, i) => mainPt(i / 120 * TAU)), true);
 const M = i => mainCurve.getPointAt((((i % NM) + NM) % NM) / NM);
@@ -260,6 +260,22 @@ const onBridge = p => distToSeg(V(p.x, p.z), chStart, chEnd) < 2.4;
 const mainPts = mainCurve.getSpacedPoints(300).slice(0, -1), walkPts = walkCurve.getSpacedPoints(120).map((p, i, a) => { p.y = deckY(i / (a.length - 1)); return p; });
 const PATHS = [[mainPts, 2.2], [walkPts, 2.2], [line(V(4, 12.5), V(4, 2.5), 12), 2.4]];
 const nearPath = (x, z, d) => PATHS.some(([pts, w]) => pts.some(p => Math.hypot(p.x - x, p.z - z) < d + w / 2));
+// palms keep their crowns off the board: a crown (fronds reach ~4 m) over the path would hide spaces from the board camera.
+// First the palm leans another way; if that is not enough the trunk steps away from the path (staying on the island).
+const BOARD_PTS = [...mainPts, ...walkPts], PALM_CLEAR = 4.6;
+// the game's board camera looks north from the south, steeply (64-70 deg): a crown h m up shows about .45 h m further north
+const crownGap = (x, z, d, l, h) => { const cx = x + Math.cos(d) * l, cz = z - Math.sin(d) * l; let m = 1e9; for (const p of BOARD_PTS) m = Math.min(m, Math.hypot(p.x - cx, p.z - cz), Math.hypot(p.x - cx, p.z - (cz - h * .45))); return m; };
+function palmOffBoard(x, z, l, d, h) {
+  if (crownGap(x, z, d, l, h) >= PALM_CLEAR) return { x, z, d, ok: true };
+  let best = { x, z, d, g: crownGap(x, z, d, l, h) };
+  for (let k = 1; k < 16; k++) { const dd = d + k * Math.PI / 8, g = crownGap(x, z, dd, l, h); if (g > best.g) best = { x, z, d: dd, g }; }
+  if (best.g >= PALM_CLEAR) return { ...best, ok: true };
+  let np = null, nd = 1e9; for (const p of BOARD_PTS) { const q = Math.hypot(p.x - x, p.z - z); if (q < nd) { nd = q; np = p; } }
+  const ux = (x - np.x) / (nd || 1), uz = (z - np.z) / (nd || 1), away = Math.atan2(-uz, ux);
+  for (let s = .5; s <= 6; s += .5) { const nx = x + ux * s, nz = z + uz * s; if (!inIsland(nx, nz, .94)) break; const g = crownGap(nx, nz, away, l, h); if (g >= PALM_CLEAR) return { x: nx, z: nz, d: away, ok: true }; }
+  return { ...best, ok: false };
+}
+
 const clearSpot = (x, z, d = 1.2) => inIsland(x, z, .9) && !inLagoon(x, z, 1.1) && !nearPath(x, z, d) && distToSeg(V(x, z), chStart, chEnd) > 3;
 
 // ---------- TERRAIN + WATER ----------
@@ -303,7 +319,7 @@ function kubo(name, x, z, ry, sign, w = 3, d = 3) { const g = group(name, x, 0, 
   for (const s of [-1, 1]) g.add(B('rail_side', .06, .06, d, bamboo, s * (w / 2 - .1), 1.3, 0));
   if (sign) g.add(mesh('sign', new THREE.PlaneGeometry(1.4, .3), signMat(sign), 0, 2.35, d / 2 + .12)); return g; }
 function lounger(x, z, ry, c) { const g = group('sun_lounger', x, 0, z); g.rotation.y = ry; g.add(B('frame', .7, .3, 1.9, white, 0, 0, 0), B('cushion', .66, .08, 1.3, c, 0, .3, .25)); const bk = B('back', .66, .08, .7, c, 0, .45, -.75); bk.rotation.x = .6; g.add(bk); return g; }
-function palmRing(name, list) { const pg = group(name); list.forEach(([x, z, h, l, d], k) => { pg.add(palm(name + '_' + k, x, z, h, l, d)); chk(name, x, z); }); return bake(pg); }
+function palmRing(name, list) { const pg = group(name); list.forEach(([x, z, h, l, d], k) => { const q = palmOffBoard(x, z, l, d, h); const pl = palm(name + '_' + k, q.x, q.z, h, l, q.d); if (q.ok) { pg.add(pl); chk(name, q.x, q.z); } else warn('palm left out (over the board):', name, k); }); return bake(pg); }
 
 // ---------- LANDMARK: PANTALAN (fishing pier) ----------
 { const pr = group('pantalan_pier'); pr.add(B('deck', 2.4, .12, 10, wood, 4, .45, 7.4));
@@ -438,7 +454,7 @@ let duneH = () => 0;
     else if (k < .93) { const lg = mesh('driftwood', new THREE.CylinderGeometry(.08, .12, 1.4 + rnd(), 6).rotateZ(PI / 2), P('driftwood', '#B9A88E'), x, y + .08, z); lg.rotation.y = rnd() * TAU; fill.add(lg); }
     else if (k < .97) { for (let q = 0; q < 3; q++) fill.add(mesh('coconut', new THREE.SphereGeometry(.15, 7, 5), q ? coconutM : buko, x + (rnd() - .5) * .7, y + .12, z + (rnd() - .5) * .7)); }
     else { for (let q = 0; q < 3; q++) { const rk = mesh('rock', new THREE.DodecahedronGeometry(.25 + rnd() * .45, 0), rock, x + (rnd() - .5) * 1.2, y + .1, z + (rnd() - .5) * 1.2); rk.scale.y = .65; rk.rotation.y = rnd() * 3; fill.add(rk); } } }
-  let yp = 0; for (let t = 0; t < 3000 && yp < 14; t++) { const x = (rnd() * 2 - 1) * RX, z = IZ + (rnd() * 2 - 1) * RZ; if (!freeAt(x, z) || rN(x, z) < .55) continue; yp++; const pl = palm('young_palm_' + yp, x, z, 3 + rnd() * 2, .5 + rnd() * .6, rnd() * TAU); pl.position.y = duneH(x, z) - .05; fill.add(pl); }
+  let yp = 0; for (let t = 0; t < 3000 && yp < 14; t++) { const x = (rnd() * 2 - 1) * RX, z = IZ + (rnd() * 2 - 1) * RZ; if (!freeAt(x, z) || rN(x, z) < .55) continue; yp++; const h = 3 + rnd() * 2, l = .5 + rnd() * .6, d = rnd() * TAU, q = palmOffBoard(x, z, l, d, h), pl = palm('young_palm_' + yp, q.x, q.z, h, l, q.d); pl.position.y = duneH(q.x, q.z) - .05; if (q.ok) fill.add(pl); }
   props.add(bake(fill)); }
 
 // ---------- LAGOON CAUSTICS ----------
@@ -466,10 +482,13 @@ function tileTex(type) { const ev = EVENTS[type]; return tex(C(256, 256, (g, s) 
   else if (type === 'araw') { shape(() => g.arc(128, 128, 40, 0, TAU)); g.strokeStyle = '#3B2316'; g.lineWidth = 11; for (let i = 0; i < 8; i++) { const a = i * PI / 4; g.beginPath(); g.moveTo(128 + Math.cos(a) * 56, 128 + Math.sin(a) * 56); g.lineTo(128 + Math.cos(a) * 84, 128 + Math.sin(a) * 84); g.stroke(); } }
 }), 0, 'tile_' + type); }
 const tileMats = Object.fromEntries(Object.keys(TYPES).map(t => [t, own(std('tile_' + t, { map: tileTex(t), roughness: .45 }))]));
-const SPM = { 0: 'simula', 2: 'bangka', 3: 'tanong', 4: 'huli', 6: 'utang', 8: 'sarisari', 10: 'swerte', 12: 'utang', 13: 'kasama', 15: 'buko', 17: 'jackenpoy', 18: 'utang', 22: 'alon', 24: 'tanong', 25: 'utang', 26: 'swerte', 29: 'huli', 31: 'tikbalang', 33: 'utang', 35: 'kasama', 37: 'sarisari', 39: 'araw',
-  41: 'utang', 42: 'jackenpoy', 46: 'taog', 47: 'tanong', 49: 'tikbalang', 51: 'utang', 53: 'swerte', 55: 'huli', 57: 'utang', 58: 'alon', 62: 'buko', 64: 'tanong', 66: 'utang', 68: 'araw', 69: 'sarisari', 71: 'tikbalang', 72: 'kasama', 74: 'utang', 76: 'swerte', 78: 'taog' };
+const SPM = { 0: 'simula', 3: 'tanong', 4: 'huli', 5: 'sarisari', 6: 'utang', 8: 'sarisari', 9: 'huli', 10: 'swerte', 12: 'bangka', 13: 'kasama', 15: 'buko', 16: 'swerte', 17: 'jackenpoy', 18: 'utang', 20: 'kasama',
+  22: 'alon', 24: 'tanong', 25: 'utang', 26: 'swerte', 27: 'buko', 29: 'huli', 30: 'tanong', 31: 'tikbalang', 33: 'utang', 35: 'kasama', 36: 'alon', 37: 'sarisari', 39: 'araw', 40: 'jackenpoy',
+  41: 'utang', 42: 'jackenpoy', 45: 'sarisari', 46: 'taog', 47: 'tanong', 49: 'tikbalang', 50: 'huli', 51: 'utang', 53: 'swerte', 55: 'huli', 56: 'swerte', 57: 'utang', 58: 'alon', 60: 'kasama',
+  62: 'buko', 64: 'tanong', 65: 'buko', 66: 'utang', 68: 'araw', 69: 'sarisari', 70: 'tanong', 71: 'tikbalang', 72: 'kasama', 74: 'utang', 76: 'swerte', 77: 'alon', 78: 'taog' };
 const MAIN = Array.from({ length: NM }, (_, i) => SPM[i] || 'piso');
-const SPW = { 2: 'utang', 4: 'alon', 6: 'swerte', 8: 'huli', 10: 'utang', 12: 'tanong', 14: 'alon', 16: 'jackenpoy', 18: 'huli', 20: 'utang', 22: 'taog', 24: 'swerte' };
+const SPW = { 2: 'utang', 4: 'alon', 5: 'jackenpoy', 6: 'swerte', 8: 'huli', 9: 'sarisari', 10: 'utang', 12: 'tanong', 14: 'alon', 15: 'huli', 16: 'jackenpoy', 18: 'huli', 19: 'swerte', 20: 'utang', 22: 'taog',
+  24: 'swerte', 25: 'kasama' };
 const WALK = Array.from({ length: NW }, (_, j) => SPW[j] || 'piso');
 const KOR = new Set(['M05', 'M16', 'M28', 'M38', 'M45', 'M54', 'M63', 'M75', 'W05', 'W17']);
 const TIDAL = new Set(['W00', 'W01', 'W24', 'W25', 'M19', 'M21', 'M59', 'M61', 'M01', 'M79']);

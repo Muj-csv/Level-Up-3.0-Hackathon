@@ -14,8 +14,9 @@ race around its board, collect piso, buy korona (crowns), and play a street-game
 after every round: Tumbang Preso, Patintero, Sipa, Palosebo, Luksong Tinik, Pukpok Palayok, Taguan and Piko.
 
 The game is **3D**: the island, the kids and every minigame arena are drawn with
-Three.js. When WebGL or Three.js is not available, it falls back to a 2D canvas board,
-and players can pick 2D in the menu (see Controls and settings).
+Three.js. When WebGL or Three.js is not available, it falls back on its own to a flat
+canvas board that shows pictures of the same 3D kids (`kids/sprites.png`). The menu's
+**Kalidad** setting (Mababa / Katamtaman / Mataas) picks how much detail the 3D draws.
 
 ## Play it
 
@@ -26,7 +27,7 @@ nothing to install.
 - **Online:** the live game on Vercel and a backup on GitHub Pages, both built from the
   `main` branch. All project links are in [`docs/LINKS.md`](docs/LINKS.md).
 - **Local server** (needed for 3D: Three.js and the islands are JavaScript modules, which
-  browsers do not load from a `file://` page; opened as a file, the game plays in 2D):
+  browsers do not load from a `file://` page; opened as a file, the game plays on the flat board):
   ```bash
   python3 -m http.server 8000
   # then open http://localhost:8000
@@ -72,10 +73,13 @@ reserve when shopping, and pick their Jack en Poy rivals (Mahirap goes after the
 
 The game opens on a splash: the Taympers logo, the four 3D kids hopping onto their tiles,
 and a loading bar that follows the real loading (fonts, Three.js, the kids, the game text
-and the main menu's Plaza scene). When it is full, **Pindutin para magsimula** starts the
-sound (browsers need a first tap for it) and the splash fades into the main menu, already
-live, as its kids cheer. On devices without 3D the splash shows pictures of the same 3D kids
-(`kids/sprites.png`) and the menu shows its picture. The tests skip the splash (`?debug`); add `&splash` to see it with the test
+and the main menu's Plaza scene). The heavy loading waits until the kids' entrance (the hop,
+Neneng's wave, the path, piko and sipa drawing in) has played, so it never stutters or
+skips; the menu's scene is then built and its first frame drawn, but it only starts moving
+at the tap. When the bar is full, **Pindutin para magsimula** starts the sound (browsers
+need a first tap for it) and the splash fades into the main menu, already live, as its kids
+cheer. On devices without 3D the splash shows pictures of the kids and the
+menu shows its picture. The tests skip the splash (`?debug`); add `&splash` to see it with the test
 hook on.
 
 ## Maps
@@ -95,16 +99,20 @@ game starts on it. Online, the host picks the map in the lobby.
 
 | Map | Board | Shortcut |
 |---|---|---|
-| **Plaza** | Kiosko, simbahan, munisipyo, bantayog; a side path past the church | Kalesa, 6 piso |
-| **Palengke** | Wet and dry market, timbangan, a middle aisle through the stalls | Padyak, 6 piso |
+| **Plaza** | Kiosko, simbahan, munisipyo, bantayog; a side path past the church | Kalesa, 8 piso |
+| **Palengke** | Wet and dry market, timbangan, a middle aisle through the stalls | Padyak, 8 piso |
 | **Aplaya** | Lagoon, pantalan, a boardwalk over the water | Bangka, 6 piso |
-| **Palayan** | Rice terraces and a waterfall; a trail up the terraces | Kariton ng kalabaw, 6 piso |
+| **Palayan** | Rice terraces and a waterfall; a trail up the terraces | Kariton ng kalabaw, 8 piso |
 
 Each map is an 80-space loop with a side path that forks off and joins it again (about
 100 spaces in all), and 10 places where korona can sit; **4 korona** are on the board at
 once. At the fork the player picks the path (each button says how far the nearest korona
-is that way). Landing on the shortcut space offers a paid ride to the far side of the
-map. The 3D islands come from the team's Taympers Maps package (`maps/`, see Credits).
+is that way). The shortcut's stop is 12 to 15 spaces after Simula: stopping on it, or
+passing it with enough piso, offers a paid ride to the far side of the map (about 50
+spaces on). The move ends at the far stop, and a korona there can be bought. At the start
+of a game the korona sit where the kids can reach them: in reach of Simula first, then
+just past the ride's far stop; when one is bought it moves to a spot someone can reach.
+The boards in `maps/boards.js` are exported from the islands by `tools/boards-export.mjs`. The 3D islands come from the team's Taympers Maps package (`maps/`, see Credits).
 
 ## Rules in short
 
@@ -140,8 +148,9 @@ map. The 3D islands come from the team's Taympers Maps package (`maps/`, see Cre
 - Keyboard: Space or Enter to act, M for the map, Esc for the menu, arrows/WASD in
   Patintero. Tab moves between buttons; dialogs keep focus inside and close with Esc.
 - The **menu** (pause button) pauses local games and holds Musika, Tunog and Vibrate
-  switches, **Grapiko 3D / 2D** (kept on the device), How to Play, and Umalis sa laro.
-  Pick 2D on slow phones; the 3D option only shows when the device can draw 3D.
+  switches, **Kalidad** Mababa / Katamtaman / Mataas (kept on the device; it only shows
+  when the device can draw 3D), How to Play, and Umalis sa laro. Pick Mababa on slow
+  phones. An older saved "2D" choice becomes Mababa.
 - Local games save at the start of every turn. If the page closes, **Ituloy ang laro**
   on the title screen picks up where you were.
 - Reduced-motion settings are respected (no screen shake, sway or long wipes).
@@ -153,7 +162,7 @@ not yet on real phones. Each island is about 230,000 to 330,000 triangles; phone
 tablets get a lighter version (fewer leaves and grass layers, no island shadows, at most
 1.5× pixel density), and building the island takes a few seconds when the game starts.
 Before the event, try every map on the slowest phone the team expects; if one stutters,
-switch **Grapiko** to 2D in the menu.
+set **Kalidad** to Mababa in the menu. No frame rate has been measured on a real phone yet.
 
 ### Known limitation: online rooms
 
@@ -186,8 +195,8 @@ Details in [`tests/README.md`](tests/README.md).
 | Playwright (development only, not part of the game) | Automated play-tests | Apache-2.0 |
 
 All art is drawn in code: 3D as Three.js shapes built in code (no model files), and the
-HUD on an HTML canvas. The 2D board's kid pictures (`kids/sprites.png`) are renders of the
-3D kids (`tools/kid-sprites.mjs`), so there is one set of kid designs. The map-screen pictures are renders of those islands. All music and sound effects are synthesized in code with the Web Audio API.
+HUD on an HTML canvas. The flat-board kid pictures (`kids/sprites.png`) are renders of the 3D
+kids (`tools/kid-sprites.mjs`). The map-screen pictures are renders of those islands. All music and sound effects are synthesized in code with the Web Audio API.
 No outside images, 3D models, audio or game code are used.
 
 ## Team

@@ -379,10 +379,13 @@ function tileTex(type) { const ev = EVENTS[type]; return tex(C(256, 256, (g, s) 
   else if (type === 'kalesa') { g.strokeStyle = '#3B2316'; g.lineWidth = 12; g.beginPath(); g.arc(128, 128, 62, 0, TAU); g.stroke(); g.lineWidth = 8; for (let i = 0; i < 8; i++) { const a = i * PI / 4; g.beginPath(); g.moveTo(128, 128); g.lineTo(128 + Math.cos(a) * 62, 128 + Math.sin(a) * 62); g.stroke(); } g.beginPath(); g.arc(128, 128, 14, 0, TAU); g.fill(); }
 }), 0, 'tile_' + type); }
 const tileMats = Object.fromEntries(Object.keys(TYPES).map(t => [t, own(std('tile_' + t, { map: tileTex(t), roughness: .45 }))]));
-const SPM = { 0: 'simula', 3: 'tanong', 5: 'kasama', 7: 'utang', 9: 'sarisari', 11: 'utang', 14: 'jackenpoy', 16: 'swerte', 18: 'utang', 20: 'banda', 23: 'tanong', 25: 'tikbalang', 27: 'utang', 28: 'swerte', 34: 'kasama', 35: 'utang', 37: 'jackenpoy', 39: 'utang',
-  41: 'sarisari', 44: 'tikbalang', 46: 'tanong', 47: 'utang', 52: 'kasama', 54: 'swerte', 56: 'utang', 58: 'tikbalang', 60: 'banda', 62: 'utang', 64: 'jackenpoy', 66: 'tanong', 68: 'kalesa', 70: 'tikbalang', 72: 'rizal', 76: 'rizal', 78: 'utang', 79: 'swerte' };
+const SPM = { 0: 'simula', 2: 'sarisari', 3: 'tanong', 5: 'kasama', 6: 'kampana', 7: 'utang', 9: 'sarisari', 10: 'swerte', 11: 'utang', 12: 'kalesa', 14: 'jackenpoy', 15: 'kasama', 16: 'swerte', 18: 'utang',
+  19: 'banda', 20: 'banda', 22: 'tanong', 23: 'tanong', 25: 'tikbalang', 26: 'munisipyo', 27: 'utang', 28: 'swerte', 30: 'jackenpoy', 32: 'sarisari', 34: 'kasama', 35: 'utang', 36: 'kampana',
+  37: 'jackenpoy', 39: 'utang', 40: 'swerte', 41: 'sarisari', 43: 'kasama', 44: 'tikbalang', 46: 'tanong', 47: 'utang', 48: 'banda', 50: 'tanong', 52: 'kasama', 53: 'munisipyo', 54: 'swerte',
+  56: 'utang', 57: 'jackenpoy', 58: 'tikbalang', 60: 'banda', 61: 'sarisari', 62: 'utang', 64: 'jackenpoy', 65: 'kampana', 66: 'tanong', 68: 'swerte', 70: 'tikbalang', 71: 'kasama', 72: 'rizal',
+  74: 'banda', 76: 'rizal', 77: 'tanong', 78: 'utang', 79: 'swerte' };
 const MAIN = Array.from({ length: NM }, (_, i) => SPM[i] || 'piso');
-const BRANCH = ['piso', 'swerte', 'piso', 'utang', 'munisipyo', 'piso', 'sarisari', 'munisipyo', 'piso', 'tanong', 'piso', 'utang', 'piso', 'kampana', 'piso', 'jackenpoy', 'kampana', 'piso', 'swerte', 'utang', 'piso', 'piso'];
+const BRANCH = ['piso', 'swerte', 'piso', 'utang', 'munisipyo', 'munisipyo', 'sarisari', 'munisipyo', 'piso', 'tanong', 'jackenpoy', 'utang', 'piso', 'kampana', 'sarisari', 'jackenpoy', 'kampana', 'piso', 'swerte', 'utang', 'kampana', 'piso'];
 const KOR = new Set(['M06', 'M22', 'M33', 'M43', 'M53', 'M63', 'M74', 'B05', 'B12', 'B20']);
 const pad = n => String(n).padStart(2, '0');
 { const spaces = group('board_spaces'), graph = [];
@@ -392,8 +395,8 @@ const pad = n => String(n).padStart(2, '0');
     const node = { id, type, x: +p.x.toFixed(2), z: +p.z.toFixed(2), next: [], koronaSpot: KOR.has(id) }; g.userData = node; graph.push(node); spaces.add(g); };
   MAIN.forEach((t, i) => addSpace('M' + pad(i), t, M(i))); BRANCH.forEach((t, j) => addSpace('B' + pad(j), t, Bp(j)));
   graph.forEach(n => { const k = +n.id.slice(1); n.next.push(n.id[0] === 'M' ? 'M' + pad((k + 1) % NM) : (k === NB - 1 ? 'M' + pad(MERGE) : 'B' + pad(k + 1))); });
-  graph.find(n => n.id === 'M' + pad(FORK)).next.push('B00'); Object.assign(graph.find(n => n.id === 'M' + pad(KAL_A)), { kalesaTo: 'M' + pad(KAL_B), kalesaCost: 6 });
-  spaces.userData = { board: 'plaza', start: 'M00', mainLoop: NM, branch: NB, fork: 'M' + pad(FORK), merge: 'M' + pad(MERGE), kalesa: { from: 'M' + pad(KAL_A), to: 'M' + pad(KAL_B), cost: 6 }, koronaSpots: [...KOR], activeKoronaRange: [1, 5], nodes: graph };
+  graph.find(n => n.id === 'M' + pad(FORK)).next.push('B00'); Object.assign(graph.find(n => n.id === 'M' + pad(KAL_B)), { kalesaTo: 'M' + pad(KAL_A), kalesaCost: 8 });   // the kalesa leaves from M12 for M68 (along its road)
+  spaces.userData = { board: 'plaza', start: 'M00', mainLoop: NM, branch: NB, fork: 'M' + pad(FORK), merge: 'M' + pad(MERGE), kalesa: { from: 'M' + pad(KAL_B), to: 'M' + pad(KAL_A), cost: 8 }, koronaSpots: [...KOR], activeKoronaRange: [1, 5], nodes: graph };
   window.__plazaBoard = spaces.userData; root.add(spaces); }
 
 // ---------- PLAZA EXTRAS: laro ng lahi, court, playground, fountain, food carts + fill ----------

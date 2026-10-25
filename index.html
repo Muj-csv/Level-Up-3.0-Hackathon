@@ -204,7 +204,7 @@ body{background:var(--sky);color:var(--ink);font-family:var(--body);overflow:hid
 .labas{background:#E3F3D6;border:2px solid #7CB55A;border-radius:12px;padding:8px 11px;margin:10px 0 4px}
 .labas b{display:block;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:#3D6E25}
 .labas p{font-size:13.5px;line-height:1.45;margin:3px 0 0}
-.modal.top{z-index:7}
+.modal.top{z-index:7;flex-direction:row;align-items:center;justify-content:center;gap:0}   /* not the HUD's .top column: in a column the card did not shrink and ran past the screen on phones */
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
 .btn.sky{background:#BFE3F2}
 .menurow{display:flex;gap:10px;width:100%}
@@ -214,6 +214,8 @@ body{background:var(--sky);color:var(--ink);font-family:var(--body);overflow:hid
   display:flex;gap:8px;align-items:flex-start;pointer-events:auto;cursor:pointer;z-index:2}
 .tip.show{animation:tipin .35s cubic-bezier(.3,1.5,.5,1)}
 @keyframes tipin{from{transform:translateX(-50%) translateY(10px);opacity:0}}
+/* phones held sideways: the tip sits in the lower left corner, above the buttons, instead of over the middle of the board */
+@media (orientation:landscape) and (max-height:520px){.tip{left:max(16px,env(safe-area-inset-left,0px));transform:none;bottom:calc(76px + env(safe-area-inset-bottom,0px));max-width:min(300px,36vw);font-size:12.5px;padding:6px 10px}.tip.show{animation:tipinl .35s cubic-bezier(.3,1.5,.5,1)}@keyframes tipinl{from{transform:translateY(10px);opacity:0}}}
 .tipb{flex:none;font-family:var(--display);font-weight:400;font-size:12px;background:var(--sun);border:2px solid var(--ink);border-radius:8px;padding:1px 6px;margin-top:1px}
 .real{background:var(--sand);border:2px dashed rgba(59,35,22,.35);border-radius:12px;padding:8px 11px;margin:10px 0 4px}
 .real b{display:block;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
@@ -231,7 +233,7 @@ body{background:var(--sky);color:var(--ink);font-family:var(--body);overflow:hid
 .legend b{white-space:normal;overflow-wrap:break-word;min-width:0}
 .legend .sw{flex:none;width:14px;height:14px;border-radius:50%;border:2px solid var(--ink);transform:translateY(2px)}
 .pgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
-@media (orientation:landscape) and (max-height:520px){.card{max-width:min(560px,100%)}.pgrid{grid-template-columns:repeat(3,minmax(0,1fr))}.pgrid .btn{font-size:16px;padding:9px 6px}}
+@media (orientation:landscape) and (max-height:520px){.card{max-width:min(680px,100%)}#card .pgrid{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:8px}#card .pgrid .btn{font-size:15px;padding:6px 4px;gap:1px;line-height:1.1;min-height:44px}}
 .pgrid .btn{display:flex;flex-direction:column;gap:3px;font-size:17px;padding:10px 8px}
 .pgrid small{font:800 11.5px var(--body);color:var(--muted)}
 .pgrid .btn span{display:inline-flex;align-items:center;justify-content:center;gap:6px}
@@ -465,16 +467,20 @@ function star(g,x,y,r,ri,n){g.beginPath();n=n||5;for(let i=0;i<n*2;i++){const a=
 
 /* ================= sound ================= */
 /* settings kept on this device: music, sound effects, vibration */
-/* gq: 3D graphics quality (low, mid, high; see GQ in the 3D board section), separate from the 3D/2D choice;
+/* gq: 3D graphics quality (low, mid, high; see GQ in the 3D board section), separate from the 3D/2D choice */
+/* saved settings. The game is always 3D where the device can draw it; Kalidad (gq) sets how heavy that 3D is. The old Grapiko 3D/2D
+   choice is gone: a device that had picked 2D and never a quality starts on Mababa (the lightest 3D), a quality it picked is kept.
    lang: the language of the cards (fil, en; see the content loader) */
-const PREFS=(()=>{const d={music:true,sfx:true,vib:true,g3d:true,gq:'mid',lang:'fil'};try{const o=JSON.parse(localStorage.getItem('lsu-prefs')||'{}');for(const k in d)if(typeof o[k]===typeof d[k])d[k]=o[k];}catch(e){}if(!['low','mid','high'].includes(d.gq))d.gq='mid';if(!['fil','en'].includes(d.lang))d.lang='fil';return d;})();
+const PREFS=(()=>{const d={music:true,sfx:true,vib:true,gq:'mid',lang:'fil'};try{const o=JSON.parse(localStorage.getItem('lsu-prefs')||'{}');for(const k in d)if(typeof o[k]===typeof d[k])d[k]=o[k];if(o.g3d===false&&typeof o.gq!=='string')d.gq='low';}catch(e){}if(!['low','mid','high'].includes(d.gq))d.gq='mid';if(!['fil','en'].includes(d.lang))d.lang='fil';return d;})();
 function savePrefs(){try{localStorage.setItem('lsu-prefs',JSON.stringify(PREFS));}catch(e){}}
 /* audio graph: effects and music buses -> master -> limiter, so stacked sounds never clip */
 const Sfx={ac:null,out:null,fx:null,lastTick:0,
   get on(){return PREFS.music||PREFS.sfx;},
-  init(){if(!this.ac){try{const ac=new (window.AudioContext||window.webkitAudioContext)(),lim=ac.createDynamicsCompressor();lim.threshold.value=-10;lim.knee.value=6;lim.ratio.value=8;lim.attack.value=.003;lim.release.value=.2;lim.connect(ac.destination);
-      this.out=ac.createGain();this.out.connect(lim);this.fx=ac.createGain();this.fx.connect(this.out);this.ac=ac;}catch(e){this.ac=null;}}
-    if(this.ac&&this.ac.state==='suspended'&&!document.hidden)this.ac.resume().catch(()=>{});},
+  /* making the audio context opens the sound device (over 100 ms on some machines), so the splash makes it while it
+     loads; it starts paused, and init() on the first tap resumes it */
+  make(){if(!this.ac){try{const ac=new (window.AudioContext||window.webkitAudioContext)(),lim=ac.createDynamicsCompressor();lim.threshold.value=-10;lim.knee.value=6;lim.ratio.value=8;lim.attack.value=.003;lim.release.value=.2;lim.connect(ac.destination);
+      this.out=ac.createGain();this.out.connect(lim);this.fx=ac.createGain();this.fx.connect(this.out);this.ac=ac;}catch(e){this.ac=null;}}},
+  init(){this.make();if(this.ac&&this.ac.state==='suspended'&&!document.hidden)this.ac.resume().catch(()=>{});},
   tone(f,d,type,v,f2,delay){if(!PREFS.sfx||!this.ac)return;try{const t=this.ac.currentTime+(delay||0);const o=this.ac.createOscillator(),gn=this.ac.createGain();o.type=type||'square';o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+d);gn.gain.setValueAtTime(v||.04,t);gn.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(gn).connect(this.fx);o.start(t);o.stop(t+d+.03);}catch(e){}},
   hop(b){this.tone(b?440:540,.08,'square',.025,b?300:780);},
   coin(){this.tone(988,.07,'square',.03);this.tone(1319,.15,'square',.03,null,.07);},
@@ -1247,7 +1253,9 @@ const isYou=p=>p&&p.ctrl==='local'&&solo();
 const turnText=p=>isYou(p)?'Ikaw na!':'Turn ni '+p.name;
 const actLabel=(p,t)=>isYou(p)?t:p.name+': '+t;
 function setMood(p,m,t){p.mood=m;p.moodT=t||1.2;}
-function slotOffset(p){const occ=state.players.filter(q=>!q.hopping&&q.pos===p.pos);if(occ.length<2)return{x:0,y:0};const i=occ.indexOf(p),a=i/occ.length*TAU+Math.PI*.25;return{x:Math.cos(a)*17,y:Math.sin(a)*9};}
+/* kids sharing a space stand apart (a kid is about 35-40 units wide) so each one can be seen: only where they are drawn, the game still has them on that space */
+function slotOffset(p){const occ=state.players.filter(q=>!q.hopping&&q.pos===p.pos);if(occ.length<2)return{x:0,y:0};const i=occ.indexOf(p),n=occ.length;
+  if(n===2)return{x:i?22:-22,y:0};const a=i/n*TAU+Math.PI*.25;return{x:Math.cos(a)*30,y:Math.sin(a)*17};}
 function updPlayers(dt){for(const p of state.players){p.blink-=dt;p.blinkT-=dt;if(p.blinkT<0){p.blink=.13;p.blinkT=1.8+R()*3;}if(p.moodT>0){p.moodT-=dt;if(p.moodT<=0)p.mood='idle';}
   if(!p.hopping&&p.dirT>0){p.dirT-=dt;if(p.dirT<=0){p.dir='front';}}
   if(!p.hopping){const sp=spacePos(p.pos),o=slotOffset(p),k=1-Math.exp(-dt*8);p.offX+=(o.x-p.offX)*k;p.offY+=(o.y-p.offY)*k;p.x=sp.x+p.offX;p.y=sp.y+p.offY;}
@@ -1315,7 +1323,7 @@ const SPACE_TIP={banda:'Banda: sumabay ka sa parada! Abante ng 3.',kampana:'Kamp
   tawad:'Tawad: nakatawad ka! +3 piso.',timbangan:'Timbangan ng Bayan: tapat ang timbang! +2 piso.',suki:'Suki: may libreng item ka mula sa tindera, o +3 piso.',basa:'Basa: madulas ang sahig, nadulas ka! Atras ng 2. Hindi ka aatras kung may Agimat ka.',
   alon:'Alon: tinangay ka ng alon! Abante ng 2.',huli:'Huli: nakahuli ka ng isda! +4 piso.',taog:'Taog: tumaas ang tubig! Atras ng 2. Hindi ka aatras kung may Agimat ka.',buko:'Buko: presko! Libreng item, o +3 piso.',araw:'Araw: tirik ang araw, bumili ka ng tubig. −2 piso. Hindi ka mababawasan kung may Agimat ka.',
   tanim:'Tanim: nagtanim ka! +2 piso.',ani:'Ani: anihan na! +5 piso.',balang:'Balang: kinain ng balang ang tanim! −4 piso. Hindi ka mababawasan kung may Agimat ka.',bayanihan:'Bayanihan: tulong-tulong! +2 piso sa lahat ng player.',
-  kalesa:'Kalesa: magbayad para sumakay papunta sa malayong dulo ng plaza.',padyak:'Padyak: magbayad para sumakay papunta sa kabilang dulo ng palengke.',bangka:'Bangka: magbayad para tumawid sa lagoon.',kalabaw:'Kariton ng kalabaw: magbayad para sumakay papunta sa kabilang bukid.',kasama:'Kasama: may sasama sa barkada mo! Bawat roll, dagdag na 1 o 2 hakbang ang bawat kasama. Hanggang 2 kasama.',tanong:'Tanong ni Lola: sagutin ang tanong tungkol sa larong Pilipino. +5 piso pag tama.',piso:'Piso: dagdag na 3 piso.',utang:'Utang: magbabayad ka ng 3 piso. Hindi ka mababawasan kung may Agimat ka.',swerte:'Swerte: bonus na piso o libreng item.',tikbalang:'Tikbalang: ililigaw ka nito! Atras ng 3. Hindi ka aatras kung may Agimat ka.',sari:'Sari-sari store: bumili ng 1 item. Magtira ng 10 piso para sa korona!',jack:'Jack en Poy: pumili ka ng kalaban. Ang panalo, kukuha ng hanggang 5 piso.'};
+  kalesa:'Kalesa: 8 piso para sumakay papunta sa kabilang dulo ng plaza. Puwede ka ring sumakay pag dumaan ka rito.',padyak:'Padyak: 8 piso para sumakay papunta sa kabilang dulo ng palengke. Puwede ka ring sumakay pag dumaan ka rito.',bangka:'Bangka: 6 piso para tumawid sa lagoon. Puwede ka ring sumakay pag dumaan ka rito.',kalabaw:'Kariton ng kalabaw: 8 piso para sumakay papunta sa kabilang bukid. Puwede ka ring sumakay pag dumaan ka rito.',kasama:'Kasama: may sasama sa barkada mo! Bawat roll, dagdag na 1 o 2 hakbang ang bawat kasama. Hanggang 2 kasama.',tanong:'Tanong ni Lola: sagutin ang tanong tungkol sa larong Pilipino. +5 piso pag tama.',piso:'Piso: dagdag na 3 piso.',utang:'Utang: magbabayad ka ng 3 piso. Hindi ka mababawasan kung may Agimat ka.',swerte:'Swerte: bonus na piso o libreng item.',tikbalang:'Tikbalang: ililigaw ka nito! Atras ng 3. Hindi ka aatras kung may Agimat ka.',sari:'Sari-sari store: bumili ng 1 item. Magtira ng 10 piso para sa korona!',jack:'Jack en Poy: pumili ka ng kalaban. Ang panalo, kukuha ng hanggang 5 piso.'};
 
 /* coins that fly from the board into the HUD */
 const flyers=[];
@@ -1576,7 +1584,8 @@ async function forwardStep(p){const nx=SP[p.pos].next;return nx.length<2?nx[0]:a
 async function moveSteps(p,n){
   dice.counter={p,n};
   for(let k=0;k<n;k++){const to=await forwardStep(p);await hop(p,to,false);p.stats.steps++;dice.counter.n=n-k-1;const kk=korona.spots.indexOf(to);if(kk>=0&&!korona.fly){const keep=dice.counter;dice.counter=null;await koronaStop(p,kk);dice.counter=keep;}
-    else if(k<n-1&&SP[to].type==='sari'&&!p.item&&p.piso>=ITEMS.kendi.cost){const keep=dice.counter;dice.counter=null;await shop(p,true);dice.counter=keep;}}
+    else if(k<n-1&&SP[to].type==='sari'&&!p.item&&p.piso>=ITEMS.kendi.cost){const keep=dice.counter;dice.counter=null;await shop(p,true);dice.counter=keep;}
+    else if(k<n-1&&SP[to].ride&&p.piso>=SP[to].ride.cost){const keep=dice.counter;dice.counter=null;if(await ride(p,true)){dice.counter=null;return;}dice.counter=keep;}}
   dice.counter=null;
 }
 async function koronaStop(p,kk){
@@ -1594,7 +1603,8 @@ async function koronaStop(p,kk){
 async function moveKorona(kk){
   const cur=korona.spots[kk],others=korona.spots.filter((_,j)=>j!==kk),gap=(a,b)=>Math.min(stepsTo(a,b),stepsTo(b,a));
   const opts=KORONA_CANDS.filter(i=>i!==cur&&!others.includes(i)&&gap(i,cur)>=5&&others.every(o=>gap(i,o)>=5)&&!state.players.some(q=>q.pos===i));
-  const to=gpick(opts.length?opts:KORONA_CANDS.filter(i=>i!==cur&&!others.includes(i)));
+  const stops=rideStops(),live=opts.filter(i=>koronaInPlay(i,stops));   // somewhere the kids can reach (see resetKorona)
+  const to=gpick(live.length?live:opts.length?opts:KORONA_CANDS.filter(i=>i!==cur&&!others.includes(i)));
   const a=spacePos(cur),b0=spacePos(to);korona.fly={x:a.x,y:a.y-50};korona.flyK=kk;
   await say('Lilipat ang korona…','#FFE07A',900);
   await tween(1.25,e=>{const b=spacePos(to);korona.fly.x=lerp(a.x,b.x,e);korona.fly.y=lerp(a.y-50,b.y-50,e)-Math.sin(Math.PI*e)*140;korona.fly.gx=korona.fly.x;korona.fly.gy=lerp(a.y,b.y,e);korona.fly.h=Math.sin(Math.PI*e)*140;},Ez.inOut);
@@ -1615,7 +1625,7 @@ async function land(p){
     case'jack':await jackEnPoy(p);break;
     case'tanong':case'rizal':await tanong(p);break;
     case'kasama':await kasama(p);break;
-    default:if(s.ride)await ride(p);else if(EVENT_TYPES.includes(s.type))await islandEvent(p,s.type);
+    default:if(s.ride){if(await ride(p,false))await land(p);}else if(EVENT_TYPES.includes(s.type))await islandEvent(p,s.type);
   }
 }
 /* island event spaces of the maps */
@@ -1644,20 +1654,25 @@ async function islandEvent(p,t){
     default:await gain(p,2);
   }
 }
-/* the map's paid shortcut (kalesa, padyak, bangka, kariton ng kalabaw) */
-async function ride(p){
-  const r=SP[p.pos].ride,name=BOARD.map?BOARD.map.rideName:'sakay';
-  await say(name.charAt(0).toUpperCase()+name.slice(1)+'!','#FFE07A',900);
-  if(p.piso<r.cost){await say('Kulang ang piso ('+r.cost+')','#fff',1000);return;}
-  const near=i=>Math.min(...korona.spots.map(k=>stepsTo(i,k)));
-  const botYes=p.piso-r.cost>=(state.cfg.diff===0?0:KCOST)||near(r.to)<near(p.pos)-4;
-  const v=await decide(p,()=>ask({chip:name+' · '+r.cost+' piso',title:isYou(p)?'Sumakay ng '+name+'?':'Sasakay ba si '+p.name+'?',body:'Dadalhin ka nito sa malayong dulo ng mapa. Pinakamalapit na korona mula doon: '+near(r.to)+' hakbang (mula rito: '+near(p.pos)+').',
-      buttons:[{label:'Sumakay · '+r.cost+' piso',value:'y',primary:true},{label:'Huwag na',value:'n'}]}),async()=>{await wait(450);return botYes?'y':'n';},'n',40000);
-  if(v!=='y')return;
-  p.piso-=r.cost;Sfx.coin();floatText('−'+r.cost,p.x,p.y-70,'#FF8A7A',20);dbg('ride',{p:p.id,to:r.to});
+/* the map's paid shortcut (kalesa, padyak, bangka, kariton ng kalabaw): offered when a kid stops on its stop, or passes it
+   with enough piso. It carries the kid to the far stop, where the move ends. Bots ride when it brings them to a korona sooner and
+   they can still pay for it there (Madali bots: half the time). Returns true when the kid rode. */
+async function ride(p,passing){
+  const r=SP[p.pos].ride,name=BOARD.map?BOARD.map.rideName:'sakay',Name=name.charAt(0).toUpperCase()+name.slice(1);
+  if(!passing)await say(Name+'!','#FFE07A',900);
+  if(p.piso<r.cost){if(!passing)await say('Kulang ang piso ('+r.cost+')','#fff',1000);return false;}
+  const near=i=>Math.min(...korona.spots.map(k=>stepsTo(i,k))),nf=near(p.pos),nt=near(r.to),spare=p.piso-r.cost>=KCOST;
+  const botYes=state.cfg.diff===0?G()<.5:spare&&(nt+3<nf||(state.round>=maxR()&&nt<nf));
+  if(passing&&p.ctrl==='bot'&&!botYes)return false;   // a bot that will not ride passes without a stop
+  const v=await decide(p,()=>ask({chip:name+' · '+r.cost+' piso',title:isYou(p)?'Sumakay ng '+name+'?':'Sasakay ba si '+p.name+'?',body:(passing?'Dadaan ka sa '+name+'. ':'')+'Dadalhin ka nito sa malayong dulo ng mapa, at doon ka titigil. Pinakamalapit na korona mula doon: '+nt+' hakbang (mula rito: '+nf+').',
+      buttons:[{label:'Sumakay · '+r.cost+' piso',value:'y',primary:true},{label:passing?'Tuloy lang':'Huwag na',value:'n'}]}),async()=>{await wait(450);return botYes?'y':'n';},'n',40000);
+  if(v!=='y')return false;
+  p.piso-=r.cost;Sfx.coin();floatText('−'+r.cost,p.x,p.y-70,'#FF8A7A',20);dbg('ride',{p:p.id,to:r.to,passing:!!passing});if(p.ctrl!=='local')say('Sumakay si '+p.name+' ng '+name+'!','#FFE07A',1000);
   const A=spacePos(p.pos),B=spacePos(r.to);p.hopping=true;p.dir='side';p.face=B.x>=A.x?1:-1;
   await tween(RM?.4:1.3,(e,u)=>{p.x=lerp(A.x,B.x,e);p.y=lerp(A.y,B.y,e);p.lift=Math.sin(Math.PI*u)*70;},Ez.inOut);
   p.pos=r.to;p.trail=[];p.lift=0;p.hopping=false;SP[r.to].pulse=1;burst(B.x,B.y,8,'dust',{spd:70,life:.5,size:6,g:-20});
+  const kk=korona.spots.indexOf(p.pos);if(kk>=0&&!korona.fly)await koronaStop(p,kk);   // a korona on the far stop can be bought there
+  return true;
 }
 function itemTip(p){if(p.ctrl!=='local')return;if(p.item==='agimat')tip('agimat','May Agimat ka! Ligtas ka sa susunod na Utang, Tikbalang o talo sa Jack en Poy.');else tip('item','May item ka na. Sa susunod mong turn, pindutin ang "Gamitin" bago mag-roll.');}
 async function agimatSaves(p){if(p.item!=='agimat')return false;p.item=null;dbg('agimat',{p:p.id});Sfx.shield();if(p.ctrl==='local')buzz([20,30,20]);setMood(p,'happy',1.2);
@@ -2029,7 +2044,7 @@ const MG_KEYS=Object.keys(MG).filter(k=>!MG[k].off);
 /* online needs every phone on the same build: the round plan comes from the seed and MG_KEYS, so a phone on an older
    cached copy would pick other minigames and fall out of step. Change BUILD_VER whenever a game's rules change; the
    list of minigames (with any switched off) is part of the id. window.LSU_NET.build overrides it (tests) */
-const BUILD_VER='2026-10-25',BUILD=(window.LSU_NET&&window.LSU_NET.build)||BUILD_VER+'/'+MG_KEYS.join('.');
+const BUILD_VER='2026-10-25b',BUILD=(window.LSU_NET&&window.LSU_NET.build)||BUILD_VER+'/'+MG_KEYS.join('.');
 /* F9.1: trivia, real-street rules and Subukan sa labas text live in content/fil.json so writers edit that file, not
    this one. Phase 2 (Simpler Filipino and English PRD): content/en.json holds the same entries in English. The arrays
    above stay as the built-in text if a file doesn't load (offline first load, file:// preview, etc.): an English entry
@@ -2637,8 +2652,17 @@ async function gameLoop(startRound,startTurn,token){
   }
   if(token===gameToken)await finale();
 }
+/* korona sit where the game is played: a few steps ahead of some kid (3 to 22: about two to four rolls), or just past a ride's far
+   stop (a reason to ride). On a map the first four are the spots in reach of Simula, then past the ride's stop, then the nearest others */
+const rideStops=()=>{const o=[];for(let i=0;i<N;i++)if(SP[i].ride)o.push(SP[i].ride.to);return o;};
+function koronaInPlay(i,stops){return state.players.some(q=>{const d=stepsTo(q.pos,i);return d>=3&&d<=22;})||stops.some(t=>stepsTo(t,i)<=14);}
 function resetKorona(){
-  if(BOARD.map){const c=KORONA_CANDS,K=Math.min(BOARD.korona,c.length);korona.spots=Array.from({length:K},(_,i)=>c[Math.floor((i+.5)*c.length/K)]);}
+  if(BOARD.map){const c=KORONA_CANDS,K=Math.min(BOARD.korona,c.length),st=BOARD.start,stops=rideStops(),gap=(a,b)=>Math.min(stepsTo(a,b),stepsTo(b,a));
+    const rank=i=>{const d=stepsTo(st,i);if(d>=3&&d<=22)return d;const s=Math.min(99,...stops.map(t=>stepsTo(t,i)));return s<=14?30+s:100+d;};
+    const order=c.slice().sort((a,b)=>rank(a)-rank(b)||a-b),pick=[];
+    for(const i of order)if(pick.length<K&&pick.every(j=>gap(i,j)>=5))pick.push(i);
+    for(const i of order)if(pick.length<K&&!pick.includes(i))pick.push(i);
+    korona.spots=pick;}
   else korona.spots=[KORONA_CANDS.find(i=>i>=6)||KORONA_CANDS[0],KORONA_CANDS.find(i=>i>=Math.floor(N*.55))||KORONA_CANDS[KORONA_CANDS.length-1]];
   korona.fly=null;korona.flyK=-1;}
 function loadBar(f,t){const el=$('#loadIsl');if(f<0){el.hidden=true;return;}if(el.hidden&&BOARD.map){el.classList.add('pic');el.style.setProperty('--bgpic','url(maps/world/'+BOARD.id+'.jpg)');}el.hidden=false;if(BOARD.map)$('#loadChip').textContent=BOARD.map.name;if(t)$('#loadT').textContent=t;$('#loadF').style.width=Math.round(clamp(f,0,1)*100)+'%';}
@@ -2659,14 +2683,14 @@ function beginGame(spec,seed,cp,cfg){
   if(isHamon()){(async()=>{const res=await runMinigame(state.plan[0],{hamon:true});if(tok===gameToken)await hamonResult(res);})();return;}
   const go=()=>{if(tok!==gameToken)return;loadBar(-1);if(t0===4){(async()=>{state.round=r0;await runMinigame(state.plan[r0-1]);if(tok===gameToken)await gameLoop(r0+1,0,tok);})();}else gameLoop(r0,t0,tok);};
   /* a local game waits for its 3D island (a loading card shows); an online game starts at once and switches to 3D when the island is ready */
-  if(BOARD.map&&B3.ok&&PREFS.g3d&&!(B3.island&&B3.island.id===BOARD.id)&&!B3.failed[BOARD.id]){const pr=B3.loadIsland(BOARD.id,(f,t)=>{if(tok===gameToken&&!NET.on)loadBar(f,t);});
+  if(BOARD.map&&B3.ok&&!(B3.island&&B3.island.id===BOARD.id)&&!B3.failed[BOARD.id]){const pr=B3.loadIsland(BOARD.id,(f,t)=>{if(tok===gameToken&&!NET.on)loadBar(f,t);});
     if(!NET.on){loadBar(0,'Inihahanda ang '+BOARD.map.name+'…');pr.then(go,()=>{B3.failed[BOARD.id]=1;go();});return;}}
   go();
 }
 function startLocal(setup,cp){
   if(NET.rm)netLeave();state.setup=setup;
   const spec=[0,1,2,3].map(i=>i<setup.n?{name:cleanName(setup.names[i])||CHARS[i].name,ctrl:'local'}:{name:CHARS[i].name,ctrl:'bot'});
-  beginGame(spec,cp?cp.gs:Math.floor(R()*2147483647),cp,setup.cfg);
+  beginGame(spec,cp?cp.gs:(DEBUG&&setup.seed!=null?setup.seed|0:Math.floor(R()*2147483647)),cp,setup.cfg);   // ?debug: a fixed seed replays the same game (bot simulations)
 }
 function startOnline(pr,cp,log){
   closeCard();NET.on=true;NET.gid=pr.gid;NET.started=pr.gid;NET.log=Object.assign({},log||{});NET.logMax=Object.keys(NET.log).reduce((m,k)=>Math.max(m,+k),0);NET.inp={};NET.gone=false;NET.onUpdate=null;
@@ -2712,7 +2736,7 @@ async function localFlow(){
 }
 /* ================= map select: the world picture of all four islands zooms to the one being picked =================
    maps/world/world.jpg is a still render of the four islands; <id>.jpg is the sharp close-up of each island's box in it */
-const WORLD={W:2048,H:1280,islands:{plaza:{x:.0217,y:.4831,w:.5038,h:.5038},palengke:{x:.5212,y:.5563,w:.4058,h:.4058},aplaya:{x:.4975,y:.0942,w:.3875,h:.3875},palayan:{x:.1217,y:.124,w:.3723,h:.3723}}};
+const WORLD={W:2048,H:1280,islands:{plaza:{x:.0218,y:.4828,w:.5037,h:.5037},palengke:{x:.5211,y:.556,w:.4058,h:.4058},aplaya:{x:.4977,y:.0944,w:.387,h:.387},palayan:{x:.1218,y:.1238,w:.3723,h:.3723}}};
 /* the world picture behind the map screen: one element, moved with CSS transforms */
 const WV={cur:null,close:{}};
 function wvSetup(){const wd=$('#mapWorld'),img=$('#mapImg');wd.style.width=WORLD.W+'px';wd.style.height=WORLD.H+'px';if(!img.getAttribute('src'))img.src='maps/world/world.jpg';
@@ -2887,7 +2911,7 @@ function guidePages(){
     {t:'Layunin',h:'<p>Maging <b>Bida ng Isla</b>! Ang may pinakamaraming <b>korona</b> sa dulo, panalo. Pag tabla, ang may mas maraming piso ang panalo.</p><p>Hanggang 4 na tao sa iisang phone o computer, o online gamit ang QR o code. Bot ang papalit sa kulang na player. Bunutan kung sino ang unang titira.</p>'},
     {t:'Sa iyong turn',h:'<ol class="steps"><li>Pindutin ang <b>Tamaan ang dice</b>. Lalabas ang 1 hanggang 10.</li><li>May puting bilog ang mga space na maaabot mo. Nakasulat sa korona kung ilang hakbang ito.</li><li>Pag <b>dumaan</b> ka sa korona at may 10 piso ka, puwede mo itong bilhin. Tapos, lilipat ito sa ibang lugar.</li><li>May <b>kasama</b> ka? Bawat isa, dagdag na 1 o 2 hakbang sa roll mo.</li><li>May item ka? Pindutin ang <b>Gamitin</b> bago mag-roll.</li></ol>'},
     {t:'Mga space',h:'<ul class="legend">'+sw(SPACE.piso.c,'Piso','+3 piso')+sw(SPACE.utang.c,'Utang','−3 piso')+sw(SPACE.swerte.c,'Swerte','bonus na piso o libreng item')+sw(SPACE.tikbalang.c,'Tikbalang','atras ng 3')+sw(SPACE.sari.c,'Sari-sari','bumili ng item. Puwede ring dumaan lang')+sw(SPACE.kasama.c,'Kasama','may sasama sa barkada mo, +1 o +2 bawat roll')+sw(SPACE.tanong.c,'Tanong ni Lola','tanong tungkol sa larong Pilipino, +5 pag tama')+sw(SPACE.jack.c,'Jack en Poy','hamunin ang kahit sino: hanggang 5 piso')+sw('#FFC93C','Korona','10 piso, dumaan para bumili')+'</ul>'},
-    {t:'Mga mapa',h:'<p>Pumili ng isla bago maglaro: <b>Plaza, Palengke, Aplaya</b> o <b>Palayan</b>. May <b>4 na korona</b> sa bawat mapa.</p><ul><li><b>Sangandaan:</b> may daan na humihiwalay, tapos bumabalik sa ikot. Ikaw ang pipili kung saan dadaan.</li><li><b>Sakay:</b> sa space ng Kalesa, Padyak, Bangka o Kariton ng kalabaw, magbayad ng 6 piso. Dadalhin ka nito sa malayong dulo ng mapa.</li><li><b>Space ng isla:</b> may sariling space ang bawat mapa, gaya ng Banda at Kampana sa Plaza, Tawad at Basa sa Palengke, Alon at Huli sa Aplaya, Ani at Balang sa Palayan. Pag unang tapak mo rito, sasabihin ng tip kung ano ang ginagawa nito.</li></ul>'},
+    {t:'Mga mapa',h:'<p>Pumili ng isla bago maglaro: <b>Plaza, Palengke, Aplaya</b> o <b>Palayan</b>. May <b>4 na korona</b> sa bawat mapa.</p><ul><li><b>Sangandaan:</b> may daan na humihiwalay, tapos bumabalik sa ikot. Ikaw ang pipili kung saan dadaan.</li><li><b>Sakay:</b> malapit sa simula ang hintuan ng Kalesa, Padyak, Bangka o Kariton ng kalabaw. Tumigil o dumaan doon at magbayad (8 piso; Bangka 6). Dadalhin ka nito sa malayong dulo ng mapa, at doon ka titigil.</li><li><b>Space ng isla:</b> may sariling space ang bawat mapa, gaya ng Banda at Kampana sa Plaza, Tawad at Basa sa Palengke, Alon at Huli sa Aplaya, Ani at Balang sa Palayan. Pag unang tapak mo rito, sasabihin ng tip kung ano ang ginagawa nito.</li></ul>'},
     {t:'Mga item',h:'<p>1 item lang ang puwedeng dalhin. Bilhin ito sa Sari-sari store, o makuha sa Swerte.</p><ul class="legend items">'+Object.keys(ITEMS).map(k=>'<li><span class="iic">'+ITEM_ICON[k]+'</span><span><b>'+esc(ITEMS[k].name)+' · '+ITEMS[k].cost+' piso</b><br>'+esc(ITEMS[k].desc)+'</span></li>').join('')+'</ul><p class="note">Bago bumili, magtira ng 10 piso para sa korona!</p>'},
     {t:'Mga laro',h:'<p>Pagkatapos ng bawat ikot, maglalaro ang lahat ng isang larong kalye: '+(t=>'<b>'+t.slice(0,-1).join(', ')+'</b> o <b>'+t[t.length-1]+'</b>')(MG_KEYS.map(k=>esc(MG[k].title)))+'.</p><p>Premyo: <b>+10</b> piso sa una, <b>+5</b> sa ikalawa, <b>+3</b> sa ikatlo.</p><p><b>Huling Hirit:</b> sa huling ikot, doble ang premyo. May tulong pa ang nasa huli.</p><p><b>Bonus na korona</b> sa dulo: <b>Hari ng Laro</b> (pinakamaraming panalo sa mga laro), <b>Mayaman</b> (pinakamaraming piso) at <b>Malas sa Dice</b> (pinakamababang average ng dice).</p>'},
     {t:'Mga paraan ng paglaro',h:'<ul><li><b>Party</b>: board, dice at laro, 3, 5 o 8 ikot.</li><li><b>Torneo</b>: laro lang, walang dice. Bawat panalo, 1 korona. Kaya galing ang labanan dito.</li><li><b>Hamon ng Araw</b>: solo laban sa mahihirap na bot. Pare-pareho ang hamon ng lahat ngayong araw. May listahan ng score.</li><li><b>Online</b>: gumawa ng room at ipa-scan ang QR, o ibigay ang 4-letrang code.</li></ul>'},
@@ -2909,16 +2933,16 @@ function closeMenu(){const m=$('#menu');if(m.hidden)return;m.hidden=true;$('#men
 function openMenuCard(html){const m=$('#menu'),c=$('#menuCard');c.innerHTML=html;m.hidden=false;const h2=c.querySelector('h2');if(h2)h2.id='menuTitle';const f=c.querySelector('[data-focus]')||c.querySelector('[data-primary]')||c.querySelector('button');if(f)setTimeout(()=>{try{f.focus({preventScroll:true});}catch(e){}},40);return c;}
 function prefRow(key,label){return segRow(key,label,[{v:1,l:'Bukas'},{v:0,l:'Sarado'}],PREFS[key]?1:0);}
 /* the settings rows and their buttons: the in-game menu uses them, and a settings screen on the title (F3.2) can too.
-   Kalidad (graphics quality) only changes how the 3D is drawn; Grapiko stays the 3D/2D choice */
+   Kalidad (graphics quality: Mababa, Katamtaman, Mataas) changes how heavy the 3D is; every quality stays 3D */
 function settingsRows(){return prefRow('music','Musika')+prefRow('sfx','Tunog')+(navigator.vibrate?prefRow('vib','Vibrate'):'')+
-  (B3.ok?segRow('g3d','Grapiko',[{v:1,l:'3D'},{v:0,l:'2D'}],PREFS.g3d?1:0)+segRow('gq','Kalidad',[{v:'low',l:'Mababa'},{v:'mid',l:'Katamtaman'},{v:'high',l:'Mataas'}],PREFS.gq):'')+
+  (B3.ok?segRow('gq','Kalidad',[{v:'low',l:'Mababa'},{v:'mid',l:'Katamtaman'},{v:'high',l:'Mataas'}],PREFS.gq):'')+
   segRow('lang','Wika',[{v:'fil',l:'Filipino'},{v:'en',l:'English'}],lang())+'<p class="note" id="langNote"'+(lang()==='en'?'':' hidden')+'>Rules and trivia only for now.</p>';}
 function wireSettings(c){c.querySelectorAll('button[data-k]').forEach(b=>b.addEventListener('click',()=>{const k=b.dataset.k;
   if(k==='gq'){if(!GQ[b.dataset.val])return;const was=B3.island&&B3.island.q;PREFS.gq=b.dataset.val;if(was&&was!==gqIsland())toast('Inaayos ang isla para sa bagong kalidad…','#fff',1800);}
   else if(k==='lang'){setLang(b.dataset.val);const n=c.querySelector('#langNote');if(n)n.hidden=b.dataset.val!=='en';}
   else PREFS[k]=b.dataset.val==='1';
   savePrefs();Sfx.init();syncSoundBtn();
-  c.querySelectorAll('button[data-k="'+k+'"]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));if(k==='sfx'&&PREFS.sfx)Sfx.tick(4);if(k==='vib'&&PREFS.vib)buzz(30);if(k==='g3d')refreshPortraits();}));}
+  c.querySelectorAll('button[data-k="'+k+'"]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));if(k==='sfx'&&PREFS.sfx)Sfx.tick(4);if(k==='vib'&&PREFS.vib)buzz(30);}));}
 async function openMenu(){
   if(APP.screen!=='game'||!$('#menu').hidden)return;Sfx.init();PAUSED=!NET.on;const back=document.activeElement;
   for(;;){
@@ -2962,7 +2986,7 @@ function galLayout(){if(APP.screen!=='gallery')return;const sc=$('#scrGallery').
   GAL.slots=GAL.order.map((n,i)=>({x:w/2+(i-1.5)*sp,y:feet,h:kh,yaw:0}));
   $('#galNames').innerHTML=GAL.slots.map((q,i)=>'<span style="left:'+Math.round(q.x)+'px;top:'+Math.round(feet+6)+'px">'+GAL.order[i]+'</span>').join('');
   if(GAL.ctl)GAL.ctl.layout(GAL.slots,w,h);}
-async function galBuild(){if(GAL.ctl||GAL.mk||!B3.ok||!PREFS.g3d)return;const tok=GAL.mk=1+Math.random();
+async function galBuild(){if(GAL.ctl||GAL.mk||!B3.ok)return;const tok=GAL.mk=1+Math.random();
   try{await loadThree();const [geo,m]=await Promise.all([import('./kids/kidgeo.js'),import('./kids/hero.js')]);if(GAL.mk!==tok||APP.screen!=='gallery')return;const Q=gq();if(geo.LOD)geo.LOD.k=Q.kid;
     GAL.ctl=m.create($('#galCv'),{reduced:RM,maxDpr:Q.pr});galLayout();GAL.ctl.gallery(GAL.moves[GAL.sel].c,GAL.faces[GAL.face].y);}
   catch(e){console.warn('gallery kids',e);GAL.ctl=null;}finally{if(GAL.mk===tok)GAL.mk=0;}}
@@ -3005,7 +3029,7 @@ document.addEventListener('keydown',e=>{const top=topDialog();if(!top)return;
 /* ================= 3D board (Three.js): islands, kids, dice block, korona, tilted follow camera ================= */
 const B3={ok:false,on:false,failed:{}};
 /* on a map the 3D view waits for its island; until then (or if it fails) the board is drawn in 2D */
-const use3D=()=>B3.ok&&PREFS.g3d&&!!B3.kidsMod&&(!BOARD.map||APP.screen!=='game'||!!scene||!!(B3.island&&B3.island.id===BOARD.id));
+const use3D=()=>B3.ok&&!!B3.kidsMod&&(!BOARD.map||APP.screen!=='game'||!!scene||!!(B3.island&&B3.island.id===BOARD.id));
 const THREE_URL='./vendor/three-r184/three.module.min.js';
 function loadThree(){if(window.THREE)return Promise.resolve(window.THREE);if(!loadThree.p)loadThree.p=import(THREE_URL).then(m=>{window.THREE=m;return m;});return loadThree.p;}
 /* F10 graphics quality, picked in the menu (Kalidad), the same for every 3D screen: title, board, islands and minigames.
@@ -3484,8 +3508,10 @@ function init3D(){
   B3.unproj=(sx,sy)=>{const rc=new T3.Raycaster(),ndc=new T3.Vector2(sx/W*2-1,-(sy/H)*2+1);rc.setFromCamera(ndc,camera);const pl=new T3.Plane(new T3.Vector3(0,1,0),B3.mg?0:-(B3.gy||0)),pt=new T3.Vector3();return rc.ray.intersectPlane(pl,pt)?{x:pt.x,y:pt.z}:null;};
   /* frees what a removed minigame, kid or portrait built on the GPU. The shared pieces stay: the cached toon colours (M),
      the outline, the arena island and the world's textured materials */
-  function freeTree(o){const keep=new Set([...MC.values(),OUT,WHITE,blob,kidBlobM,grassM,sandM,dirtM,stoneM,cliffM,rockM,waterM,woodM,ropeM,cloudM]);
-    const free=n=>{if(n===arena)return;n.children.forEach(free);if(n.geometry&&n.geometry!==blobGeo)n.geometry.dispose();
+  /* a rigged kid's skeleton holds its own bone texture, freed only by skeleton.dispose(); the players' cached kids (B3.nk) stay */
+  function freeTree(o){const keep=new Set([...MC.values(),OUT,WHITE,blob,kidBlobM,grassM,sandM,dirtM,stoneM,cliffM,rockM,waterM,woodM,ropeM,cloudM]),keepSk=new Set();
+    for(const w of Object.values(B3.nk||{}))w.g.traverse(x=>{if(x.skeleton)keepSk.add(x.skeleton);});
+    const free=n=>{if(n===arena)return;n.children.forEach(free);if(n.skeleton&&!keepSk.has(n.skeleton))n.skeleton.dispose();if(n.geometry&&n.geometry!==blobGeo)n.geometry.dispose();
       for(const m of [].concat(n.material||[]))if(!keep.has(m)){for(const k in m){const t=m[k];if(t&&t.isTexture&&t!==gm)t.dispose();}m.dispose();}};
     free(o);}
   /* the graphics quality: shadows, the kids' round shadows and texture sharpness change at once; the pixel ratio is read every frame;
@@ -3524,7 +3550,7 @@ function init3D(){
     if(B3.plRef!==state.players){for(const K of B3.kids.values()){S.remove(K.g);if(!K.nk)freeTree(K.g);}for(const K of B3.allies.values()){S.remove(K.g);freeTree(K.g);}B3.kids.clear();B3.allies.clear();B3.plRef=state.players;}
     if(B3.mg){B3.mg.upd(dt);}else{
     for(const p of state.players){const K=kidFor(p);
-      const o=kidOpts(p),mp=!!BOARD.map;o.walk=p.hopping?now*16:null;o.y0=groundAt(p.x,p.y);pose(K,p.x,p.y,o,mp?1.15:1.3);
+      const o=kidOpts(p),mp=!!BOARD.map;o.walk=p.hopping?now*16:null;o.y0=groundAt(p.x,p.y);pose(K,p.x,p.y,o,1.3);
       p.allies.forEach(a=>{let A=B3.allies.get(a);if(!A){A=extraKid(NPCS[a.look],{shadow:true});B3.allies.set(a,A);}pose(A,a.x,a.y,{dir:p.hopping?p.dir:'front',face:p.face,walk:p.hopping?now*14:null,mood:p.mood==='cheer'?'cheer':'happy',lift:p.hopping?Math.abs(Math.sin(now*12))*6:0,y0:mp?groundAt(a.x,a.y):0},mp?.85:.95);});}
     // spaces
     const rc=state.reach,rk=1+(RM?0:Math.sin(now*6)*.06);
@@ -3537,7 +3563,7 @@ function init3D(){
       cg.position.set(x,62+h+(RM?0:Math.sin(now*2.6)*4),z);cg.rotation.y=now*1.4;}
     // dice
     B3.dice.forEach((d,i)=>{const on=dice.on&&dice.owner&&i<dice.vals.length;d.m.visible=!!on;if(!on)return;const p=dice.owner,two=dice.vals.length>1;
-      paintDie(d,dice.gold&&dice.spin?'?':dice.vals[i],p.color,dice.gold);const k=(1+dice.punch*.45)*(two?.85:1);d.m.scale.setScalar(k);d.m.position.set(p.x+(two?(i?24:-24):0),(BOARD.map?112:128)+p.lift+groundAt(p.x,p.y)+(dice.spin&&!RM?Math.sin(now*6+i)*4:0),p.y);
+      paintDie(d,dice.gold&&dice.spin?'?':dice.vals[i],p.color,dice.gold);const k=(1+dice.punch*.45)*(two?.85:1);d.m.scale.setScalar(k);d.m.position.set(p.x+(two?(i?24:-24):0),(BOARD.map?118:128)+p.lift+groundAt(p.x,p.y)+(dice.spin&&!RM?Math.sin(now*6+i)*4:0),p.y-(BOARD.map?46:24));
       if(dice.spin&&!RM){d.m.rotation.x+=dt*7*(i?-1:1);d.m.rotation.y+=dt*9;}else{d.m.rotation.x+=(-.35-d.m.rotation.x%TAU3)*.25;d.m.rotation.y+=(.55-d.m.rotation.y%TAU3)*.25;d.m.rotation.z=0;}});
     }
     // ambience
@@ -3549,6 +3575,12 @@ function init3D(){
   };
   const px1=new Uint8Array(4);B3.finish=()=>{const gl=ren.getContext();gl.readPixels(0,0,1,1,gl.RGBA,gl.UNSIGNED_BYTE,px1);};   // waits until the GPU has drawn the frame (benchmarks)
   B3.info=()=>{const r=ren.info.render,m=ren.info.memory;return{pr:ren.getPixelRatio(),calls:r.calls,tris:r.triangles,geo:m.geometries,tex:m.textures,progs:(ren.info.programs||[]).length,shadow:sun.castShadow?sun.shadow.mapSize.x:0};};
+  /* ?debug: where the draw calls come from (visible meshes and shadow casters by owner) and what the sun's shadow pass costs */
+  if(DEBUG)B3.census=()=>{const own=new Map(),tag=(g,k)=>g&&g.traverse(o=>own.set(o,k));for(const K of B3.kids.values())tag(K.g,'kids');for(const a of (B3.allies?B3.allies.values():[]))tag(a&&a.g,'allies');
+    if(B3.island)tag(B3.island.grp,'island');const vis=o=>{for(let p=o;p;p=p.parent)if(!p.visible)return false;return true;};const by={},cast={};let n=0,nc=0;
+    S.traverse(o=>{if(!(o.isMesh||o.isPoints||o.isLine)||!vis(o))return;const k=own.get(o)||'other';n++;by[k]=(by[k]||0)+1;if(o.castShadow){nc++;cast[k]=(cast[k]||0)+1;}});
+    ren.render(S,camera);const withSh={calls:ren.info.render.calls,tris:ren.info.render.triangles};const cs=sun.castShadow;sun.castShadow=false;ren.render(S,camera);const noSh={calls:ren.info.render.calls,tris:ren.info.render.triangles};sun.castShadow=cs;ren.render(S,camera);
+    return{meshes:n,byOwner:by,shadowCasters:nc,castByOwner:cast,withShadow:withSh,noShadow:noSh};};
   B3.ok=true;
   }catch(e){console.error(e);B3.ok=false;}
 }
@@ -3641,7 +3673,7 @@ function update(dt){
 let lastDraw=performance.now();
 function draw(){const g=ctx;g.setTransform(DPR,0,0,DPR,0,0);
   const tn=performance.now(),dt3=Math.min(.05,(tn-lastDraw)/1000);lastDraw=tn;
-  if(B3.ok&&PREFS.g3d&&BOARD.map&&APP.screen==='game'&&!B3.loading&&!(B3.island&&B3.island.id===BOARD.id)&&!B3.failed[BOARD.id]){const id=BOARD.id;B3.loadIsland(id).catch(()=>{B3.failed[id]=1;});}
+  if(B3.ok&&BOARD.map&&APP.screen==='game'&&!B3.loading&&!(B3.island&&B3.island.id===BOARD.id)&&!B3.failed[BOARD.id]){const id=BOARD.id;B3.loadIsland(id).catch(()=>{B3.failed[id]=1;});}
   B3.on=use3D()&&APP.screen==='game';if(cv3.hidden===B3.on)cv3.hidden=!B3.on;
   if(B3.on){g.clearRect(0,0,W,H);try{B3.render(dt3);}catch(e){console.error(e);B3.ok=false;refreshPortraits();}if(scene){try{B3.mg&&B3.mg.over(g);}catch(e){}if(scene.drawScreen)scene.drawScreen(g);drawFX3(g);drawCountdown(g,scene);}else drawOverlay3(g);}
   else if(APP.screen==='title'||APP.screen==='maps')g.clearRect(0,0,W,H);   /* the world picture shows through */
@@ -3652,7 +3684,8 @@ function frame(t){if((PERF||DEBUG)&&t>last){FT.push(t-last);if(FT.length>600)FT.
 /* ================= boot ================= */
 function start(data){
   resize();
-  ISL.forEach(isl=>renderIsland(isl,false));renderIsland(ARENA,true);loadThree().then(()=>{init3D();refreshPortraits();}).catch(()=>{});
+  /* behind the splash the board's 3D is set up later, as one of its loading steps, so it does not hold up the kids' entrance */
+  ISL.forEach(isl=>renderIsland(isl,false));renderIsland(ARENA,true);loadThree().then(()=>{if(SPLASH.on)return;init3D();refreshPortraits();}).catch(()=>{});
   try{if(window.claude&&window.claude.use)window.claude.use('downloads').then(d=>{DL=d||null;}).catch(()=>{});}catch(e){}
   const cp=data&&data.checkpoint;
   if(cp&&cp.mode==='local'&&cp.setup){startLocal(cp.setup,cp);}
@@ -3672,21 +3705,26 @@ try{window.claude&&window.claude.hot&&window.claude.hot.snapshot&&window.claude.
    The still picture (maps/world/title*.jpg) shows at once and stands in without 3D; the live scene fades in over it
    once built. It is dropped while a game runs (the game's island needs the memory) and built again on the way back,
    with the graphics quality (Kalidad) set at that time. */
-const TS={ctl:null,mk:null,tok:0,on:false,bg:$('#titleBg'),cv:$('#titleCv')};
+const TS={ctl:null,mk:null,tok:0,on:false,lay:'',bg:$('#titleBg'),cv:$('#titleCv')};
 async function titleBuild(){const tok=++TS.tok;try{await loadThree();
     const [geo,m]=await Promise.all([import('./kids/kidgeo.js'),import('./maps/title.js')]);if(tok!==TS.tok)return;const Q=gq();if(geo.LOD)geo.LOD.k=Q.kid;
     const ctl=TS.mk=m.create(TS.cv,{reduced:RM,maxDpr:Q.pr,shadow:Q.shadow,islShadow:Q.isl,leaf:Math.min(2500,Q.leaf),grass:Math.min(6,Q.grass)});await ctl.ready;if(tok!==TS.tok)return;
-    TS.ctl=ctl;if(TS.on)titleShow();}catch(e){if(tok===TS.tok){TS.mk=null;console.warn('title scene',e);}}}
-function titleDrop(){TS.tok++;const c=TS.mk;TS.mk=TS.ctl=null;TS.cv.classList.remove('on');if(c)c.dispose();}
+    TS.ctl=ctl;if(TS.on)(SPLASH.on&&!SPLASH.started?titlePrime():titleShow());}catch(e){if(tok===TS.tok){TS.mk=null;console.warn('title scene',e);}}}
+function titleDrop(){TS.tok++;const c=TS.mk;TS.mk=TS.ctl=null;TS.lay='';TS.cv.classList.remove('on');if(c)c.dispose();}
 function titleShow(){titleLayout();TS.ctl.show(true);requestAnimationFrame(()=>requestAnimationFrame(()=>{if(TS.ctl&&TS.on)TS.cv.classList.add('on');}));}
-/* where the kids stand: on portrait screens between the logo and the buttons, otherwise in the area left of the buttons */
+/* under the splash the menu scene is laid out and its opening frame drawn, but it only runs from the tap: the splash
+   keeps the machine to itself, and the menu opens on that same first frame */
+function titlePrime(){titleLayout();TS.ctl.still(0);TS.cv.classList.add('on');}
+/* where the kids stand: on portrait screens between the logo and the buttons, otherwise in the area left of the buttons.
+   An unchanged layout is not applied again (resizing the canvas would blank the frame already drawn) */
 function titleLayout(){if(!TS.ctl||!TS.on)return;const w=innerWidth,h=innerHeight,b=$('#scrTitle .brand').getBoundingClientRect(),m=$('#scrTitle .menu').getBoundingClientRect();
-  TS.ctl.layout(w,h,matchMedia('(max-aspect-ratio:4/5)').matches?{x:.5,y:clamp((b.bottom+m.top)/2/h,.25,.6),fw:1}:{x:clamp(m.left/2/w,.25,.5),y:.74,fw:clamp(m.left/w,.4,1)});}
+  const f=matchMedia('(max-aspect-ratio:4/5)').matches?{x:.5,y:clamp((b.bottom+m.top)/2/h,.25,.6),fw:1}:{x:clamp(m.left/2/w,.25,.5),y:.74,fw:clamp(m.left/w,.4,1)},k=w+'x'+h+JSON.stringify(f);
+  if(k===TS.lay)return;TS.lay=k;TS.ctl.layout(w,h,f);}
 /* the backdrop follows the screen: live on the title, paused on the map and gallery screens, dropped in a game */
 function titleScene(s){TS.on=s==='title';TS.bg.hidden=!TS.on;
   if(s==='game'){titleDrop();return;}
   if(TS.ctl){if(TS.on)titleShow();else TS.ctl.show(false);}
-  else if(TS.on&&!TS.mk&&PREFS.g3d&&!SPLASH.hold)titleBuild();}
+  else if(TS.on&&!TS.mk&&!SPLASH.hold)titleBuild();}
 addEventListener('resize',titleLayout);
 if(window.ResizeObserver)new ResizeObserver(titleLayout).observe($('#scrTitle .menu'));   // Ituloy ang laro shows or hides
 
@@ -3694,13 +3732,13 @@ if(window.ResizeObserver)new ResizeObserver(titleLayout).observe($('#scrTitle .m
    It opens the game over everything. Its steps are real loading: fonts, Three.js, its own kids (kids/hero.js), the game
    text, and the main menu's Plaza scene (maps/title.js), so the menu is live when the splash fades into it. */
 const HERO={ctl:null,cv:$('#heroCv')};
-const SPLASH={on:!!$('#splash'),hold:false,done:0,total:5,ready:false,started:false,t0:performance.now(),flank:false,flat:false};
+const SPLASH={on:!!$('#splash'),hold:false,done:0,total:5,ready:false,started:false,t0:performance.now(),flank:false,flat:false,art:[]};
 /* the tests open the game with ?debug and skip the splash; ?debug&splash shows it */
 if(SPLASH.on&&DEBUG&&!/[?&]splash/.test(location.search)){$('#splash').remove();SPLASH.on=false;}
 SPLASH.hold=SPLASH.on;
-async function heroInit(){if(!PREFS.g3d)return false;try{await loadThree();
+async function heroInit(){try{await loadThree();
     const [geo,m]=await Promise.all([import('./kids/kidgeo.js'),import('./kids/hero.js')]);const Q=gq();if(geo.LOD)geo.LOD.k=Q.kid;
-    HERO.ctl=m.create(HERO.cv,{reduced:RM,maxDpr:Q.pr});return true;}catch(e){console.warn('splash kids',e);HERO.ctl=null;return false;}}
+    HERO.ctl=m.create(HERO.cv,{reduced:RM,maxDpr:Q.pr,wait:true});return true;}catch(e){console.warn('splash kids',e);HERO.ctl=null;return false;}}
 function splashMeasure(){if(!SPLASH.on)return;const el=$('#splash'),lg=$('#spLogo'),tg=$('#spTag'),row=$('#spRow'),W=el.clientWidth,H=el.clientHeight;
   const block=tg.getBoundingClientRect().bottom-lg.getBoundingClientRect().top,avail=H-150-24-block-40;
   SPLASH.flank=(W>H*1.3&&avail<120)||avail<80;row.style.height=(SPLASH.flank?0:Math.round(Math.max(0,Math.min(avail,H*.42,360))))+'px';
@@ -3719,33 +3757,46 @@ function splashFlatKids(){const moods=['cheer','happy','hop','cheer'];$('#spRow'
 function splashIntro(){const el=$('#splash'),E='cubic-bezier(.2,.8,.3,1)',q=x=>el.querySelectorAll(x);if(RM||!el.animate)return;
   q('[data-l]').forEach((n,i)=>n.animate([{transform:'translateY(.35em) scale(.9,1.1)',opacity:0},{transform:'translateY(-.06em) scale(1.04,.96)',opacity:1,offset:.6},{transform:'none',opacity:1}],{duration:560,delay:250+i*70,easing:E,fill:'backwards'}));
   $('#spTag').animate([{opacity:0,transform:'translateY(8px)'},{opacity:1,transform:'none'}],{duration:420,delay:900,easing:E,fill:'backwards'});
-  const p=el.querySelector('[data-a="path"]');if(p)p.animate([{strokeDashoffset:600,opacity:0},{strokeDashoffset:0,opacity:.55}],{duration:1200,delay:900,easing:E,fill:'backwards'});
-  q('[data-a="piko"]').forEach(n=>n.animate([{opacity:0},{opacity:.95}],{duration:500,delay:1300,easing:E,fill:'backwards'}));
-  const sp=el.querySelector('[data-a="sipa"]');if(sp)sp.animate([{transform:'translateY(20px) rotate(-14deg)',opacity:0},{transform:'translateY(-10px) rotate(-6deg)',opacity:1,offset:.55},{transform:'rotate(-14deg)'}],{duration:700,delay:1700,easing:E,fill:'backwards'});}
+  /* the path, piko and sipa wait (hidden) for the kids' entrance and draw in with it: splashArt() */
+  const art=SPLASH.art,p=el.querySelector('[data-a="path"]');if(p)art.push(p.animate([{strokeDashoffset:600,opacity:0},{strokeDashoffset:0,opacity:.55}],{duration:1200,delay:900,easing:E,fill:'backwards'}));
+  q('[data-a="piko"]').forEach(n=>art.push(n.animate([{opacity:0},{opacity:.95}],{duration:500,delay:1300,easing:E,fill:'backwards'})));
+  const sp=el.querySelector('[data-a="sipa"]');if(sp)art.push(sp.animate([{transform:'translateY(20px) rotate(-14deg)',opacity:0},{transform:'translateY(-10px) rotate(-6deg)',opacity:1,offset:.55},{transform:'rotate(-14deg)'}],{duration:700,delay:1700,easing:E,fill:'backwards'}));
+  art.forEach(a=>a.pause());}
+const SPLASH_INTRO_MS=1320,SPLASH_ART_MS=2400;   // the tagline is in 1.32 s after the page opens; the sipa, last of the art, lands 2.4 s into the entrance
+function splashArt(finish){SPLASH.art.forEach(a=>{try{finish?a.finish():a.play();}catch(e){}});if(finish)SPLASH.art=[];}
 function splashReport(done,label){if(!SPLASH.on||SPLASH.ready)return;SPLASH.done=Math.max(SPLASH.done,done);const pct=Math.round(100*SPLASH.done/SPLASH.total);
   $('#spFill').style.width=pct+'%';$('#spBar').setAttribute('aria-valuenow',String(pct));if(label!=null)$('#spStatus').textContent=label;
   if(SPLASH.done>=SPLASH.total){const wait=Math.max(0,(RM?0:1100)-(performance.now()-SPLASH.t0));setTimeout(splashReady,wait);}}
-function splashReady(){if(SPLASH.ready||!SPLASH.on)return;SPLASH.ready=true;$('#splash').classList.add('ready');$('#spBar').hidden=true;$('#spStatus').hidden=true;
+function splashReady(){if(SPLASH.ready||!SPLASH.on)return;SPLASH.ready=true;splashArt(true);$('#splash').classList.add('ready');$('#spBar').hidden=true;$('#spStatus').hidden=true;
   const b=$('#spGo');b.hidden=false;try{b.focus({preventScroll:true});}catch(e){}if(HERO.ctl)HERO.ctl.cheer();}
 /* the tap: sound starts (browsers need a tap first), the splash fades into the main menu, whose kids cheer as it opens */
 function splashStart(){if(!SPLASH.ready||SPLASH.started)return;SPLASH.started=true;
   Sfx.init();[523,659,784].forEach((f,i)=>Sfx.tone(f,.35,'triangle',.06,null,i*.09));
   const el=$('#splash');el.classList.add('go');SPLASH.hold=false;
   if(APP.screen==='title'){titleScene('title');if(TS.ctl)TS.ctl.cheer();}
-  setTimeout(()=>{SPLASH.on=false;if(HERO.ctl){HERO.ctl.dispose();HERO.ctl=null;}el.remove();   /* the splash's kids are freed; the menu has its own */
+  /* the splash's kids stop with the fade and are freed once the menu is running (the menu has its own) */
+  setTimeout(()=>{SPLASH.on=false;const h=HERO.ctl;HERO.ctl=null;if(h){h.show(false);(window.requestIdleCallback||setTimeout)(()=>h.dispose(),{timeout:2000});}el.remove();
+    if(window.THREE&&!B3.ok){init3D();refreshPortraits();}   // the splash was let go before its loading reached the board
     if(APP.screen==='title')try{($('#mResume').hidden?$('#mLocal'):$('#mResume')).focus({preventScroll:true});}catch(e){}},RM?0:340);}
 /* the menu's Plaza scene, built now (the step the bar waits longest on); ends early if it fails or takes too long */
-function splashMenuScene(){if(!PREFS.g3d||TS.ctl)return Promise.resolve();SPLASH.hold=false;
+function splashMenuScene(){if(TS.ctl)return Promise.resolve();SPLASH.hold=false;
   const built=TS.mk?new Promise(res=>{const poll=()=>{if(TS.ctl||!TS.mk)res();else setTimeout(poll,120);};poll();}):titleBuild();
   return Promise.race([built,new Promise(r=>setTimeout(r,15000))]);}
 async function splashLoad(fontsP){const N=SPLASH.total,raf=()=>new Promise(r=>requestAnimationFrame(()=>r()));
   splashReport(0,'Kinukuha ang mga font…');await fontsP;splashMeasure();
   splashReport(1,'Kinukuha ang 3D engine…');await loadThree().catch(()=>null);
   splashReport(2,'Binubuo sina Bunso, Neneng, Totoy at Jun…');await raf();
-  if(await heroInit())HERO.ctl.play(true);else{SPLASH.flat=true;$('#spRow').classList.add('flat');SPR.load();   /* no 3D: the kids' pictures (kids/sprites.png) */
+  if(!RM)await new Promise(r=>setTimeout(r,SPLASH_INTRO_MS-(performance.now()-SPLASH.t0)));   // the logo and tagline finish first
+  if(!await heroInit()){SPLASH.flat=true;$('#spRow').classList.add('flat');SPR.load();   /* no 3D: the kids' pictures (kids/sprites.png) */
     if(!SPR.ok)await new Promise(r=>{SPR.img.addEventListener('load',r,{once:true});SPR.img.addEventListener('error',r,{once:true});setTimeout(r,5000);});}
   splashMeasure();
-  splashReport(3,'Inihahanda ang Plaza…');
+  /* the entrance: the kids hop onto their tiles, Neneng waves, the path, piko and sipa draw in. Nothing heavy runs next
+     to it (only the menu's files are fetched), so every frame of it shows; the board and the Plaza are built after */
+  if(HERO.ctl){await HERO.ctl.prepare();HERO.ctl.play(true);}
+  splashArt();import('./maps/title.js').catch(()=>{});
+  if(!RM)await new Promise(r=>setTimeout(r,Math.max(HERO.ctl?HERO.ctl.entranceMs():0,SPLASH_ART_MS)+150));
+  splashReport(3,'Inihahanda ang Plaza…');await raf();
+  if(window.THREE){init3D();refreshPortraits();}Sfx.make();
   const still=new Image();still.src=matchMedia('(max-aspect-ratio:4/5)').matches?'maps/world/title-tall.jpg':'maps/world/title.jpg';
   await Promise.all([splashMenuScene(),Promise.race([Promise.all([CONTENT_P,still.decode?still.decode().catch(()=>{}):Promise.resolve()]),new Promise(r=>setTimeout(r,5000))])]);
   splashReport(4,'Inihahanda ang eksena…');if(HERO.ctl)HERO.ctl.renderOnce();await raf();

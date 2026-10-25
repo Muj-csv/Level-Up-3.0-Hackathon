@@ -28,12 +28,11 @@ Mayumi, Boyet, Dodong). `buildKid` merges each kid's static parts by material an
 `castShadows` keeps small parts out of the shadow pass, so a kid costs about 31 to 35
 draws.
 
-Where 3D is not shown (no WebGL, Grapiko 2D, or before `kids.js` has loaded) the board and
-portraits use `sprites.png` / `sprites.json`: the 8 kids in 15 poses (front, back, side;
-idle, walk, hop, cheer, sad), 96 × 120 frames, rendered from these 3D kids by
-`node tools/kid-sprites.mjs`. Re-run it after changing a kid's design. The old hand-drawn
-2D kids are gone. The Mga Bata gallery shows the 3D kids themselves through `hero.js`
-(`gallery(clip, yaw)`), and the shareable result picture uses 3D full-body renders.
+On devices without 3D (no WebGL, or before `kids.js` has loaded) the board and portraits
+use `sprites.png` / `sprites.json`: the 8 kids in 15 poses (front, back, side; idle, walk,
+hop, cheer, sad), 96 × 120 frames, rendered from these 3D kids by
+`node tools/kid-sprites.mjs`. Re-run it after changing a kid's design. The Mga Bata
+gallery shows the 3D kids themselves through `hero.js` (`gallery(clip, yaw)`).
 
 Changes from the character set: the import of `kid-geo` points at `./kidgeo.js`, and an
 `LOD` setting lets phones and tablets build the swept forms and Bunso's curls with fewer

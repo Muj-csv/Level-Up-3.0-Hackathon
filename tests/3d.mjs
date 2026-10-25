@@ -1,5 +1,5 @@
 // 3D play-test: the board and minigames drawn with Three.js (WebGL through SwiftShader, so no GPU is needed).
-// Checks the 3D title and board, reach rings, screen-to-board mapping, the 3D/2D setting, save and resume
+// Checks the 3D title and board, reach rings, screen-to-board mapping, the Kalidad setting (always 3D), save and resume
 // with Kasama allies, every minigame's 3D arena, the 2D fallback when Three.js cannot load, the 3D gallery and result
 // picture, and a slow kids/kids.js (the board waits in 2D, never an older kid).
 // Screenshots go to test-results/3d-*.png. Run: node tests/3d.mjs
@@ -70,30 +70,25 @@ const step = page => page.evaluate(() => {
   const ms = await page.evaluate(() => window.__lsu.bench(10));
   console.log(`      (board frame in software WebGL: ${ms.toFixed(1)} ms; a phone GPU is much faster)`);
 
-  // the 3D/2D setting in the pause menu
+  // graphics in the pause menu: Kalidad (Mababa, Katamtaman, Mataas), always 3D; the old Grapiko 3D/2D switch is gone
   await page.click('#menuBtn');
-  const row = await page.$('#menuCard button[data-k="g3d"][data-val="0"]');
-  check(!!row, 'pause menu has the Grapiko 3D/2D setting');
-  if (row) {
-    // the switch shows on the next drawn frame, which software WebGL can take a while to reach
-    await row.click(); await page.waitForFunction(() => !window.__lsu.b3.on, null, { timeout: 20000 }).catch(() => {});
-    const two = await page.evaluate(() => ({ on: window.__lsu.b3.on, cv3: document.getElementById('stage3d').hidden, saved: JSON.parse(localStorage.getItem('lsu-prefs')).g3d }));
-    check(!two.on && two.cv3 && two.saved === false, 'switching to 2D hides the 3D canvas and is saved', JSON.stringify(two));
-    await page.click('#menuCard [data-v="close"]'); await page.waitForTimeout(500); await shot(page, 'board-2d');
-    await page.click('#menuBtn'); await page.click('#menuCard button[data-k="g3d"][data-val="1"]'); await page.waitForFunction(() => window.__lsu.b3.on, null, { timeout: 20000 }).catch(() => {});
-    const three = await page.evaluate(() => window.__lsu.b3.on && !document.getElementById('stage3d').hidden);
-    check(three, 'switching back to 3D shows the 3D board again');
-    await page.click('#menuCard [data-v="close"]');
-  }
+  const g = await page.evaluate(() => ({ q: [...document.querySelectorAll('#menuCard button[data-k="gq"]')].map(b => b.textContent), g3d: !!document.querySelector('#menuCard button[data-k="g3d"]') }));
+  check(g.q.join() === 'Mababa,Katamtaman,Mataas' && !g.g3d, 'pause menu: Kalidad has three choices and there is no 2D switch', JSON.stringify(g));
+  await page.click('#menuCard button[data-k="gq"][data-val="low"]'); await page.waitForTimeout(300);
+  check(await page.evaluate(() => window.__lsu.b3.on && !document.getElementById('stage3d').hidden), 'Mababa keeps the board in 3D');
+  await page.click('#menuCard button[data-k="gq"][data-val="mid"]'); await page.click('#menuCard [data-v="close"]'); await page.waitForTimeout(500);
 
   // save and resume keep the Kasama allies (given here to a bot, then saved at the next turn)
   await page.evaluate(() => { window.__lsu.state.players[1].allies.push({ n: 'Lito', look: 0, x: 0, y: 0 }); });
-  let saved = false;
-  for (let i = 0; i < 300 && !saved; i++) {
+  // the next save comes at the next turn (or minigame) start; under software WebGL a minigame in between can take minutes
+  // (game time slows with the frame rate), so the wait is in time, not clicks, and a miss says where the game was
+  let saved = false; const t0 = Date.now();
+  while (!saved && Date.now() - t0 < 240000) {
     saved = await page.evaluate(() => /"allies":\[[^\]]*"n":"Lito"/.test(localStorage.getItem('lsu-save') || ''));
     if (!saved) { await step(page); await page.waitForTimeout(150); }
   }
-  check(saved, 'the save at the start of a turn includes Kasama allies');
+  const where = saved ? '' : await page.evaluate(() => { const L = window.__lsu, c = document.querySelector('#card h2'); return JSON.stringify({ round: L.state.round, turn: L.state.turn, mg: L.scene && L.scene.kind || null, card: !document.querySelector('#modal').hidden && c ? c.textContent : null, ended: L.state.ended }); });
+  check(saved, 'the save at the start of a turn includes Kasama allies', saved ? Math.round((Date.now() - t0) / 1000) + ' s' : 'not saved in 240 s: ' + where);
   await page.goto(srv.url + '?debug'); await page.waitForFunction(() => window.__lsu && window.__lsu.screen === 'title');
   await page.click('#mResume'); await page.waitForTimeout(1500);
   // meshes should equal the total ally count across every player, not just player[1]'s --
@@ -173,17 +168,32 @@ for (const kind of Object.keys(MASH)) {
   await page.click('#mLocal'); await page.click('#card [data-v="go"]'); await page.click('#mapGo'); await page.waitForTimeout(1500);
   check(await page.evaluate(() => window.__lsu.screen === 'game' && window.__lsu.board.id === 'plaza' && document.querySelector('#loadIsl').hidden), 'no Three.js: a map game starts at once on the 2D board');
   await page.click('#menuBtn');
-  check(!(await page.$('#menuCard button[data-k="g3d"]')), 'no Three.js: the menu does not offer a 3D setting');
+  check(!(await page.$('#menuCard button[data-k="g3d"]')) && !(await page.$('#menuCard button[data-k="gq"]')), 'no Three.js: the menu offers no graphics settings (the 2D board is automatic)');
   await page.context().close();
 }
 
-// ---------- 4. splash in 3D: the kids hop in while the menu's Plaza is built, then the tap opens the live menu ----------
+// ---------- 4. splash in 3D: the kids' entrance plays with nothing heavy next to it, then the menu's Plaza is built, and the tap opens the live menu ----------
 {
-  const page = await newPage('3d', '?debug&splash');
-  await page.waitForFunction(() => !document.querySelector('#spGo').hidden, null, { timeout: 90000 }).catch(() => {});
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1, isMobile: true, hasTouch: true });
+  await renderer(ctx, '3d');
+  // watches the entrance (from the art starting to draw in until the Plaza step): is the menu's Plaza or the board's 3D being built?
+  await ctx.addInitScript(() => {
+    const w = window.__ent = { seen: false, heavy: [] };
+    const tick = () => { const s = document.querySelector('[data-a="sipa"]'), a = s && s.getAnimations && s.getAnimations()[0], L = window.__lsu, st = document.querySelector('#spStatus');
+      if (!w.seen && a && a.playState === 'running') w.seen = true;
+      if (w.seen && L && st && !/Plaza|eksena/.test(st.textContent) && document.querySelector('#spGo').hidden) { if (L.title.mk) w.heavy.push('menu scene'); if (L.b3.ok) w.heavy.push('board 3D'); }
+      if (!w.done) requestAnimationFrame(tick); };
+    requestAnimationFrame(tick); });
+  const page = await ctx.newPage(); allErrs.push(watchErrors(page, '3d'));
+  await page.goto(srv.url + '?debug&splash');
+  await page.waitForFunction(() => window.__lsu && !document.querySelector('#spGo').hidden, null, { timeout: 120000 }).catch(() => {});
   const s = await page.evaluate(() => ({ ready: !document.querySelector('#spGo').hidden, kids: !!window.__lsu.hero.ctl, flat: document.querySelector('#spRow').classList.contains('flat'), menu: !!window.__lsu.title.ctl }));
   check(s.ready && s.kids && !s.flat, 'splash: the four 3D kids are built and "Pindutin para magsimula" shows', JSON.stringify(s));
   check(s.menu, 'splash: the main menu\'s Plaza scene is built during the splash');
+  const e = await page.evaluate(() => { window.__ent.done = true; const art = [...document.querySelectorAll('#splash [data-a]')];
+    return { seen: window.__ent.seen, heavy: [...new Set(window.__ent.heavy)], opacity: art.map(n => +(+getComputedStyle(n).opacity).toFixed(2)), moving: art.filter(n => n.getAnimations().length).length }; });
+  check(e.seen && !e.heavy.length, 'splash: the kids\' entrance and the art play with nothing heavy built next to them', JSON.stringify(e));
+  check(e.opacity.length >= 3 && e.opacity.every(o => o >= .5) && !e.moving, 'splash: the path, piko and sipa have drawn in fully when "Pindutin" shows', JSON.stringify(e));
   await page.waitForTimeout(1500); await page.screenshot({ path: path.join(OUT, '3d-splash.png'), timeout: 120000 });
   await page.click('#spGo', { force: true });   // force: the button gently bobs, so it never holds still for the click check
   await page.waitForFunction(() => !document.querySelector('#splash'), null, { timeout: 20000 }).catch(() => {});
