@@ -242,8 +242,9 @@ export function create(canvas, { reduced = false, maxDpr = 2, shadow = 2048, isl
   return {
     ready,
     layout,
-    /* draw while shown (the loop restarts from the opening frame each time the menu opens) */
-    show(on) { if (shown === !!on) return; shown = !!on; if (!shown) { cancelAnimationFrame(raf); raf = 0; return; } t0 = performance.now(); cheerAt = -99; if (ctx && reduced) render(0); else kick(); },
+    /* draw while shown (the loop restarts from the opening frame each time the menu opens; frame times from before,
+       such as a build running next to it, do not count against the resolution) */
+    show(on) { if (shown === !!on) return; shown = !!on; if (!shown) { cancelAnimationFrame(raf); raf = 0; return; } t0 = performance.now(); cheerAt = -99; avg = 0; cheap = 0; lastStep = t0; if (ctx && reduced) render(0); else kick(); },
     /* all four kids cheer, one after another */
     cheer() { if (reduced) return; cheerAt = (performance.now() - t0) / 1000; },
     /* one frame at loop time T (for the still picture) */

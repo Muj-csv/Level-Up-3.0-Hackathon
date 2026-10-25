@@ -36,14 +36,25 @@ Confirmed with a Playwright run that records every request the page makes: zero
 requests leave the origin on load, where before there were two (the Google Fonts CSS
 and its woff2 file).
 
-**Still open:** (2) — there's still no way to play with no internet after the first
-load. That needs an actual caching strategy (a service worker with an install/cache
-step, or `vite-plugin-pwa`-equivalent for a single-file app — whatever Ian picks for
-F2's loading bar should account for this, since F2.2 already needs to track real asset
-load progress). This is a bigger decision than a content/test fix, so flagging it here
-rather than building it: **F10.3's offline-after-first-load requirement is not met
-yet.** Recommend Ian scope it alongside F2 (splash/loading), since both need to agree on
-what "loaded" means and what gets cached.
+**Fixed Oct 25:** (2) — `sw.js`, a service worker, keeps a copy of every game file
+(30 files, 3.6 MB), so after one visit online the game opens and plays on one device with
+no internet: Party, Torneo, Hamon ng Araw (scores on the device) and Pagsasanay, in 3D.
+Online rooms still need internet (Supabase).
+
+- The game's own files come from the network first, so a new deploy arrives as soon as
+  the device is online; the saved copy is used offline, or when the network has not
+  answered in 4 s (slow venue Wi-Fi). `vendor/` (versioned file names) comes from the copy.
+- 10 s after each load online, the worker checks every saved file against the server
+  (cheap when nothing changed), so an island not opened for a while stays in step with
+  a newer `index.html`.
+- It runs on https (Vercel, GitHub Pages) and localhost; not inside the Claude artifact,
+  not from a `file://` copy, and under `?debug` only with `&sw`. `vercel.json` serves
+  `sw.js` with `no-cache`.
+- `tests/offline.mjs` loads the game once, shuts the server down, reloads, and plays on
+  an island never opened before, in 3D; it also checks that `sw.js` lists every deployed
+  game file (a new file must be added to `FILES` there, with a new `VERSION`).
+- iPhones and iPads can clear a site's saved data after a few weeks without a visit: open
+  the game on every demo device in the days before the finals (see `docs/ONLINE.md`).
 
 ## F10.4 — quality setting (shadows, pixel ratio)
 
@@ -126,6 +137,19 @@ islands holds 420 against 467 the first time (Mababa) or 959 against 995 (Katamt
   little to cull; Three.js already skips what is off screen. Not needed unless the phone
   test shows it.
 - *Pausing the 3D in a hidden tab:* browsers already stop animation frames in hidden tabs.
+
+**Draw-call census (F11, Oct 25):** `B3.census()` (`?debug`) on each island's board at the start of a game,
+390×844 at 2×. Draw calls / triangles:
+
+| Island | Mababa | Katamtaman | Mataas |
+|---|---|---|---|
+| Plaza | 343 / 388k | 353 / 491k | 359 / 508k |
+| Palengke | 581 / 354k | 576 / 455k | 697 / 481k |
+| Aplaya | 387 / 307k | 413 / 410k | 411 / 413k |
+| Palayan | 382 / 374k | 379 / 487k | 411 / 560k |
+
+Repeated minigames no longer leave GPU textures behind (the 3D barrio kids' skeleton textures are freed with the
+minigame). Details in `docs/F11_HANDOFF.md`.
 
 **How far these numbers go:** software WebGL draws on the CPU, so these are relative
 costs between settings, not phone frame rates. They also drift: the same 2D board measured

@@ -1,0 +1,600 @@
+{
+  "meta": {
+    "language": "en",
+    "note": "Phase 2 of the Simpler Filipino and English PRD: the English text for the cards (Tanong ni Lola, minigame rules, Sa totoong kalye, Subukan sa labas, soon games). Same structure, ids and order as content/fil.json; a missing entry falls back to fil.json, then to the built-in text. Written by the rules in docs/WRITING.md: protected terms (content/terms.json) stay in Filipino, with a short meaning in brackets the first time on a card. The facts are the same as fil.json; reviewed_by/reviewed_at stay null until a teacher or classmate comfortable in English reads every card. Nicknames stay in Filipino: they are names.",
+    "written_at": "2026-10-25",
+    "written_by": "Jace Matthew M. Catriz (idea), using Claude (AI)"
+  },
+  "trivia": [
+    {
+      "id": "tumbang-pamato",
+      "q": "What do you throw at the can in Tumbang Preso?",
+      "a": [
+        "Tsinelas (slippers)",
+        "Ball",
+        "Holen (marbles)"
+      ],
+      "f": "The tsinelas is the pamato (what you throw). Grab it fast so you don't get tagged!",
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": "sipa-national-game",
+      "q": "What was the national game until 2009?",
+      "a": [
+        "Sipa",
+        "Patintero",
+        "Piko"
+      ],
+      "f": "In 2009, arnis became our national martial art and sport.",
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": "patintero-aka",
+      "q": "What is another name for Patintero?",
+      "a": [
+        "Tubigan",
+        "Presohan",
+        "Sungka"
+      ],
+      "f": "Sometimes the lines are drawn with water (tubig). That's why it's called tubigan!",
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": "palosebo-grease",
+      "q": "What is rubbed on the bamboo pole in Palosebo?",
+      "a": [
+        "Grease or cooking oil",
+        "Glue",
+        "Honey"
+      ],
+      "f": "The name comes from the Spanish palo ensebado. It means \"greased pole.\"",
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": "jackenpoy-bato",
+      "q": "In Jack en Poy, what beats rock?",
+      "a": [
+        "Paper",
+        "Scissors",
+        "Tsinelas (slippers)"
+      ],
+      "f": "Paper wraps the rock. And rock beats scissors.",
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": "luksong-tinik",
+      "q": "In Luksong Tinik, what is the \"tinik\"?",
+      "a": [
+        "Hands and feet stacked up",
+        "A plant with tinik (thorns)",
+        "A long rope"
+      ],
+      "f": "Each hand or foot added makes the tinik (thorn) higher.",
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": "piko-pamato",
+      "q": "In Piko, what do you toss into the boxes?",
+      "a": [
+        "A pamato, like a flat stone",
+        "A coin",
+        "A ball"
+      ],
+      "f": "You hop on one foot. Skip the box with the pamato (your marker) in it.",
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": "holen-what",
+      "q": "What is a holen?",
+      "a": [
+        "A small glass ball",
+        "A spinning top",
+        "Saranggola (a kite)"
+      ],
+      "f": "You flick the holen (marble) with your thumb. Try to hit the other player's holen!",
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": "sungka-equipment",
+      "q": "What do you use to play Sungka?",
+      "a": [
+        "A board with holes, and shells",
+        "Playing cards",
+        "Dice"
+      ],
+      "f": "Sigay, or small shells, go into the holes of the board.",
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": "agawan-base-win",
+      "q": "How do you win in Agawan Base?",
+      "a": [
+        "Touch the other team's base",
+        "Get the most balls",
+        "Finish running first"
+      ],
+      "f": "There are 2 bases and 2 teams. If you get tagged, the other team captures you.",
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": "palayok-laman",
+      "q": "In Pukpok Palayok, what's usually in the pot?",
+      "a": [
+        "Kendi (candy), coins or small toys",
+        "Water",
+        "Rice"
+      ],
+      "f": "When the palayok breaks, the kids rush to grab the candy and coins that fall.",
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": "taguan-kanta",
+      "q": "What does the taya (the seeker) sing in Taguan?",
+      "a": [
+        "Tagu-taguan, maliwanag ang buwan",
+        "Bahay Kubo",
+        "Leron, Leron Sinta"
+      ],
+      "f": "The taya sings it with eyes closed while counting. This gives the others time to hide.",
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": "piko-pamato",
+      "q": "In Piko, what do you do with the box that has the pamato?",
+      "a": [
+        "Skip it",
+        "Step on it with both feet",
+        "Rest there"
+      ],
+      "f": "Don't step on the box with the pamato (your marker). Just pick it up on your way back, without falling.",
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": "plaza-kiosko",
+      "island": "plaza",
+      "q": "What is the kiosko in the middle of the town plaza?",
+      "a": [
+        "Where the band plays during the pista (town fiesta)",
+        "Palengke (the town market)",
+        "The police station"
+      ],
+      "f": "The kiosko is like a small stage. The town band plays there during a pista or a party in the plaza.",
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": "plaza-kalesa",
+      "island": "plaza",
+      "q": "What is a kalesa?",
+      "a": [
+        "A horse-drawn carriage",
+        "A sailboat",
+        "A pedal tricycle"
+      ],
+      "f": "A kalesa is pulled by a horse. People often rode it long ago. You can still find one today, like in Intramuros.",
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": "palengke-tawad",
+      "island": "palengke",
+      "q": "What does tawad mean at the palengke (market)?",
+      "a": [
+        "Asking for a lower price",
+        "Weighing the goods",
+        "Wrapping the fish"
+      ],
+      "f": "Shoppers at the palengke often ask the seller for a lower price.",
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": "palengke-padyak",
+      "island": "palengke",
+      "q": "What is a padyak?",
+      "a": [
+        "A pedal-powered ride, no motor",
+        "A sailboat",
+        "A horse-drawn carriage"
+      ],
+      "f": "A padyak runs on pedals, no engine. It's for short trips to the palengke or a nearby barangay.",
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": "aplaya-bangka",
+      "island": "aplaya",
+      "q": "What is a bangka?",
+      "a": [
+        "A wooden boat for fishing",
+        "A horse-drawn carriage",
+        "A cart pulled by a kalabaw (water buffalo)"
+      ],
+      "f": "A bangka is a boat. Fishermen use it to fish near the shore.",
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": "aplaya-patuyo",
+      "island": "aplaya",
+      "q": "Why is fish dried in the sun?",
+      "a": [
+        "So it doesn't spoil and lasts longer",
+        "To make it soft",
+        "To make it bigger"
+      ],
+      "f": "Fish is dried in the hot sun so it doesn't spoil. It's an old way, especially in places with no fridge.",
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": "palayan-kalabaw",
+      "island": "palayan",
+      "q": "What is a kalabaw (water buffalo) used for?",
+      "a": [
+        "Plows the soil before planting rice",
+        "Guards the farm at night",
+        "Grinds the rice"
+      ],
+      "f": "The kalabaw pulls the plow. It plows the soil before rice is planted.",
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": "palayan-bayanihan",
+      "island": "palayan",
+      "q": "What is bayanihan?",
+      "a": [
+        "The whole community helping each other",
+        "The town's official pista (fiesta)",
+        "A kind of national dance"
+      ],
+      "f": "Bayanihan is Filipinos helping each other, like moving a house together. It comes from the word \"bayan\" (town).",
+      "reviewed_by": null,
+      "reviewed_at": null
+    }
+  ],
+  "minigames": {
+    "tumbang": {
+      "title": "Tumbang Preso",
+      "short": "Knock the can down with your slipper.",
+      "aka": "Also called presohan, tumba-lata, or tumba-patis in the Visayas",
+      "chip": "4 players · all at once",
+      "unit": "hits",
+      "labas": "You need: 1 can, one tsinelas (slipper) each, and 3 or more friends. Draw a circle for the can. Draw a line to throw from.",
+      "rules": [
+        "Throw your tsinelas (slipper) to knock down the can.",
+        "The line moves. Throw when it's in the white middle.",
+        "5 throws each. The line gets faster and faster. Most cans knocked down wins!"
+      ],
+      "real": "On the street, a taya (the guard) watches the can inside the circle. The others throw their tsinelas (slippers) at the can from the line. When the can falls, grab your tsinelas while the taya stands the can up again. If you get tagged, you're the new taya!",
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    "patintero": {
+      "title": "Patintero",
+      "short": "Cross every line without getting tagged.",
+      "aka": "Also called harang taga or tubigan",
+      "chip": "1 against 3 · one run each",
+      "unit": "points",
+      "labas": "Draw lines on a yard or court with chalk or water. Split into 2 teams: guards on the lines, and runners.",
+      "rules": [
+        "Cross every line to Dulo (the end), then run back to Bahay (home).",
+        "+2 for each line going out, +3 coming back, +5 for getting home.",
+        "If you get tagged, go back to Bahay. While you're blinking, lines you cross don't count."
+      ],
+      "real": "Lines are drawn on the ground, sometimes with water. That's why it's also called tubigan. 2 teams play. The guards can only move along the lines. The other team crosses to the far end, then back. When someone gets tagged, the 2 teams switch.",
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    "sipa": {
+      "title": "Sipa",
+      "short": "Keep the sipa up without letting it fall.",
+      "aka": "National game of the Philippines until 2009",
+      "chip": "4 players · all at once",
+      "unit": "sipa",
+      "labas": "Make your own sipa (kick toy): a washer or bottle cap with strips of plastic or paper. Count how many kicks before it falls.",
+      "rules": [
+        "Kick the sipa (a small kick toy) before it falls.",
+        "Press when the circle glows. Too early, or pressing again and again? You can't kick for a moment.",
+        "It gets faster and faster. The most sipa kicks wins!"
+      ],
+      "real": "A sipa is a small weight, like lead or a washer, with colorful paper or cloth. You kick it up with the inside of your foot or your knee. Don't let it fall! It was the national game until 2009. That year, arnis became the national martial art and sport.",
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    "palosebo": {
+      "title": "Palosebo",
+      "short": "Climb the slippery bamboo pole.",
+      "aka": "From the Spanish palo ensebado: a bamboo pole covered in grease",
+      "chip": "4 players · all at once",
+      "unit": "points",
+      "labas": "Palosebo is a pista (town fiesta) game. Look for it at your barangay's pista! Ask your lolo or lola how they won long ago.",
+      "rules": [
+        "Tap to climb the bamboo pole. When the hand turns green, you can go.",
+        "Don't rush! You'll slip if you tap too fast.",
+        "Reach the prize at the top within 12 seconds. Faster climbs get a bonus."
+      ],
+      "real": "This game is played at every pista (town fiesta). A long bamboo pole is covered with oil or grease. There is a prize at the top, like money or a flag. Players race to climb it. You need strength, smarts and patience so you don't slide down.",
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    "luksong": {
+      "title": "Luksong Tinik",
+      "short": "Jump over the rising \"tinik\" of hands.",
+      "aka": "A game of jumping and courage",
+      "chip": "4 players · all at once",
+      "unit": "level",
+      "labas": "2 friends sit facing each other on the grass. They stack their feet, then their hands. That's the tinik (thorn)! The others jump over it. Whoever gets caught takes a turn sitting.",
+      "rules": [
+        "Run toward the tinik (the stack of hands and feet). Tap to jump when your foot is on the yellow line.",
+        "Too early or too late, you get caught and your game is over.",
+        "Every level, the tinik gets higher and faster. Highest level wins!"
+      ],
+      "real": "2 players sit on the ground. They stack their feet, then their hands, to make the tinik (thorn) taller. The others jump over without touching it. Whoever gets caught takes a turn sitting.",
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    "palayok": {
+      "title": "Pukpok Palayok",
+      "short": "Break the clay pot while blindfolded.",
+      "aka": "Also called hampas-palayok or basag-palayok",
+      "chip": "4 players · all at once",
+      "unit": "points",
+      "labas": "To be safe, use an old box or paper bag, not a real palayok (clay pot). Fill it with candy and hang it on a rope. Blindfold a friend and spin them 3 times before they swing. Watchers, stay away from the swinger!",
+      "rules": [
+        "See how many steps away the palayok (clay pot) is before you're blindfolded.",
+        "Count each step in your head. Then press to swing.",
+        "Basag (break): 10, sagi (graze): 6, malapit (close): 3. You get 3 tries. Don't believe what the crowd shouts!"
+      ],
+      "real": "This game is played at a pista (fiesta) or a birthday. A palayok (clay pot) with candy, coins or toys hangs on a rope between 2 posts. The player is blindfolded, spun around a few times, and given a stick. The crowd shouts where to swing. Sometimes it's true, sometimes it's a joke! When the palayok breaks, everyone rushes for the candy.",
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    "taguan": {
+      "title": "Taguan",
+      "short": "Find the kids hiding in the yard.",
+      "aka": "Also called tagu-taguan",
+      "chip": "4 players · all at once",
+      "unit": "points",
+      "labas": "You need 3 or more friends and a safe yard. Pick a base. The taya (seeker) closes their eyes and counts to 20. The others hide where grown-ups can still see them.",
+      "rules": [
+        "The taya (seeker) walks on their own and stops at each hiding spot. 10 points for each kid you find.",
+        "Tap when you see a sign of a kid: tsinelas (slippers), hair, eyes, a shadow, giggling, rustling or fingers.",
+        "The cat, chicken and dog are just animals! Wrong tap: −2, and you can't tap at the next 2 hiding spots."
+      ],
+      "real": "The taya (seeker) closes their eyes and counts while the others hide. The taya sings \"Tagu-taguan, maliwanag ang buwan…\". Then the taya looks for the hiders. When the taya finds someone, they race back to the base. The first one caught is the new taya.",
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    "piko": {
+      "title": "Piko",
+      "short": "Hop through the boxes drawn on the ground.",
+      "aka": "Also called piko-piko; hopscotch in English",
+      "chip": "4 players · all at once",
+      "unit": "steps",
+      "labas": "Draw a piko court on safe cement or ground with chalk or charcoal. Find a flat pamato (marker stone). You can play with just 2 people.",
+      "rules": [
+        "Pindot (tap): 1 foot in a single box. Diinan (hold): 2 feet in side-by-side boxes.",
+        "Skip the box with the pamato (marker). If it's in a side-by-side pair, use 1 foot in the other box.",
+        "Wrong jump? Patay (out)! Back to the start, minus that court's steps. +2 per finished court. 20 seconds."
+      ],
+      "real": "The boxes are drawn on the ground with chalk or charcoal. The player tosses the pamato (a flat stone or a piece of broken pot) into the first box. They hop: 1 foot in a single box, 2 feet in side-by-side boxes. They skip the box with the pamato. On the way back, they pick up the pamato without falling. You're out if you step on a line, fall, or land in the wrong box.",
+      "reviewed_by": null,
+      "reviewed_at": null
+    }
+  },
+  "soon": [
+    {
+      "t": "Agawan Base",
+      "d": "2 teams, 2 bases, lots of running."
+    },
+    {
+      "t": "Sungka",
+      "d": "A board with holes and sigay (shells). A game of strategy."
+    }
+  ],
+  "islands": {
+    "note": "Same island list as content/fil.json: each island's two Tanong ni Lola questions, by id.",
+    "list": [
+      {
+        "id": "plaza",
+        "name": "Plaza",
+        "triviaIds": [
+          "plaza-kiosko",
+          "plaza-kalesa"
+        ]
+      },
+      {
+        "id": "palengke",
+        "name": "Palengke",
+        "triviaIds": [
+          "palengke-tawad",
+          "palengke-padyak"
+        ]
+      },
+      {
+        "id": "aplaya",
+        "name": "Aplaya",
+        "triviaIds": [
+          "aplaya-bangka",
+          "aplaya-patuyo"
+        ]
+      },
+      {
+        "id": "palayan",
+        "name": "Palayan",
+        "triviaIds": [
+          "palayan-kalabaw",
+          "palayan-bayanihan"
+        ]
+      }
+    ]
+  },
+  "nicknames": {
+    "note": "F8.1 word lists for the nickname picker (adjective + noun in Filipino, e.g. 'Masipag na Kalabaw'), replacing the free-text name field. Joey's half of F8 (Ian owns the picker UI). Each adjective's `label` is the pre-joined form with the correct Tagalog linker already applied ('na' after a consonant, fused '-ng' after a vowel) so the UI can just do `label + ' ' + noun.t` with no grammar logic of its own. PENDING: the PRD's F8 acceptance requires sign-off from 2 team members that nothing here could offend or carry an unintended double meaning in Filipino — `reviewed_by` needs 2 names before this ships. See docs/NICKNAME_WORDLIST_REVIEW.md for the review packet.",
+    "reviewed_by": [],
+    "reviewed_at": null,
+    "adjectives": [
+      {
+        "id": "masipag",
+        "t": "Masipag",
+        "label": "Masipag na"
+      },
+      {
+        "id": "matapang",
+        "t": "Matapang",
+        "label": "Matapang na"
+      },
+      {
+        "id": "mabait",
+        "t": "Mabait",
+        "label": "Mabait na"
+      },
+      {
+        "id": "masaya",
+        "t": "Masaya",
+        "label": "Masayang"
+      },
+      {
+        "id": "matalino",
+        "t": "Matalino",
+        "label": "Matalinong"
+      },
+      {
+        "id": "matatag",
+        "t": "Matatag",
+        "label": "Matatag na"
+      },
+      {
+        "id": "mabilis",
+        "t": "Mabilis",
+        "label": "Mabilis na"
+      },
+      {
+        "id": "matiyaga",
+        "t": "Matiyaga",
+        "label": "Matiyagang"
+      },
+      {
+        "id": "masigla",
+        "t": "Masigla",
+        "label": "Masiglang"
+      },
+      {
+        "id": "magiliw",
+        "t": "Magiliw",
+        "label": "Magiliw na"
+      },
+      {
+        "id": "mausisa",
+        "t": "Mausisa",
+        "label": "Mausisang"
+      },
+      {
+        "id": "matulungin",
+        "t": "Matulungin",
+        "label": "Matulungin na"
+      },
+      {
+        "id": "maalalahanin",
+        "t": "Maalalahanin",
+        "label": "Maalalahanin na"
+      },
+      {
+        "id": "mapagmahal",
+        "t": "Mapagmahal",
+        "label": "Mapagmahal na"
+      },
+      {
+        "id": "matapat",
+        "t": "Matapat",
+        "label": "Matapat na"
+      },
+      {
+        "id": "malakas",
+        "t": "Malakas",
+        "label": "Malakas na"
+      }
+    ],
+    "nouns": [
+      {
+        "id": "kalabaw",
+        "t": "Kalabaw"
+      },
+      {
+        "id": "tamaraw",
+        "t": "Tamaraw"
+      },
+      {
+        "id": "agila",
+        "t": "Agila"
+      },
+      {
+        "id": "maya",
+        "t": "Maya"
+      },
+      {
+        "id": "pawikan",
+        "t": "Pawikan"
+      },
+      {
+        "id": "tarsier",
+        "t": "Tarsier"
+      },
+      {
+        "id": "tutubi",
+        "t": "Tutubi"
+      },
+      {
+        "id": "alitaptap",
+        "t": "Alitaptap"
+      },
+      {
+        "id": "paruparo",
+        "t": "Paruparo"
+      },
+      {
+        "id": "palaka",
+        "t": "Palaka"
+      },
+      {
+        "id": "alimango",
+        "t": "Alimango"
+      },
+      {
+        "id": "pusa",
+        "t": "Pusa"
+      },
+      {
+        "id": "aso",
+        "t": "Aso"
+      },
+      {
+        "id": "kuting",
+        "t": "Kuting"
+      },
+      {
+        "id": "ibon",
+        "t": "Ibon"
+      },
+      {
+        "id": "bubuyog",
+        "t": "Bubuyog"
+      }
+    ]
+  }
+}

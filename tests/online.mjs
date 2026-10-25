@@ -3,11 +3,12 @@
 // Run: node tests/online.mjs            (the Claude room service, through tests/mock-room.js)
 //      node tests/online.mjs supabase   (the game's Supabase room adapter, through tests/mock-supabase.js)
 //      node tests/online.mjs live       (the real Supabase project in index.html; needs internet)
+//      add en to any of them to put the guest in English (?lang=en) and the host in Filipino: the phones must still agree
 import path from 'path';
 import { chromium, serve, watchErrors, check, done, ROOT, renderer } from './lib.mjs';
 
-const MODE = process.argv[2] || 'claude', SUPA = MODE === 'supabase';
-console.log('room service: ' + { claude: 'Claude room (mock-room.js)', supabase: 'Supabase adapter (mock-supabase.js)', live: 'Supabase adapter, real project' }[MODE]);
+const ARGS = process.argv.slice(2), GUEST_EN = ARGS.includes('en'), MODE = ARGS.find(a => a !== 'en') || 'claude', SUPA = MODE === 'supabase';
+console.log('room service: ' + { claude: 'Claude room (mock-room.js)', supabase: 'Supabase adapter (mock-supabase.js)', live: 'Supabase adapter, real project' }[MODE] + (GUEST_EN ? ', guest in English' : ''));
 const srv = await serve();
 const browser = await chromium();
 const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
@@ -30,7 +31,7 @@ check(/^[A-Z0-9]{4}$/.test(code), 'host gets a 4-character room code', code);
 await host.click('#card button[data-k="rounds"][data-val="3"]');
 
 const guest = await ctx.newPage(); const guestErrs = watchErrors(guest, 'guest');
-await guest.goto(srv.url + '?debug&speed=3#' + code);
+await guest.goto(srv.url + '?debug&speed=3' + (GUEST_EN ? '&lang=en' : '') + '#' + code);
 await guest.waitForSelector('#card #jcode', { timeout: 10000 });
 check((await guest.inputValue('#jcode')) === code, 'QR/link hash pre-fills the code on the guest');
 await guest.fill('#nmMe', 'Bisita');
@@ -40,6 +41,13 @@ await host.waitForFunction(() => /Bisita/.test((document.querySelector('#lbRoste
 check(true, 'host lobby lists the guest');
 await guest.waitForFunction(() => /Host/.test(document.querySelector('#card').textContent), null, { timeout: 10000 });
 check(true, 'guest sees the host and its settings');
+if (GUEST_EN) {
+  // each phone shows its own language; the question list (picked by number from the seed) must be the same length on both
+  const lh = await host.evaluate(() => ({ l: window.__lsu.lang(), n: window.__lsu.TANONG.length, q: window.__lsu.TANONG[0].q }));
+  const lg = await guest.evaluate(() => ({ l: window.__lsu.lang(), n: window.__lsu.TANONG.length, q: window.__lsu.TANONG[0].q }));
+  check(lh.l === 'fil' && lg.l === 'en' && lh.q !== lg.q, 'host reads Filipino, guest reads English', lh.q + ' | ' + lg.q);
+  check(lh.n === lg.n, 'both phones have the same Tanong ni Lola list', lh.n + ' / ' + lg.n);
+}
 await host.click('#card [data-v="start"]');
 
 async function playUntilFinal(pages, ms) {

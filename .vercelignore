@@ -1,4 +1,4 @@
-# Only the game is deployed: index.html, vendor/, maps/, kids/ and content/. Tests, tools and docs stay in the repo.
+# Only the game is deployed: index.html, sw.js, vendor/, maps/, kids/ and content/. Tests, tools and docs stay in the repo.
 tests
 tools
 test-results
