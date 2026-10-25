@@ -68,10 +68,11 @@ for (const [label, w, h] of [['phone 360x740', 360, 740], ['phone landscape 740x
   await page.click('#card [data-v="next"]');
   check(await page.evaluate(() => document.querySelector('#modal').hidden), 'guide pages through to the end and closes');
   await opens('#mSprites', () => window.__lsu.screen === 'gallery', 'Mga karakter opens the character gallery');
-  await page.click('#animChips button:nth-child(5)');
-  check(await page.getAttribute('#animChips button:nth-child(5)', 'aria-pressed') === 'true', 'gallery animation chips select');
-  const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 10000 }), page.click('#galDl')]);
-  check(dl.suggestedFilename() === 'taympers-sprites.png', 'sprite sheet downloads outside Claude', dl.suggestedFilename());
+  await page.click('#animChips button:nth-child(5)'); await page.click('#faceChips button:nth-child(3)');
+  check(await page.getAttribute('#animChips button:nth-child(5)', 'aria-pressed') === 'true' && await page.getAttribute('#faceChips button:nth-child(3)', 'aria-pressed') === 'true', 'gallery: the move and facing chips select');
+  const gal = await page.evaluate(() => ({ names: [...document.querySelectorAll('#galNames span')].map(s => s.textContent).join(), dl: !!document.querySelector('#galDl'), moves: document.querySelectorAll('#animChips button').length }));
+  check(gal.names === 'Bunso,Neneng,Totoy,Jun' && gal.moves === 9, 'gallery: the four kids with their names, nine moves to pick', JSON.stringify(gal));
+  check(!gal.dl, 'gallery: the old sprite-sheet download is gone');
   await page.click('#galBack');
   const before = await page.getAttribute('#soundBtn', 'aria-pressed');
   await page.click('#soundBtn');
@@ -122,6 +123,47 @@ for (const [label, w, h] of [['phone', 390, 844], ['landscape phone', 844, 390]]
   await page.context().close();
 }
 
+// ---------- 2d. labels, touch targets, contrast and the keyboard path ----------
+{
+  // every visible button on screen is at least 44 px tall (the project's touch-target floor)
+  // (measured once the cards have finished their opening animation, which scales them to 94%)
+  const small = async page => (await page.waitForFunction(() => document.getAnimations().every(a => a.playState !== 'running' || a.effect.getComputedTiming().iterations === Infinity), null, { timeout: 3000 }).catch(() => {}), page.evaluate(() => [...document.querySelectorAll('button')].filter(b => { const r = b.getBoundingClientRect(), s = getComputedStyle(b); return r.width && r.height && !b.closest('[hidden]') && s.visibility !== 'hidden' && r.height < 44; }).map(b => (b.id || b.dataset.v || b.dataset.k || b.textContent.trim()).slice(0, 20) + ' ' + Math.round(b.getBoundingClientRect().height))));
+  const lum = c => { const v = c.match(/[\d.]+/g).slice(0, 3).map(Number).map(x => { x /= 255; return x <= .03928 ? x / 12.92 : ((x + .055) / 1.055) ** 2.4; }); return .2126 * v[0] + .7152 * v[1] + .0722 * v[2]; };
+  const page = await newPage({ viewport: { width: 360, height: 740 }, isMobile: true, hasTouch: true });
+  await page.click('#mSprites'); await page.click('#galBack');
+  await page.focus('#mGuide'); await page.keyboard.press('Tab'); await page.keyboard.press('Tab'); await page.keyboard.press('Tab');
+  check(await page.evaluate(() => document.activeElement.id) === 'soundBtn', 'keyboard: after the menu buttons Tab goes to the sound button under them', await page.evaluate(() => document.activeElement.id || document.activeElement.tagName));
+  await page.click('#mLocal');
+  check((await small(page)).length === 0, 'game setup: every button is at least 44 px tall', (await small(page)).join(', '));
+  await page.click('#card [data-v="go"]'); await page.waitForFunction(() => window.__lsu.screen === 'maps');
+  for (const k of ['plaza', 'palengke', 'aplaya', 'palayan']) {
+    await page.click(`#mapBtns [data-k="${k}"]`);
+    const bg = await page.evaluate(k => getComputedStyle(document.querySelector(`#mapBtns [data-k="${k}"]`)).backgroundColor, k);
+    const ratio = 1.05 / (lum(bg) + .05);
+    check(ratio >= 4.5, `map screen: the picked island (${k}) shows its white name at 4.5:1 or more`, ratio.toFixed(2) + ' on ' + bg);
+  }
+  await page.click('#mapBack'); await page.click('#card [data-v="back"]');
+  await page.click('#mGuide'); await page.click('#card [data-v="next"]'); await page.click('#card [data-v="next"]');
+  const lap = await page.evaluate(() => [...document.querySelectorAll('#card .legend li')].filter(li => { const b = li.querySelector('b'), d = li.lastElementChild; if (!b || !d || b === d) return false; const r1 = b.getBoundingClientRect(), r2 = d.getBoundingClientRect(); return r1.right > r2.left + 1 && r1.bottom > r2.top && r2.bottom > r1.top; }).map(li => li.textContent.slice(0, 20)));
+  check(/Mga espasyo/.test(await page.textContent('#card h2')) && lap.length === 0, 'guide page 3: no space name runs into its description at 360 px', lap.join(' | '));
+  await page.keyboard.press('Escape'); if (await page.isVisible('#card [data-v="back"]')) await page.click('#card [data-v="back"]');
+  if (!(await page.evaluate(() => document.querySelector('#modal').hidden))) { const b = await page.$('#card [data-v="close"],#card [data-v="next"]'); if (b) await b.click(); }
+  await page.evaluate(() => window.__lsu.startLocal({ n: 1, names: ['Ian'], cfg: { mode: 'party', rounds: 3, diff: 1 } }));
+  await page.waitForTimeout(800); await page.click('#menuBtn');
+  check((await small(page)).length === 0, 'pause menu: every button is at least 44 px tall', (await small(page)).join(', '));
+  await page.context().close();
+  // a landscape phone: Pagsasanay's five games all sit above its closing buttons, none hidden behind them
+  const land = await newPage({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true });
+  await land.click('#mHamon'); await land.click('#card [data-v="practice"]');
+  const cover = await land.evaluate(() => { const row = document.querySelector('#card > .row:last-child').getBoundingClientRect(), card = document.querySelector('#card').getBoundingClientRect();
+    return [...document.querySelectorAll('#card .pgrid .btn')].filter(b => { const r = b.getBoundingClientRect(); return r.bottom > row.top + 1 || r.bottom > card.bottom; }).map(b => b.dataset.v); });
+  check(cover.length === 0, 'landscape phone: all five Pagsasanay games are fully visible above Balik', cover.join(','));
+  await land.click('#card [data-v="patintero"]'); await land.click('#card [data-v="go"]');
+  await land.waitForFunction(() => window.__lsu.scene && window.__lsu.scene.peek, null, { timeout: 10000 });
+  check(await land.textContent('#roundPill') === 'Pagsasanay', 'Pagsasanay shows "Pagsasanay" in the top bar, not "Hamon"', await land.textContent('#roundPill'));
+  await land.context().close();
+}
+
 // ---------- 3. full Party match: bookkeeping ----------
 {
   const page = await newPage({}, '?debug&speed=4');
@@ -141,6 +183,10 @@ for (const [label, w, h] of [['phone', 390, 844], ['landscape phone', 844, 390]]
     check(log.filter(e => e.type === 'roll').length === 12, 'exactly 4 turns per round over 3 rounds', log.filter(e => e.type === 'roll').length + ' rolls');
     check(log.filter(e => e.type === 'mg').length === 3, 'one minigame per round');
     check(!(await page.evaluate(() => localStorage.getItem('lsu-save'))), 'finished game clears its save');
+    const head = await page.textContent('#card h2');
+    check(/Bida ng Isla!$|^Tabla!$/.test(head), 'the winner is named "Bida ng Isla"', head);
+    await page.waitForFunction(() => document.getAnimations().every(a => a.playState !== 'running' || a.effect.getComputedTiming().iterations === Infinity), null, { timeout: 3000 }).catch(() => {});
+    check(await page.evaluate(() => document.querySelector('#saveRes').getBoundingClientRect().height >= 44), '"I-save ang larawan" is at least 44 px tall', String(await page.evaluate(() => document.querySelector('#saveRes').getBoundingClientRect().height)));
     const [img] = await Promise.all([page.waitForEvent('download', { timeout: 10000 }), page.click('#saveRes')]);
     check(img.suggestedFilename() === 'taympers-resulta.png', 'result picture downloads');
   }
@@ -171,6 +217,8 @@ for (const [label, w, h] of [['phone', 390, 844], ['landscape phone', 844, 390]]
   await page.click('#card [data-v="go"]');
   await page.waitForSelector('#card [data-v="go"]');
   await page.click('#card [data-v="go"]');
+  await page.waitForFunction(() => window.__lsu.scene && window.__lsu.scene.peek, null, { timeout: 10000 }).catch(() => {});
+  check(await page.textContent('#roundPill') === 'Hamon', 'Hamon ng Araw keeps "Hamon" in the top bar', await page.textContent('#roundPill'));
   for (let i = 0; i < 600 && !(await page.isVisible('#card [data-v="again"]')); i++) { await page.evaluate(() => { const a = document.querySelector('#actionBtn'); if (!a.hidden) a.click(); }); await page.waitForTimeout(100); }
   const lb = await page.evaluate(() => JSON.parse(localStorage.getItem('lsu-lb') || '{}'));
   const today = Object.values(lb).flat().filter(e => e.daily && e.n === 'Tester');

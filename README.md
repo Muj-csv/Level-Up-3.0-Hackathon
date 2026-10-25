@@ -74,8 +74,8 @@ The game opens on a splash: the Taympers logo, the four 3D kids hopping onto the
 and a loading bar that follows the real loading (fonts, Three.js, the kids, the game text
 and the main menu's Plaza scene). When it is full, **Pindutin para magsimula** starts the
 sound (browsers need a first tap for it) and the splash fades into the main menu, already
-live, as its kids cheer. On devices without 3D the kids are drawn in 2D and the menu shows
-its picture. The tests skip the splash (`?debug`); add `&splash` to see it with the test
+live, as its kids cheer. On devices without 3D the splash shows pictures of the same 3D kids
+(`kids/sprites.png`) and the menu shows its picture. The tests skip the splash (`?debug`); add `&splash` to see it with the test
 hook on.
 
 ## Maps
@@ -185,8 +185,9 @@ Details in [`tests/README.md`](tests/README.md).
 | Taympers Maps: the four 3D islands, their boards and their life (`maps/`) | The Plaza, Palengke, Aplaya and Palayan maps and the map-screen and menu pictures (`maps/world/`, rendered from them with `tools/world-render.mjs` and `tools/title-render.mjs`) | Made by the team: Ian Patrick A. Flores (idea), using Claude (AI) to build them; see AI use |
 | Playwright (development only, not part of the game) | Automated play-tests | Apache-2.0 |
 
-All art is drawn in code: 2D on an HTML canvas, 3D as Three.js shapes built in code (no
-model files). The map-screen pictures are renders of those islands. All music and sound effects are synthesized in code with the Web Audio API.
+All art is drawn in code: 3D as Three.js shapes built in code (no model files), and the
+HUD on an HTML canvas. The 2D board's kid pictures (`kids/sprites.png`) are renders of the
+3D kids (`tools/kid-sprites.mjs`), so there is one set of kid designs. The map-screen pictures are renders of those islands. All music and sound effects are synthesized in code with the Web Audio API.
 No outside images, 3D models, audio or game code are used.
 
 ## Team
