@@ -2503,9 +2503,9 @@ function pikoPre(d){const R0=[[8,16],[14,24],[22,32]][d]||[14,24],t=R0[0]+Math.f
   for(let i=0;i<PIKO_CUM.length;i++)if(PIKO_CUM[i]<=t&&PIKO_CUM[i]>=R0[0])n=i;if(!n)n=PIKO_CUM.findIndex(v=>v>=R0[0]);return n;}
 function mkPiko(pre,mgi){
   const P=PIKO;let resolve;const L1=locals();
-  const sc={kind:'piko',view:{w:600,h:520},focusY:-30,t:0,cd:3.6,ended:false,actionLabel:L1.length===1?'Lukso!':null,hint:L1.length===1?'Pindot: isang paa · Diinan: dalawang paa':'Pindutin o diinan ang sariling hanay'};sc.done=new Promise(r=>resolve=r);
+  const sc={kind:'piko',view:{w:470,h:420},focusY:95,t:0,cd:3.6,ended:false,actionLabel:L1.length===1?'Lukso!':null,hint:L1.length===1?'Pindot: isang paa · Diinan: dalawang paa':'Pindutin o diinan ang sariling hanay'};sc.done=new Promise(r=>resolve=r);
   const courts=[];const court=c=>courts[c]||(courts[c]=pikoCourt(c));
-  const lanes=state.players.map((p,i)=>({p,i,mode:p.ctrl,x:(i-1.5)*135,c:0,si:0,hk:0,ch:0,hopT:0,patT:0,nextT:0,press:null,buf:null,flash:null,from:null,to:null,botK:0,shown:null}));
+  const lanes=state.players.map((p,i)=>({p,i,mode:p.ctrl,x:(i-1.5)*112,c:0,si:0,hk:0,ch:0,hopT:0,patT:0,nextT:0,press:null,buf:null,flash:null,from:null,to:null,botK:0,shown:null}));
   const publish=(L,th)=>{if(NET.on&&L.mode==='local')netMg({i:mgi,c:L.c,si:L.si,hk:L.hk,pt:L.patT>0?1:0,s:L.hk,d:sc.ended?1:0},th);};
   /* where a kid stands: before the court (si 0) or in the row of its last step; side -1/1 is one box of a pair */
   const spot=(L,c,si)=>{if(!si)return{x:L.x,y:P.START};const s=court(c).steps[si-1];return{x:L.x+s.side*P.BOXW*.5,y:P.START-(s.ri+1)*P.ROWH+P.ROWH*.5};};
@@ -2521,7 +2521,7 @@ function mkPiko(pre,mgi){
     if(m.c===L.c&&m.si===L.si+1){L.from=spot(L,L.c,L.si);L.to=spot(L,m.c,m.si);L.hopT=P.HOP;}else if(m.si<L.si&&m.c===L.c&&m.pt){L.patT=P.PATAY;msg(L,'Patay!','#FF8A7A');}
     L.c=m.c|0;L.si=m.si|0;L.hk=m.hk|0;L.shown={c:L.c,si:L.si,hk:L.hk};}
   function input(L,kind){if(sc.ended||L.patT>0)return;if(L.hopT>0||L.nextT>0){if(!L.buf)L.buf=kind;return;}apply(L,kind);}
-  const hold=holdInput(sc,{lane:(x,y)=>{const w=toWorld(x,y);return clamp(Math.round(w.x/135+1.5),0,3);},
+  const hold=holdInput(sc,{lane:(x,y)=>{const w=toWorld(x,y);return clamp(Math.round(w.x/112+1.5),0,3);},
     down:pid=>{const L=lanes[pid];if(!L||L.mode!=='local'||sc.cd>.6||sc.ended){return;}L.press={t0:sc.t,fired:false};},
     up:pid=>{const L=lanes[pid];if(!L||!L.press)return;const p=L.press;L.press=null;if(!p.fired)input(L,'tap');}});
   sc.peek=()=>lanes.map(L=>{const st=court(L.c).steps[L.si];return{need:st?st.need:null,hopping:L.hopT>0,patay:L.patT>0,between:L.nextT>0,pressing:!!L.press,fired:!!(L.press&&L.press.fired),held:hold.held(L.i),si:L.si,c:L.c,hk:L.hk,cd:sc.cd,t:sc.t};});
@@ -2534,7 +2534,7 @@ function mkPiko(pre,mgi){
       if(L.nextT>0){L.nextT-=dt;if(L.nextT<=0){L.c++;L.si=0;L.ch=0;publish(L,true);if(L.buf){const b=L.buf;L.buf=null;apply(L,b);}}}
       if(L.mode==='bot'){const n=pre[L.i],gap=Math.max(.34,17/Math.max(1,n));if(L.botK<n&&sc.t>=(L.botK+1)*gap&&L.hopT<=0&&L.nextT<=0){L.botK++;apply(L,court(L.c).steps[L.si].need);}}
       else if(L.mode==='remote')follow(L);}
-    if(sc.t>=P.T){sc.ended=true;hold.releaseAll();lanes.forEach(L=>publish(L,false));Sfx.whistle();setTimeout(()=>resolve({scores:lanes.map(L=>Math.max(0,L.hk))}),900);}
+    if(sc.t>=P.T){sc.ended=true;sc.releaseAll();lanes.forEach(L=>publish(L,false));Sfx.whistle();setTimeout(()=>resolve({scores:lanes.map(L=>Math.max(0,L.hk))}),900);}
   };
   /* footprints: one per foot that lands in the box, so the court reads without colour */
   function foot(g,x,y,s,flip){g.save();g.translate(x,y);g.scale(flip?-s:s,s);g.beginPath();g.ellipse(0,2,4.2,7,0,0,TAU);g.fillStyle='rgba(59,35,22,.62)';g.fill();for(let q=0;q<4;q++){g.beginPath();g.arc(-3+q*2.2,-6.6+Math.abs(q-1.5)*.7,1.3,0,TAU);g.fill();}g.restore();}
@@ -2550,7 +2550,7 @@ function mkPiko(pre,mgi){
     g.font='900 10px '+BODY;g.textAlign='center';g.textBaseline='middle';g.fillStyle='rgba(59,35,22,.7)';g.fillText(C.name,x,P.START-C.rows.length*P.ROWH-10);}
   sc.draw=g=>{
     const list=drawArenaBase(g);
-    if(L1.length>1)for(const L of lanes)if(L.mode==='local'){rr(g,L.x-60,-150,120,P.START+30+150,12);g.fillStyle=tint(L.p.color,.5).replace('rgb','rgba').replace(')',',.22)');g.fill();}
+    if(L1.length>1)for(const L of lanes)if(L.mode==='local'){rr(g,L.x-54,-150,108,P.START+30+150,12);g.fillStyle=tint(L.p.color,.5).replace('rgb','rgba').replace(')',',.22)');g.fill();}
     for(const L of lanes){drawCourt(g,L);g.beginPath();g.moveTo(L.x-36,P.START+6);g.lineTo(L.x+36,P.START+6);g.strokeStyle='rgba(255,255,255,.9)';g.lineWidth=3;g.stroke();
       const u=L.hopT>0?1-L.hopT/P.HOP:1,a=L.hopT>0&&L.from?L.from:spot(L,L.c,L.si),b=L.hopT>0&&L.to?L.to:a,x=lerp(a.x,b.x,Ez.inOut(u)),y=lerp(a.y,b.y,Ez.inOut(u)),lift=L.hopT>0&&!RM?Math.sin(Math.PI*u)*16:0;
       const two=L.si>0&&court(L.c).steps[L.si-1]&&court(L.c).steps[L.si-1].need==='hold';
@@ -3366,7 +3366,8 @@ function init3D(){
     const rope=new T3.Mesh(new T3.TubeGeometry(new T3.CatmullRomCurve3(Array.from({length:9},(_,i)=>new T3.Vector3(lerp(-292,292,i/8),102-Math.sin(Math.PI*i/8)*22,-262))),20,.9,5),M('#5A3A22'));G3.add(rope);
     arena=G3;return G3;}
   function tagOf(p){const kl=keyLabel(p);return p.ctrl==='remote'?'online':(p.ctrl==='bot'?'bot':(kl?'['+kl+']':''));}
-  function badge(g,x,y,z,col,txt,name,sub,tag){const s=B3.proj(x,y,z),k=clamp(s.k*1.15,.62,1.25);g.save();g.translate(clamp(s.x,18,W-16-96*k),s.y);g.scale(k,k);g.beginPath();g.arc(0,0,15,0,TAU);fs(g,col,INK,2.5);otext(g,String(txt),0,1,String(txt).length>3?11:16,'#fff',4);
+  /* col: an optional screen column {x,w} for lanes too close together on a narrow screen */
+  function badge(g,x,y,z,col,txt,name,sub,tag,colm){const s=B3.proj(x,y,z),k=colm?clamp(Math.min(s.k*1.15,colm.w/112),.5,1.25):clamp(s.k*1.15,.62,1.25);g.save();g.translate(colm?colm.x+17*k:clamp(s.x,18,W-16-96*k),s.y);g.scale(k,k);g.beginPath();g.arc(0,0,15,0,TAU);fs(g,col,INK,2.5);otext(g,String(txt),0,1,String(txt).length>3?11:16,'#fff',4);
     g.textAlign='left';g.textBaseline='middle';g.lineJoin='round';const tx=(t,yy,f)=>{g.font=f;g.lineWidth=4;g.strokeStyle=PAPER;g.strokeText(t,20,yy);g.fillStyle=INK;g.fillText(t,20,yy);};
     if(name)tx(name,sub?-5:0,'900 13px '+BODY);if(sub)tx(sub,9,'800 10.5px '+BODY);if(tag)tx(tag,sub?23:14,'900 10px '+BODY);g.restore();}
   function tinCan(){const g=new T3.Group();const c=mesh(new T3.CylinderGeometry(9,9,18,16),M('#C9D1D9'),0,9,0);ol(c,.06);g.add(c,mesh(new T3.CylinderGeometry(9.3,9.3,8,16),M('#E2452E'),0,9,0),mesh(new T3.CylinderGeometry(9.4,9.4,1.6,16),M('#F2B21B'),0,9,0));shadowAll(g);return g;}
@@ -3515,7 +3516,8 @@ function init3D(){
       over=g=>{const k=v.cur();if(!v.clueOn(k))return;const o=rounds[v.r].spots[k],s=o.s,u=v.rt-v.arrive(k)-s.at,a=Math.min(1,u/.08,(v.R0().clue-u)/.08);
         for(const {st,cm} of views){if(st.pl.found.has(o.key)&&st.pl.mode==='local')continue;VV.set(s.x,0,-10);const dist=VV.distanceTo(cm.position);VV.project(cm);
           g.save();g.beginPath();g.rect(st.x,st.y,st.w,st.h);g.clip();drawClue(g,s,st.x+(VV.x+1)/2*st.w,st.y+(1-VV.y)/2*st.h,st.h/(2*dist*TAN),a,v.rt);g.restore();}};}
-    else if(kind==='piko'){const PK=v.P,chalk=new T3.MeshBasicMaterial({color:0xFFFFFF,transparent:true,opacity:.92}),footM=new T3.MeshBasicMaterial({color:0x3B2316,transparent:true,opacity:.62,depthWrite:false}),
+    else if(kind==='piko'){cam.d*=1.14;   /* a little wider than the 2D view, so the outer courts stay on a tall phone */
+      const PK=v.P,chalk=new T3.MeshBasicMaterial({color:0xFFFFFF,transparent:true,opacity:.92}),footM=new T3.MeshBasicMaterial({color:0x3B2316,transparent:true,opacity:.62,depthWrite:false}),
         hiM=new T3.MeshBasicMaterial({color:0xFFE98C,transparent:true,opacity:.55,depthWrite:false}),footG=new T3.CircleGeometry(4.4,12),hiG=new T3.PlaneGeometry(PK.BOXW-4,PK.ROWH-4);
       footG.rotateX(-Math.PI/2);footG.scale(1,1,1.6);hiG.rotateX(-Math.PI/2);
       /* each lane's court in chalk, with a footprint per foot that lands in a box and the pamato in its box; built again when the lane moves to the next court */
@@ -3531,7 +3533,7 @@ function init3D(){
           o.hi.visible=!!act&&L.mode==='local';if(act){const s=act,x=L.x+(s.side?s.side*PK.BOXW*.5:0);o.hi.position.set(x,1.1,PK.START-(s.ri+1)*PK.ROWH+PK.ROWH/2);o.hi.scale.x=C.rows[s.ri]===2&&!s.side?2:1;}
           const u=L.hopT>0?1-L.hopT/PK.HOP:1,a=L.hopT>0&&L.from?L.from:v.spot(L,L.c,L.si),b=L.hopT>0&&L.to?L.to:a,x=lerp(a.x,b.x,Ez.inOut(u)),z=lerp(a.y,b.y,Ez.inOut(u));
           pose(kidOf(L.p),x,z,{dir:'back',lift:L.hopT>0&&!RM?Math.sin(Math.PI*u)*16:0,mood:L.patT>0?'sad':(L.hopT>0?'hop':L.p.mood),sy:L.press&&!L.press.fired?.92:1,blink:L.p.blink>0},1.05);}};
-      over=g=>{for(const o of L3){const L=o.L;badge(g,L.x-30,0,PK.START+44,L.p.color,Math.max(0,L.hk),L.p.name,'hakbang',tagOf(L.p));
+      over=g=>{for(const o of L3){const L=o.L;badge(g,L.x-30,0,PK.START+44,L.p.color,Math.max(0,L.hk),L.p.name,'hakbang',tagOf(L.p),{x:W*L.i/4+2,w:W/4-4});
           if(L.flash){const m=L.flash,s=B3.proj(L.x,60,PK.START-PK.ROWH*3);g.save();g.globalAlpha=Math.min(1,(1-m.t)/.3);otext(g,m.txt,s.x,s.y-m.t*14,15,m.col,4);g.restore();}
           if(L.press&&L.mode==='local'){const sp=L.hopT>0&&L.to?L.to:v.spot(L,L.c,L.si),s=B3.proj(sp.x+20,70,sp.y),k=Math.min(1,(v.t()-L.press.t0)/PK.HOLD);g.beginPath();g.arc(s.x,s.y,9,-Math.PI/2,-Math.PI/2+TAU*k);g.strokeStyle=k>=1?'#2FA35A':'#F2B21B';g.lineWidth=4.5;g.stroke();}}};}
     shadowAll(root);
