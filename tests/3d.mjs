@@ -1,6 +1,7 @@
 // 3D play-test: the board and minigames drawn with Three.js (WebGL through SwiftShader, so no GPU is needed).
-// Checks the 3D title and board, reach rings, screen-to-board mapping, the 3D/2D setting, save and resume
-// with Kasama allies, every minigame's 3D arena, and the 2D fallback when Three.js cannot load.
+// Checks the 3D title and board, reach rings, screen-to-board mapping, the Kalidad setting (always 3D), save and resume
+// with Kasama allies, every minigame's 3D arena, the 2D fallback when Three.js cannot load, the 3D gallery and result
+// picture, and a slow kids/kids.js (the board waits in 2D, never an older kid).
 // Screenshots go to test-results/3d-*.png. Run: node tests/3d.mjs
 import fs from 'fs';
 import path from 'path';
@@ -69,21 +70,13 @@ const step = page => page.evaluate(() => {
   const ms = await page.evaluate(() => window.__lsu.bench(10));
   console.log(`      (board frame in software WebGL: ${ms.toFixed(1)} ms; a phone GPU is much faster)`);
 
-  // the 3D/2D setting in the pause menu
+  // graphics in the pause menu: Kalidad (Mababa, Katamtaman, Mataas), always 3D; the old Grapiko 3D/2D switch is gone
   await page.click('#menuBtn');
-  const row = await page.$('#menuCard button[data-k="g3d"][data-val="0"]');
-  check(!!row, 'pause menu has the Grapiko 3D/2D setting');
-  if (row) {
-    // the switch shows on the next drawn frame, which software WebGL can take a while to reach
-    await row.click(); await page.waitForFunction(() => !window.__lsu.b3.on, null, { timeout: 20000 }).catch(() => {});
-    const two = await page.evaluate(() => ({ on: window.__lsu.b3.on, cv3: document.getElementById('stage3d').hidden, saved: JSON.parse(localStorage.getItem('lsu-prefs')).g3d }));
-    check(!two.on && two.cv3 && two.saved === false, 'switching to 2D hides the 3D canvas and is saved', JSON.stringify(two));
-    await page.click('#menuCard [data-v="close"]'); await page.waitForTimeout(500); await shot(page, 'board-2d');
-    await page.click('#menuBtn'); await page.click('#menuCard button[data-k="g3d"][data-val="1"]'); await page.waitForFunction(() => window.__lsu.b3.on, null, { timeout: 20000 }).catch(() => {});
-    const three = await page.evaluate(() => window.__lsu.b3.on && !document.getElementById('stage3d').hidden);
-    check(three, 'switching back to 3D shows the 3D board again');
-    await page.click('#menuCard [data-v="close"]');
-  }
+  const g = await page.evaluate(() => ({ q: [...document.querySelectorAll('#menuCard button[data-k="gq"]')].map(b => b.textContent), g3d: !!document.querySelector('#menuCard button[data-k="g3d"]') }));
+  check(g.q.join() === 'Mababa,Katamtaman,Mataas' && !g.g3d, 'pause menu: Kalidad has three choices and there is no 2D switch', JSON.stringify(g));
+  await page.click('#menuCard button[data-k="gq"][data-val="low"]'); await page.waitForTimeout(300);
+  check(await page.evaluate(() => window.__lsu.b3.on && !document.getElementById('stage3d').hidden), 'Mababa keeps the board in 3D');
+  await page.click('#menuCard button[data-k="gq"][data-val="mid"]'); await page.click('#menuCard [data-v="close"]'); await page.waitForTimeout(500);
 
   // save and resume keep the Kasama allies (given here to a bot, then saved at the next turn)
   await page.evaluate(() => { window.__lsu.state.players[1].allies.push({ n: 'Lito', look: 0, x: 0, y: 0 }); });
@@ -172,7 +165,7 @@ for (const kind of Object.keys(MASH)) {
   await page.click('#mLocal'); await page.click('#card [data-v="go"]'); await page.click('#mapGo'); await page.waitForTimeout(1500);
   check(await page.evaluate(() => window.__lsu.screen === 'game' && window.__lsu.board.id === 'plaza' && document.querySelector('#loadIsl').hidden), 'no Three.js: a map game starts at once on the 2D board');
   await page.click('#menuBtn');
-  check(!(await page.$('#menuCard button[data-k="g3d"]')), 'no Three.js: the menu does not offer a 3D setting');
+  check(!(await page.$('#menuCard button[data-k="g3d"]')) && !(await page.$('#menuCard button[data-k="gq"]')), 'no Three.js: the menu offers no graphics settings (the 2D board is automatic)');
   await page.context().close();
 }
 
@@ -189,6 +182,40 @@ for (const kind of Object.keys(MASH)) {
   const t = await page.evaluate(() => ({ gone: !document.querySelector('#splash'), screen: window.__lsu.screen, live: document.getElementById('titleCv').classList.contains('on'), freed: !window.__lsu.hero.ctl }));
   check(t.gone && t.screen === 'title' && t.live && t.freed, 'splash: the tap opens the live main menu and frees the splash kids', JSON.stringify(t));
   await page.context().close();
+}
+// ---------- 5. one set of kids: the 3D gallery, the result picture, and a slow kids/kids.js ----------
+{
+  const page = await newPage('3d');
+  await page.click('#mSprites');
+  const g = await page.waitForFunction(() => window.__lsu.gal.ctl, null, { timeout: 120000 }).then(() => true, () => false);
+  check(g && await page.evaluate(() => !document.querySelector('#galDl')), 'gallery: the four 3D kids (kids/hero.js), no sprite-sheet download');
+  await page.click('#animChips button:nth-child(4)'); await page.waitForTimeout(3000); await shot(page, 'gallery');
+  await page.click('#galBack');
+  check(await page.evaluate(() => !window.__lsu.gal.ctl), 'gallery: its 3D kids are freed when it closes');
+  await page.evaluate(() => window.__lsu.startLocal({ n: 1, names: ['Ian'], cfg: { mode: 'party', rounds: 3, diff: 1, map: 'ulap' } }));
+  await page.waitForFunction(() => window.__lsu.b3.on, null, { timeout: 60000 });
+  const png = await page.evaluate(() => window.__lsu.resultPng());
+  fs.writeFileSync(path.join(OUT, '3d-result.png'), Buffer.from(png.split(',')[1], 'base64'));
+  check(png.length > 200000, 'result picture: drawn with the 3D kids', png.length + ' chars');
+  await page.context().close();
+}
+{
+  // kids/kids.js arrives 12 s late: the board waits in 2D with the kids' pictures and the HUD shows no old kid
+  const ctx = await browser.newContext({ viewport: { width: 640, height: 400 }, deviceScaleFactor: 1 });
+  await renderer(ctx, '3d');
+  await ctx.route('**/kids/kids.js', async r => { await new Promise(res => setTimeout(res, 12000)); await r.continue(); });
+  const page = await ctx.newPage(); allErrs.push(watchErrors(page, 'slow kids'));
+  await page.goto(srv.url + '?debug');
+  await page.waitForFunction(() => window.__lsu && window.__lsu.screen === 'title' && window.__lsu.b3.ok, null, { timeout: 60000 });
+  await page.evaluate(() => window.__lsu.startLocal({ n: 1, names: ['Ian'], cfg: { mode: 'party', rounds: 3, diff: 1, map: 'ulap' } }));
+  await page.waitForTimeout(1500);
+  const early = await page.evaluate(() => { const L = window.__lsu; const cvs = [...document.querySelectorAll('#players canvas')];
+    const inked = cvs.every(c => { const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let n = 0; for (let i = 3; i < d.length; i += 4) if (d[i]) n++; return n > 50; });
+    return { kids: !!L.b3.kidsMod, on: L.b3.on, inked }; });
+  check(!early.kids && !early.on && early.inked, 'slow kids: the board waits in 2D and every portrait shows a placeholder or the kid picture (no older kid)', JSON.stringify(early));
+  const later = await page.waitForFunction(() => window.__lsu.b3.kidsMod && window.__lsu.b3.on, null, { timeout: 90000 }).then(() => true, () => false);
+  check(later, 'slow kids: once kids/kids.js arrives the board switches to 3D');
+  await ctx.close();
 }
 check(allErrs.flat().length === 0, 'no script errors across all 3D runs', allErrs.flat().slice(0, 3).join(' | '));
 await browser.close(); srv.close(); done();

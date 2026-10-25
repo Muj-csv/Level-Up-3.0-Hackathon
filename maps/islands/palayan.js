@@ -311,6 +311,22 @@ const cartPts = new THREE.CatmullRomCurve3([cartA, V(cartA.x * .55, cartA.z + .2
 const canalPts = new THREE.CatmullRomCurve3(STREAM).getSpacedPoints(120).map(p => { p.y = H(p.x, p.z) + .05; return p; });
 const PATHS = [[mainPts, 2.3], [cartPts, 2.6], [trailXZ, 2.0], [canalPts, 3.6]];
 const nearPath = (x, z, d) => PATHS.some(([pts, w]) => pts.some(p => Math.hypot(p.x - x, p.z - z) < d + w / 2));
+// palms keep their crowns off the board: a crown (fronds reach ~4 m) over the path would hide spaces from the board camera.
+// First the palm leans another way; if that is not enough the trunk steps away from the path (staying on the island).
+const BOARD_PTS = [...mainPts, ...trailXZ], PALM_CLEAR = 4.6;
+// the game's board camera looks north from the south, steeply (64-70 deg): a crown h m up shows about .45 h m further north
+const crownGap = (x, z, d, l, h) => { const cx = x + Math.cos(d) * l, cz = z - Math.sin(d) * l; let m = 1e9; for (const p of BOARD_PTS) m = Math.min(m, Math.hypot(p.x - cx, p.z - cz), Math.hypot(p.x - cx, p.z - (cz - h * .45))); return m; };
+function palmOffBoard(x, z, l, d, h) {
+  if (crownGap(x, z, d, l, h) >= PALM_CLEAR) return { x, z, d, ok: true };
+  let best = { x, z, d, g: crownGap(x, z, d, l, h) };
+  for (let k = 1; k < 16; k++) { const dd = d + k * Math.PI / 8, g = crownGap(x, z, dd, l, h); if (g > best.g) best = { x, z, d: dd, g }; }
+  if (best.g >= PALM_CLEAR) return { ...best, ok: true };
+  let np = null, nd = 1e9; for (const p of BOARD_PTS) { const q = Math.hypot(p.x - x, p.z - z); if (q < nd) { nd = q; np = p; } }
+  const ux = (x - np.x) / (nd || 1), uz = (z - np.z) / (nd || 1), away = Math.atan2(-uz, ux);
+  for (let s = .5; s <= 6; s += .5) { const nx = x + ux * s, nz = z + uz * s; if (!inIsland(nx, nz, .94)) break; const g = crownGap(nx, nz, away, l, h); if (g >= PALM_CLEAR) return { x: nx, z: nz, d: away, ok: true }; }
+  return { ...best, ok: false };
+}
+
 const onBridge = p => p.z > -9 && distPoly(p.x, p.z, canalPts) < 2.2;
 const interior = (x, z, m = 0) => Math.hypot(x / MA, (z - MZ) / MB) < 1 - m;
 const onIslandFlat = (x, z) => inIsland(x, z, .9) && z > -9;
@@ -415,7 +431,7 @@ const terrainG = group('terrain'); { const body = islandBody('island_body', RX, 
   [[31, 14], [-23, -9.5], [24, -8], [33, -13]].forEach(([x, z], k) => { og.add(mangoTree('mangga_' + k, x, z, .9 + rnd() * .3)); chk('mango', x, z); });
   og.add(bambooClump('kawayan_1', -30, -9.5), bambooClump('kawayan_2', -33.5, -3), bambooClump('kawayan_3', 29.5, -14.5));
   og.add(haystack('mandala_1', 33.5, 15.8), haystack('mandala_2', -29.5, -6.5), haystack('mandala_3', 27, -12), haystack('mandala_4', -8, 27));
-  [[-33, 13], [29.5, 18.5], [-37, -1], [4, 30], [-6, 30.5], [-25, -13]].forEach(([x, z], k) => { og.add(palm('niyog_' + k, x, z, 7 + rnd() * 1.2, 1 + rnd() * .6, rnd() * TAU)); chk('palm', x, z); });
+  [[-33, 13], [29.5, 18.5], [-37, -1], [4, 30], [-6, 30.5], [-25, -13]].forEach(([x, z], k) => { const h = 7 + rnd() * 1.2, l = 1 + rnd() * .6, d = rnd() * TAU, q = palmOffBoard(x, z, l, d, h), pl = palm('niyog_' + k, q.x, q.z, h, l, q.d); if (q.ok) { og.add(pl); chk('palm', q.x, q.z); } else warn('palm left out (over the board):', k); });
   props.add(bake(og)); }
 
 // ---------- MOUNTAIN FOREST (on slopes above the terraces) ----------
@@ -475,10 +491,12 @@ function tileTex(type) { const ev = EVENTS[type]; return tex(C(256, 256, (g, s) 
   else if (type === 'bayanihan') { shape(() => { g.moveTo(70, 120); g.lineTo(128, 70); g.lineTo(186, 120); g.lineTo(186, 160); g.lineTo(70, 160); g.closePath(); }); for (const x of [80, 128, 176]) { g.beginPath(); g.arc(x, 196, 14, 0, TAU); g.fill(); } }
 }), 0, 'tile_' + type); }
 const tileMats = Object.fromEntries(Object.keys(TYPES).map(t => [t, own(std('tile_' + t, { map: tileTex(t), roughness: .45 }))]));
-const SPM = { 0: 'simula', 3: 'tanong', 4: 'ani', 6: 'utang', 8: 'sarisari', 10: 'swerte', 12: 'utang', 13: 'kasama', 15: 'tanim', 17: 'jackenpoy', 18: 'utang', 22: 'balang', 24: 'tanong', 25: 'utang', 26: 'swerte', 29: 'ani', 31: 'tikbalang', 33: 'utang', 35: 'kasama', 37: 'sarisari', 39: 'bayanihan',
-  41: 'utang', 42: 'jackenpoy', 46: 'ulan', 47: 'tanong', 49: 'tikbalang', 51: 'utang', 53: 'swerte', 55: 'ani', 57: 'utang', 58: 'balang', 62: 'tanim', 64: 'tanong', 66: 'kalabaw', 68: 'bayanihan', 69: 'sarisari', 71: 'tikbalang', 72: 'kasama', 74: 'utang', 76: 'swerte', 78: 'ulan' };
+const SPM = { 0: 'simula', 3: 'tanong', 4: 'ani', 5: 'sarisari', 6: 'utang', 8: 'sarisari', 9: 'ani', 10: 'swerte', 12: 'utang', 13: 'kasama', 14: 'kalabaw', 15: 'tanim', 17: 'jackenpoy', 18: 'utang', 19: 'swerte',
+  21: 'kasama', 22: 'balang', 24: 'tanong', 25: 'utang', 26: 'swerte', 28: 'tanim', 29: 'ani', 31: 'tikbalang', 32: 'tanong', 33: 'utang', 35: 'kasama', 37: 'sarisari', 38: 'bayanihan', 39: 'bayanihan',
+  41: 'utang', 42: 'jackenpoy', 43: 'jackenpoy', 46: 'ulan', 47: 'tanong', 48: 'sarisari', 49: 'tikbalang', 51: 'utang', 52: 'ani', 53: 'swerte', 55: 'ani', 57: 'utang', 58: 'balang', 59: 'swerte',
+  61: 'kasama', 62: 'tanim', 64: 'tanong', 66: 'tanim', 68: 'bayanihan', 69: 'sarisari', 70: 'tanong', 71: 'tikbalang', 72: 'kasama', 74: 'utang', 76: 'swerte', 77: 'bayanihan', 78: 'ulan' };
 const MAIN = Array.from({ length: NM }, (_, i) => SPM[i] || 'piso');
-const SPT = { 2: 'utang', 4: 'balang', 6: 'swerte', 8: 'ani', 10: 'tanong', 11: 'swerte', 13: 'tanim', 15: 'jackenpoy', 17: 'ani', 19: 'utang', 21: 'swerte' };
+const SPT = { 2: 'utang', 4: 'balang', 5: 'jackenpoy', 6: 'swerte', 8: 'ani', 9: 'sarisari', 10: 'tanong', 11: 'swerte', 13: 'tanim', 15: 'jackenpoy', 16: 'ani', 17: 'ani', 19: 'utang', 20: 'swerte', 21: 'swerte' };
 const TRAIL = Array.from({ length: NT }, (_, j) => SPT[j] || 'piso');
 const KOR = new Set(['M05', 'M16', 'M27', 'M38', 'M45', 'M54', 'M63', 'M75', 'T05', 'T16']);
 const pad = n => String(n).padStart(2, '0');
@@ -489,8 +507,8 @@ const pad = n => String(n).padStart(2, '0');
     const flood = id[0] === 'M' && PADDIES.some(q => Math.hypot(q.x - p.x, q.z - p.z) < 7.5); const node = { id, type, x: +p.x.toFixed(2), y: +y.toFixed(2), z: +p.z.toFixed(2), next: [], koronaSpot: KOR.has(id), floodable: flood }; g.userData = node; graph.push(node); spaces.add(g); };
   MAIN.forEach((t, i) => addSpace('M' + pad(i), t, M(i))); TRAIL.forEach((t, j) => addSpace('T' + pad(j), t, tc.getPointAt((j + 1) / (NT + 1))));
   graph.forEach(n => { const k = +n.id.slice(1); n.next.push(n.id[0] === 'M' ? 'M' + pad((k + 1) % NM) : (k === NT - 1 ? 'M' + pad(MERGE) : 'T' + pad(k + 1))); });
-  graph.find(n => n.id === 'M' + pad(FORK)).next.push('T00'); Object.assign(graph.find(n => n.id === 'M' + pad(CART_A)), { kalabawTo: 'M' + pad(CART_B), kalabawCost: 6 });
-  spaces.userData = { board: 'palayan', start: 'M00', mainLoop: NM, terraceTrail: NT, fork: 'M' + pad(FORK), merge: 'M' + pad(MERGE), kalabawCart: { from: 'M' + pad(CART_A), to: 'M' + pad(CART_B), cost: 6 }, koronaSpots: [...KOR], floodableSpaces: graph.filter(n => n.floodable).map(n => n.id), activeKoronaRange: [1, 5], nodes: graph };
+  graph.find(n => n.id === 'M' + pad(FORK)).next.push('T00'); Object.assign(graph.find(n => n.id === 'M' + pad(CART_B)), { kalabawTo: 'M' + pad(CART_A), kalabawCost: 8 });   // the kariton leaves from M14 for M66 (along its road)
+  spaces.userData = { board: 'palayan', start: 'M00', mainLoop: NM, terraceTrail: NT, fork: 'M' + pad(FORK), merge: 'M' + pad(MERGE), kalabawCart: { from: 'M' + pad(CART_B), to: 'M' + pad(CART_A), cost: 8 }, koronaSpots: [...KOR], floodableSpaces: graph.filter(n => n.floodable).map(n => n.id), activeKoronaRange: [1, 5], nodes: graph };
   window.__palayanBoard = spaces.userData; root.add(spaces); }
 
 let tris = 0; root.traverse(o => { if (o.isMesh) tris += (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3; });

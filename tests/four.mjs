@@ -90,7 +90,9 @@ const took = await until(host, () => window.__lsu.state.players[2].ctrl === 'bot
 check(waiting && took, 'A. guest 2 drops out past the grace: a bot takes its seat', await seat(host, 2));
 await offline(g2, false);
 const back = await until(host, () => window.__lsu.state.players[2].ctrl === 'remote', 150000);
-check(back && (await seat(g2, 2)) === 'local', 'A. guest 2 gets its seat back after it returns', (await seat(host, 2)) + ' / ' + (await seat(g2, 2)));
+// the host hands the seat back first; guest 2's own device applies it when that decision reaches it (as in rejoin.mjs)
+const backGuest = back && await until(g2, () => window.__lsu.state.players[2].ctrl === 'local', 30000);
+check(back && backGuest, 'A. guest 2 gets its seat back after it returns', (await seat(host, 2)) + ' / ' + (await seat(g2, 2)));
 
 // B. guest 3's page reloads
 const g3 = guests[2];
