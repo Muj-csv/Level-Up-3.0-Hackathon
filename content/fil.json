@@ -103,6 +103,14 @@
       "reviewed_at": null
     },
     {
+      "id": "piko-pamato",
+      "q": "Sa Piko, ano ang ginagawa sa kahong may pamato?",
+      "a": ["Nilalaktawan ito", "Tinatapakan ito nang dalawang paa", "Doon nagpapahinga"],
+      "f": "Hindi tinatapakan ang kahong may pamato; pupulutin lang ito pagbalik, nang hindi natutumba.",
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
       "id": "plaza-kiosko",
       "island": "plaza",
       "q": "Ano ang kiosko na madalas makikita sa gitna ng plaza ng bayan?",
@@ -280,10 +288,24 @@
       "real": "Pipikit at bibilang ang taya habang nagtatago ang iba, at kinakanta ang \"Tagu-taguan, maliwanag ang buwan…\". Pagkatapos, hahanapin niya ang mga nagtatago. Kapag may nakita siya, uunahan niyang makabalik sa base ang nakita. Ang unang nahuli ang magiging bagong taya.",
       "reviewed_by": null,
       "reviewed_at": null
+    },
+    "piko": {
+      "title": "Piko",
+      "aka": "Tinatawag ding piko-piko; hopscotch sa Ingles",
+      "chip": "4 na manlalaro · sabay-sabay",
+      "unit": "hakbang",
+      "labas": "Gumuhit ng piko sa ligtas na semento o lupa gamit ang tisa o uling, at maghanap ng patag na pamato. Puwede kahit dalawa lang kayo.",
+      "rules": [
+        "Pindot: isang paa sa iisang kahon. Diinan: dalawang paa sa magkatabing kahon.",
+        "Laktawan ang kahong may pamato. Kung nasa magkatabi ito, isang paa lang sa kabilang kahon.",
+        "Maling lukso: Patay! Balik sa simula at bawas ang hakbang sa guhit na iyon. +2 bawat tapos na guhit, 20 segundo."
+      ],
+      "real": "Iginuguhit ng tisa o uling ang mga kahon sa lupa. Ihahagis ng manlalaro ang pamato (patag na bato o piraso ng paso) sa unang kahon, lulundag sa isang paa sa iisang kahon at dalawang paa sa magkatabi, at lalaktawan ang kahong may pamato. Pagbalik, pupulutin niya ang pamato nang hindi natutumba. Patay kapag tumapak sa guhit, natumba o nagkamali ng kahon.",
+      "reviewed_by": null,
+      "reviewed_at": null
     }
   },
   "soon": [
-    { "t": "Piko", "d": "Lukso sa isang paa sa mga kahong iginuhit." },
     { "t": "Agawan Base", "d": "Dalawang koponan, dalawang base, maraming takbuhan." },
     { "t": "Sungka", "d": "Tablang may butas at mga sigay. Laro ng diskarte." }
   ],

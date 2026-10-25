@@ -1412,6 +1412,10 @@ let actionResolver=null;
 let actionAt=0;
 function waitAction(label){actionBtn.textContent=label;actionBtn.hidden=false;setHint('');actionAt=performance.now();return new Promise(res=>{actionResolver=()=>{actionResolver=null;actionBtn.hidden=true;itemBtn.hidden=true;res();};});}
 actionBtn.addEventListener('click',()=>{Sfx.init();if(scene&&scene.action)scene.action();else if(actionResolver)actionResolver();});
+/* hold scenes (Piko) also hear the button's press and release; each finger is its own pointer, and a cancelled or
+   lost touch counts as a release. Taps still reach scene.action through click */
+actionBtn.addEventListener('pointerdown',e=>{if(!scene||!scene.actionDown)return;Sfx.init();try{actionBtn.setPointerCapture(e.pointerId);}catch(_){}scene.actionDown(e.pointerId);});
+for(const ev of ['pointerup','pointercancel','lostpointercapture'])actionBtn.addEventListener(ev,e=>{if(scene&&scene.actionUp)scene.actionUp(e.pointerId);});
 itemBtn.addEventListener('click',()=>{const on=itemBtn.getAttribute('aria-pressed')!=='true';itemBtn.setAttribute('aria-pressed',String(on));applyItemPreview(on);});
 mapBtn.addEventListener('click',()=>{state.overview=!state.overview;mapBtn.setAttribute('aria-pressed',String(state.overview));});
 /* the speaker button mutes or restores music and effects together; the menu sets them one by one */
@@ -1785,7 +1789,7 @@ const PASS_KEY='lsu-pass';let PASS_MEM=null;
 function passGet(){if(PASS_MEM)return PASS_MEM;try{const o=JSON.parse(localStorage.getItem(PASS_KEY)||'{}');return{played:o.played||{},labas:o.labas||{}};}catch(e){return{played:{},labas:{}};}}
 function passSave(o){PASS_MEM=null;try{localStorage.setItem(PASS_KEY,JSON.stringify(o));}catch(e){PASS_MEM=o;}}
 function stampGame(kind){const o=passGet();const first=!o.played[kind];o.played[kind]=(o.played[kind]|0)+1;passSave(o);return first;}
-const SOON=[{t:'Piko',d:'Lukso sa isang paa sa mga kahong iginuhit.'},{t:'Agawan Base',d:'Dalawang koponan, dalawang base, maraming takbuhan.'},{t:'Sungka',d:'Tablang may butas at mga sigay. Laro ng diskarte.'}];
+const SOON=[{t:'Agawan Base',d:'Dalawang koponan, dalawang base, maraming takbuhan.'},{t:'Sungka',d:'Tablang may butas at mga sigay. Laro ng diskarte.'}];
 function labasBox(def){return def.labas?'<div class="labas"><b>Subukan sa labas</b><p>'+esc(def.labas)+'</p></div>':'';}
 async function passportFlow(){
   for(;;){const o=passGet();const done=MG_KEYS.filter(k=>o.played[k]).length,gold=MG_KEYS.filter(k=>o.labas[k]).length,tot=MG_KEYS.length*2;
@@ -2087,7 +2091,11 @@ const MG={
   taguan:{labas:'Kailangan ng 3 o higit pang kalaro at isang ligtas na bakuran. Pumili ng base, magbilang ang taya hanggang 20 nang nakapikit, at magtago ang iba sa lugar na kita pa ng matatanda.',title:'Taguan',aka:'Tinatawag ding tagu-taguan',chip:'4 na manlalaro · sabay-sabay',unit:'puntos',make:(pre,mgi)=>mkTaguan(pre,mgi),
     preroll:d=>({f:[3,5,7][d]+Math.floor(G()*3),w:d>=2?0:Math.floor(G()*(d?2:3))}),botScore:pre=>Math.max(0,Math.min(100,pre.f*10-pre.w*2)),
     rules:['Kusang naglalakad ang taya at tumitigil sa bawat taguan.','I-tap kapag may palatandaan ng bata: tsinelas, buhok, mata, anino, hagikgik, kaluskos o daliri. Hayop lang ang pusa, manok at aso!','10 bawat nahanap. Mali: −2, at hindi ka makaka-tap sa susunod na 2 taguan.'],
-    real:'Pipikit at bibilang ang taya habang nagtatago ang iba, at kinakanta ang "Tagu-taguan, maliwanag ang buwan…". Pagkatapos, hahanapin niya ang mga nagtatago. Kapag may nakita siya, uunahan niyang makabalik sa base ang nakita. Ang unang nahuli ang magiging bagong taya.'}
+    real:'Pipikit at bibilang ang taya habang nagtatago ang iba, at kinakanta ang "Tagu-taguan, maliwanag ang buwan…". Pagkatapos, hahanapin niya ang mga nagtatago. Kapag may nakita siya, uunahan niyang makabalik sa base ang nakita. Ang unang nahuli ang magiging bagong taya.'},
+  piko:{labas:'Gumuhit ng piko sa ligtas na semento o lupa gamit ang tisa o uling, at maghanap ng patag na pamato. Puwede kahit dalawa lang kayo.',title:'Piko',aka:'Tinatawag ding piko-piko; hopscotch sa Ingles',chip:'4 na manlalaro · sabay-sabay',unit:'hakbang',make:(pre,mgi)=>mkPiko(pre,mgi),
+    preroll:d=>pikoPre(d),botScore:pre=>PIKO_CUM[pre]||0,
+    rules:['Pindot: isang paa sa iisang kahon. Diinan: dalawang paa sa magkatabing kahon.','Laktawan ang kahong may pamato. Kung nasa magkatabi ito, isang paa lang sa kabilang kahon.','Maling lukso: Patay! Balik sa simula at bawas ang hakbang sa guhit na iyon. +2 bawat tapos na guhit, 20 segundo.'],
+    real:'Iginuguhit ng tisa o uling ang mga kahon sa lupa. Ihahagis ng manlalaro ang pamato (patag na bato o piraso ng paso) sa unang kahon, lulundag sa isang paa sa iisang kahon at dalawang paa sa magkatabi, at lalaktawan ang kahong may pamato. Pagbalik, pupulutin niya ang pamato nang hindi natutumba. Patay kapag tumapak sa guhit, natumba o nagkamali ng kahon.'}
 };
 const MG_KEYS=Object.keys(MG).filter(k=>!MG[k].off);
 /* online needs every phone on the same build: the round plan comes from the seed and MG_KEYS, so a phone on an older
@@ -2108,7 +2116,7 @@ const CONTENT_P=(async function loadContent(){
   }catch(e){console.warn('content/fil.json not loaded, using built-in fallback text',e);}
 })();
 function mgCtrl(kind){const L=locals();if(kind==='patintero')return L.length>1&&!NET.on?'Isa-isang tatakbo ang mga tao. I-drag ang daliri o arrow keys / WASD.':'I-drag ang daliri kahit saan, o arrow keys / WASD.';
-  if(L.length>1)return'Bawat tao: i-tap ang sariling hanay, o pindutin ang '+L.map(p=>'['+keyLabel(p)+'] '+p.name).join(', ')+'.';return'Tap, Space, o ang '+({sipa:'Sipa!',palosebo:'Akyat!',luksong:'Talon!',palayok:'Palo!',taguan:'Hanap!'}[kind]||'Tira!')+' na button.';}
+  if(L.length>1)return'Bawat tao: i-tap ang sariling hanay, o pindutin ang '+L.map(p=>'['+keyLabel(p)+'] '+p.name).join(', ')+'.';if(kind==='piko')return'Pindot = isang paa, diinan = dalawang paa: tap, Space, o ang Lukso! na button.';return'Tap, Space, o ang '+({sipa:'Sipa!',palosebo:'Akyat!',luksong:'Talon!',palayok:'Palo!',taguan:'Hanap!'}[kind]||'Tira!')+' na button.';}
 /* the minigame order for a whole game, fixed by the seed (same on every device), no game twice in a row */
 function mgPlan(seed,n){const r=seeded((seed^0x2545F491)|0),out=[];let bag=[];while(out.length<n){if(!bag.length){bag=MG_KEYS.slice();for(let i=bag.length-1;i>0;i--){const j=Math.floor(r()*(i+1));const t=bag[i];bag[i]=bag[j];bag[j]=t;}if(out.length&&bag[0]===out[out.length-1])bag.push(bag.shift());}out.push(bag.shift());}return out;}
 function realBox(def){return def.real?'<div class="real"><b>Sa totoong kalye</b><p>'+esc(def.real)+'</p></div>':'';}
@@ -2460,6 +2468,103 @@ function mkTaguan(pre,mgi){
   return sc;
 }
 
+/* hold input (shared, new-minigames PRD P3.9; Piko is the first game to use it): a press and a release per player.
+   Keys act on keydown and keyup (auto-repeat ignored); each touch is tracked by its pointer id, so lifting a finger
+   releases the right lane; the action button sends scene.actionDown / actionUp. A cancelled touch, the window losing
+   focus or the tab being hidden release every press. down(pid) and up(pid) are the scene's; lane(x,y) picks the player
+   whose part of the board a touch landed on. A player pressed through two sources (Space and the button) is released
+   when the last one lets go */
+function holdInput(sc,{down,up,lane}){const L1=locals(),keys=localKeyMap(),src=new Map(),count=pid=>{let n=0;for(const v of src.values())if(v===pid)n++;return n;};
+  const press=(s,pid)=>{if(pid==null||src.has(s))return;const first=!count(pid);src.set(s,pid);if(first)down(pid);};
+  const release=s=>{if(!src.has(s))return;const pid=src.get(s);src.delete(s);if(!count(pid))up(pid);};
+  sc.key=(e,isDown)=>{const pid=keys[e.code];if(pid==null)return;e.preventDefault();if(isDown){if(e.repeat)return;press('k:'+e.code,pid);}else release('k:'+e.code);};
+  sc.pointerDown=(x,y,id)=>press('p:'+id,L1.length===1?L1[0].id:lane(x,y));
+  sc.pointerUp=(x,y,id)=>release('p:'+id);
+  sc.actionDown=id=>{if(L1.length===1)press('b:'+id,L1[0].id);};
+  sc.actionUp=id=>release('b:'+id);
+  sc.releaseAll=()=>{for(const s of [...src.keys()])release(s);};
+  return{held:pid=>count(pid)>0,sources:()=>src.size};}
+
+/* Piko (hopscotch): read the court and hop it. A single box takes one foot (a quick press), a side-by-side pair takes
+   two feet (a press held to 0.22 s, which counts right then). The pamato's box is skipped; a pair with the pamato is a
+   one-foot step into the free box. A wrong hop is "Patay!": 0.8 s, back to the start, and that court's steps are lost.
+   1 hakbang per step, 2 more per finished court, 20 s. Courts and pamato are the same for every lane and every phone */
+const PIKO={T:20,HOLD:.22,HOP:.26,PATAY:.8,NEXT:.35,ROWH:44,BOXW:44,START:196,
+  PAT:[['Klasiko',[1,1,1,2,1,2]],['Eroplano',[1,2,1,2,1]],['Hagdan',[1,1,2,1,1,2]]]};
+/* court c (0-based): its rows, its boxes (numbered from the start) with the pamato in box c+1, and the steps to hop */
+function pikoCourt(c){const P=PIKO,[name,rows]=P.PAT[c%3],nb=rows.reduce((a,b)=>a+b,0),pb=c%nb,boxes=[],steps=[];let bi=0;
+  rows.forEach((n,ri)=>{const ids=[];for(let q=0;q<n;q++)ids.push(bi++);const pam=ids.indexOf(pb);boxes.push({ri,n,ids,pam});
+    if(n===1){if(pam<0)steps.push({ri,need:'tap',side:0});}else steps.push({ri,need:pam<0?'hold':'tap',side:pam<0?0:(pam===0?1:-1)});});
+  return{c,name,rows,boxes,steps,pb};}
+/* the running total after each correct step when nobody misses: a bot's preroll is a number of steps, so what it shows
+   is exactly what it scores */
+const PIKO_CUM=(()=>{const a=[0];for(let c=0;a.length<200;c++){const st=pikoCourt(c).steps;st.forEach((s,i)=>a.push(a[a.length-1]+1+(i===st.length-1?2:0)));}return a;})();
+function pikoPre(d){const R0=[[8,16],[14,24],[22,32]][d]||[14,24],t=R0[0]+Math.floor(G()*(R0[1]-R0[0]+1));let n=0;
+  for(let i=0;i<PIKO_CUM.length;i++)if(PIKO_CUM[i]<=t&&PIKO_CUM[i]>=R0[0])n=i;if(!n)n=PIKO_CUM.findIndex(v=>v>=R0[0]);return n;}
+function mkPiko(pre,mgi){
+  const P=PIKO;let resolve;const L1=locals();
+  const sc={kind:'piko',view:{w:470,h:420},focusY:95,t:0,cd:3.6,ended:false,actionLabel:L1.length===1?'Lukso!':null,hint:L1.length===1?'Pindot: isang paa · Diinan: dalawang paa':'Pindutin o diinan ang sariling hanay'};sc.done=new Promise(r=>resolve=r);
+  const courts=[];const court=c=>courts[c]||(courts[c]=pikoCourt(c));
+  const lanes=state.players.map((p,i)=>({p,i,mode:p.ctrl,x:(i-1.5)*112,c:0,si:0,hk:0,ch:0,hopT:0,patT:0,nextT:0,press:null,buf:null,flash:null,from:null,to:null,botK:0,shown:null}));
+  const publish=(L,th)=>{if(NET.on&&L.mode==='local')netMg({i:mgi,c:L.c,si:L.si,hk:L.hk,pt:L.patT>0?1:0,s:L.hk,d:sc.ended?1:0},th);};
+  /* where a kid stands: before the court (si 0) or in the row of its last step; side -1/1 is one box of a pair */
+  const spot=(L,c,si)=>{if(!si)return{x:L.x,y:P.START};const s=court(c).steps[si-1];return{x:L.x+s.side*P.BOXW*.5,y:P.START-(s.ri+1)*P.ROWH+P.ROWH*.5};};
+  function msg(L,txt,col){L.flash={txt,col,t:0};}
+  function apply(L,kind){const st=court(L.c).steps[L.si];if(!st)return;const me=L.mode==='local';
+    if(kind===st.need){L.from=spot(L,L.c,L.si);L.si++;L.hk++;L.ch++;L.to=spot(L,L.c,L.si);L.hopT=P.HOP;if(me){Sfx.hop(kind==='hold');buzz(kind==='hold'?22:10);}
+      if(L.si>=court(L.c).steps.length){L.hk+=2;L.nextT=P.HOP+P.NEXT;msg(L,court(L.c).name+'! +2',L.p.color);if(me)Sfx.coin();}}
+    else{L.hk-=L.ch;L.ch=0;L.si=0;L.patT=P.PATAY;L.buf=null;L.hopT=0;msg(L,'Patay!','#FF8A7A');setMood(L.p,'sad',P.PATAY);if(me){Sfx.bad();buzz(50);}}
+    publish(L,true);}
+  /* an input that arrives while the kid is mid-hop (or stepping onto the next court) waits for the landing; one is kept */
+  /* an online player's lane follows what that phone publishes (also after the end, so its last hop shows) */
+  function follow(L){const m=netPeerMg(L.p.peer,mgi);if(!m||(L.shown&&m.c===L.shown.c&&m.si===L.shown.si&&m.hk===L.shown.hk))return;
+    if(m.c===L.c&&m.si===L.si+1){L.from=spot(L,L.c,L.si);L.to=spot(L,m.c,m.si);L.hopT=P.HOP;}else if(m.si<L.si&&m.c===L.c&&m.pt){L.patT=P.PATAY;msg(L,'Patay!','#FF8A7A');}
+    L.c=m.c|0;L.si=m.si|0;L.hk=m.hk|0;L.shown={c:L.c,si:L.si,hk:L.hk};}
+  function input(L,kind){if(sc.ended||L.patT>0)return;if(L.hopT>0||L.nextT>0){if(!L.buf)L.buf=kind;return;}apply(L,kind);}
+  const hold=holdInput(sc,{lane:(x,y)=>{const w=toWorld(x,y);return clamp(Math.round(w.x/112+1.5),0,3);},
+    down:pid=>{const L=lanes[pid];if(!L||L.mode!=='local'||sc.cd>.6||sc.ended){return;}L.press={t0:sc.t,fired:false};},
+    up:pid=>{const L=lanes[pid];if(!L||!L.press)return;const p=L.press;L.press=null;if(!p.fired)input(L,'tap');}});
+  sc.peek=()=>lanes.map(L=>{const st=court(L.c).steps[L.si];return{need:st?st.need:null,hopping:L.hopT>0,patay:L.patT>0,between:L.nextT>0,pressing:!!L.press,fired:!!(L.press&&L.press.fired),held:hold.held(L.i),si:L.si,c:L.c,hk:L.hk,cd:sc.cd,t:sc.t};});
+  sc.update=dt=>{
+    if(cdTick(sc,dt))return;if(sc.ended){lanes.forEach(L=>{if(L.mode==='remote'){follow(L);L.hopT=0;}});return;}sc.t+=dt;
+    for(const L of lanes){if(L.flash&&(L.flash.t+=dt)>1)L.flash=null;
+      if(L.press&&!L.press.fired&&sc.t-L.press.t0>=P.HOLD){L.press.fired=true;input(L,'hold');}
+      if(L.patT>0){L.patT-=dt;if(L.patT<=0)publish(L,true);continue;}
+      if(L.hopT>0){L.hopT-=dt;if(L.hopT<=0&&L.buf&&L.nextT<=0){const b=L.buf;L.buf=null;apply(L,b);}}
+      if(L.nextT>0){L.nextT-=dt;if(L.nextT<=0){L.c++;L.si=0;L.ch=0;publish(L,true);if(L.buf){const b=L.buf;L.buf=null;apply(L,b);}}}
+      if(L.mode==='bot'){const n=pre[L.i],gap=Math.max(.34,17/Math.max(1,n));if(L.botK<n&&sc.t>=(L.botK+1)*gap&&L.hopT<=0&&L.nextT<=0){L.botK++;apply(L,court(L.c).steps[L.si].need);}}
+      else if(L.mode==='remote')follow(L);}
+    if(sc.t>=P.T){sc.ended=true;sc.releaseAll();lanes.forEach(L=>publish(L,false));Sfx.whistle();setTimeout(()=>resolve({scores:lanes.map(L=>Math.max(0,L.hk))}),900);}
+  };
+  /* footprints: one per foot that lands in the box, so the court reads without colour */
+  function foot(g,x,y,s,flip){g.save();g.translate(x,y);g.scale(flip?-s:s,s);g.beginPath();g.ellipse(0,2,4.2,7,0,0,TAU);g.fillStyle='rgba(59,35,22,.62)';g.fill();for(let q=0;q<4;q++){g.beginPath();g.arc(-3+q*2.2,-6.6+Math.abs(q-1.5)*.7,1.3,0,TAU);g.fill();}g.restore();}
+  function pamato(g,x,y){ell(g,x,y+2,10,6);fs(g,'#8E8A86',INK,1.8);ell(g,x-2,y,4,2);g.fillStyle='rgba(255,255,255,.5)';g.fill();}
+  function drawCourt(g,L){const C=court(L.c),x=L.x,bw=P.BOXW,act=C.steps[L.si];
+    C.boxes.forEach(b=>{const y=P.START-(b.ri+1)*P.ROWH,two=b.n===2;
+      for(let q=0;q<b.n;q++){const bx=two?x-bw+q*bw:x-bw/2,box=b.ids[q],isPam=box===C.pb,next=act&&act.ri===b.ri;
+        rr(g,bx+1,y+1,bw-2,P.ROWH-2,3);g.fillStyle=next&&L.mode==='local'?'rgba(255,233,140,.55)':'rgba(255,255,255,.14)';g.fill();g.strokeStyle='rgba(255,255,255,.95)';g.lineWidth=2.6;g.stroke();
+        g.font='800 9px '+BODY;g.textAlign='left';g.textBaseline='top';g.fillStyle='rgba(59,35,22,.55)';g.fillText(String(box+1),bx+4,y+3);
+        if(isPam)pamato(g,bx+bw/2,y+P.ROWH/2);
+        else if(two&&b.pam<0)foot(g,bx+bw/2+(q?-3:3),y+P.ROWH/2+2,.9,q===0);
+        else foot(g,bx+bw/2,y+P.ROWH/2+2,.9,false);}});
+    g.font='900 10px '+BODY;g.textAlign='center';g.textBaseline='middle';g.fillStyle='rgba(59,35,22,.7)';g.fillText(C.name,x,P.START-C.rows.length*P.ROWH-10);}
+  sc.draw=g=>{
+    const list=drawArenaBase(g);
+    if(L1.length>1)for(const L of lanes)if(L.mode==='local'){rr(g,L.x-54,-150,108,P.START+30+150,12);g.fillStyle=tint(L.p.color,.5).replace('rgb','rgba').replace(')',',.22)');g.fill();}
+    for(const L of lanes){drawCourt(g,L);g.beginPath();g.moveTo(L.x-36,P.START+6);g.lineTo(L.x+36,P.START+6);g.strokeStyle='rgba(255,255,255,.9)';g.lineWidth=3;g.stroke();
+      const u=L.hopT>0?1-L.hopT/P.HOP:1,a=L.hopT>0&&L.from?L.from:spot(L,L.c,L.si),b=L.hopT>0&&L.to?L.to:a,x=lerp(a.x,b.x,Ez.inOut(u)),y=lerp(a.y,b.y,Ez.inOut(u)),lift=L.hopT>0&&!RM?Math.sin(Math.PI*u)*16:0;
+      const two=L.si>0&&court(L.c).steps[L.si-1]&&court(L.c).steps[L.si-1].need==='hold';
+      list.push({y:y+20,f:()=>{drawKid(g,L.p,x,y+20,{dir:'back',lift,mood:L.patT>0?'sad':(L.hopT>0?'hop':L.p.mood),sx:two&&L.hopT<=0?1.12:1,sy:L.press&&!L.press.fired?.9:1,blink:L.p.blink>0});
+        if(L.press&&L.mode==='local'){const k=Math.min(1,(sc.t-L.press.t0)/P.HOLD);g.beginPath();g.arc(x+22,y-26,8,-Math.PI/2,-Math.PI/2+TAU*k);g.strokeStyle=k>=1?'#2FA35A':'#F2B21B';g.lineWidth=4;g.stroke();}}});}
+    list.sort((a,b)=>a.y-b.y).forEach(o=>o.f());
+    for(const L of lanes){if(L.flash){const m=L.flash;g.save();g.globalAlpha=Math.min(1,(1-m.t)/.3);otext(g,m.txt,L.x,P.START-P.ROWH*3-m.t*14,15,m.col,4);g.restore();}
+      g.beginPath();g.arc(L.x-34,P.START+44,14,0,TAU);fs(g,L.p.color,INK,2.5);otext(g,String(Math.max(0,L.hk)),L.x-34,P.START+45,16,'#fff',4);
+      g.font='900 13px '+BODY;g.textAlign='left';g.textBaseline='middle';g.fillStyle=INK;g.fillText(L.p.name,L.x-15,P.START+39);g.font='800 10px '+BODY;g.fillStyle='rgba(59,35,22,.65)';g.fillText('hakbang',L.x-15,P.START+52);laneTag(g,L.p,L.x,P.START+70);}
+  };
+  sc.drawScreen=g=>{const left=Math.max(0,P.T-sc.t),w=150,x=W/2-w/2,y=topH+4;rr(g,x,y,w,32,16);fs(g,PAPER,INK,2.5);g.font='900 14px '+BODY;g.textAlign='center';g.textBaseline='middle';g.fillStyle=left<5?'#C9372A':INK;g.fillText('0:'+String(Math.ceil(left)).padStart(2,'0'),x+w/2,y+16);};
+  sc.v3={lanes,court,spot,P,hold,t:()=>sc.t};
+  return sc;
+}
 async function runMinigame(kind,opt){
   opt=opt||{};
   await seatSync();
@@ -2923,10 +3028,13 @@ cv.addEventListener('pointermove',e=>{if(!scene||!scene.pointerMove)return;const
 const ptrUp=e=>{if(scene&&scene.pointerUp){const r=cv.getBoundingClientRect();scene.pointerUp(e.clientX-r.left,e.clientY-r.top,e.pointerId);}};
 cv.addEventListener('pointerup',ptrUp);cv.addEventListener('pointercancel',ptrUp);
 window.addEventListener('keydown',e=>{if(e.defaultPrevented||topDialog()||APP.screen!=='game')return;if(e.key==='Escape'){e.preventDefault();openMenu();return;}Sfx.init();const onBtn=e.target&&e.target.tagName==='BUTTON';
-  if(scene){if(onBtn&&(e.code==='Space'||e.code==='Enter'))return;scene.key&&scene.key(e,true);return;}
+  if(scene){if(onBtn&&(e.code==='Space'||e.code==='Enter')&&!scene.releaseAll)return;scene.key&&scene.key(e,true);return;}
   if((e.code==='Space'||e.code==='Enter')&&!onBtn&&actionResolver){e.preventDefault();actionResolver();}
   if(e.code==='KeyM'){mapBtn.click();}});
 window.addEventListener('keyup',e=>{if(scene&&scene.key)scene.key(e,false);});
+/* a press held while the window loses focus or the tab is hidden never gets its keyup or pointerup: release it */
+const releaseHeld=()=>{if(scene&&scene.releaseAll)scene.releaseAll();};
+window.addEventListener('blur',releaseHeld);document.addEventListener('visibilitychange',()=>{if(document.hidden)releaseHeld();});
 /* dialogs: Tab stays inside the open card, Escape presses its back/close button */
 const ESC_V=['back','prev','n','none','leave','close'];
 document.addEventListener('keydown',e=>{const top=topDialog();if(!top)return;
@@ -3258,7 +3366,8 @@ function init3D(){
     const rope=new T3.Mesh(new T3.TubeGeometry(new T3.CatmullRomCurve3(Array.from({length:9},(_,i)=>new T3.Vector3(lerp(-292,292,i/8),102-Math.sin(Math.PI*i/8)*22,-262))),20,.9,5),M('#5A3A22'));G3.add(rope);
     arena=G3;return G3;}
   function tagOf(p){const kl=keyLabel(p);return p.ctrl==='remote'?'online':(p.ctrl==='bot'?'bot':(kl?'['+kl+']':''));}
-  function badge(g,x,y,z,col,txt,name,sub,tag){const s=B3.proj(x,y,z),k=clamp(s.k*1.15,.62,1.25);g.save();g.translate(clamp(s.x,18,W-16-96*k),s.y);g.scale(k,k);g.beginPath();g.arc(0,0,15,0,TAU);fs(g,col,INK,2.5);otext(g,String(txt),0,1,String(txt).length>3?11:16,'#fff',4);
+  /* col: an optional screen column {x,w} for lanes too close together on a narrow screen */
+  function badge(g,x,y,z,col,txt,name,sub,tag,colm){const s=B3.proj(x,y,z),k=colm?clamp(Math.min(s.k*1.15,colm.w/112),.5,1.25):clamp(s.k*1.15,.62,1.25);g.save();g.translate(colm?colm.x+17*k:clamp(s.x,18,W-16-96*k),s.y);g.scale(k,k);g.beginPath();g.arc(0,0,15,0,TAU);fs(g,col,INK,2.5);otext(g,String(txt),0,1,String(txt).length>3?11:16,'#fff',4);
     g.textAlign='left';g.textBaseline='middle';g.lineJoin='round';const tx=(t,yy,f)=>{g.font=f;g.lineWidth=4;g.strokeStyle=PAPER;g.strokeText(t,20,yy);g.fillStyle=INK;g.fillText(t,20,yy);};
     if(name)tx(name,sub?-5:0,'900 13px '+BODY);if(sub)tx(sub,9,'800 10.5px '+BODY);if(tag)tx(tag,sub?23:14,'900 10px '+BODY);g.restore();}
   function tinCan(){const g=new T3.Group();const c=mesh(new T3.CylinderGeometry(9,9,18,16),M('#C9D1D9'),0,9,0);ol(c,.06);g.add(c,mesh(new T3.CylinderGeometry(9.3,9.3,8,16),M('#E2452E'),0,9,0),mesh(new T3.CylinderGeometry(9.4,9.4,1.6,16),M('#F2B21B'),0,9,0));shadowAll(g);return g;}
@@ -3407,6 +3516,26 @@ function init3D(){
       over=g=>{const k=v.cur();if(!v.clueOn(k))return;const o=rounds[v.r].spots[k],s=o.s,u=v.rt-v.arrive(k)-s.at,a=Math.min(1,u/.08,(v.R0().clue-u)/.08);
         for(const {st,cm} of views){if(st.pl.found.has(o.key)&&st.pl.mode==='local')continue;VV.set(s.x,0,-10);const dist=VV.distanceTo(cm.position);VV.project(cm);
           g.save();g.beginPath();g.rect(st.x,st.y,st.w,st.h);g.clip();drawClue(g,s,st.x+(VV.x+1)/2*st.w,st.y+(1-VV.y)/2*st.h,st.h/(2*dist*TAN),a,v.rt);g.restore();}};}
+    else if(kind==='piko'){cam.d*=1.14;   /* a little wider than the 2D view, so the outer courts stay on a tall phone */
+      const PK=v.P,chalk=new T3.MeshBasicMaterial({color:0xFFFFFF,transparent:true,opacity:.92}),footM=new T3.MeshBasicMaterial({color:0x3B2316,transparent:true,opacity:.62,depthWrite:false}),
+        hiM=new T3.MeshBasicMaterial({color:0xFFE98C,transparent:true,opacity:.55,depthWrite:false}),footG=new T3.CircleGeometry(4.4,12),hiG=new T3.PlaneGeometry(PK.BOXW-4,PK.ROWH-4);
+      footG.rotateX(-Math.PI/2);footG.scale(1,1,1.6);hiG.rotateX(-Math.PI/2);
+      /* each lane's court in chalk, with a footprint per foot that lands in a box and the pamato in its box; built again when the lane moves to the next court */
+      const L3=v.lanes.map(L=>{const grp=new T3.Group();root.add(grp);flatBox(root,L.x-36,PK.START+6,L.x+36,PK.START+6,4);
+        const pam=mesh(new T3.CylinderGeometry(9,10,3,12),M('#8E8A86'),0,1.8,0);ol(pam,.06);root.add(pam);const hi=new T3.Mesh(hiG,hiM);hi.position.y=1.1;root.add(hi);return{L,grp,pam,hi,c:-1};});
+      function buildCourt(o){o.grp.traverse(m=>{if(m.geometry&&m.geometry!==footG)m.geometry.dispose();});o.grp.clear();const C=v.court(o.L.c),x=o.L.x,bw=PK.BOXW,hh=PK.ROWH;
+        C.boxes.forEach(b=>{const z0=PK.START-(b.ri+1)*hh,two=b.n===2;for(let q=0;q<b.n;q++){const bx=two?x-bw+q*bw:x-bw/2,box=b.ids[q];
+          flatBox(o.grp,bx+1,z0+1,bx+bw-1,z0+1,2.6,chalk,1.3);flatBox(o.grp,bx+1,z0+hh-1,bx+bw-1,z0+hh-1,2.6,chalk,1.3);flatBox(o.grp,bx+1,z0+1,bx+1,z0+hh-1,2.6,chalk,1.3);flatBox(o.grp,bx+bw-1,z0+1,bx+bw-1,z0+hh-1,2.6,chalk,1.3);
+          if(box===C.pb){o.pam.position.set(bx+bw/2,1.8,z0+hh/2);continue;}
+          const f=new T3.Mesh(footG,footM);f.position.set(bx+bw/2+(two&&b.pam<0?(q?-3:3):0),1.25,z0+hh/2+2);o.grp.add(f);}});
+        o.c=o.L.c;}
+      upd=()=>{for(const o of L3){const L=o.L;if(o.c!==L.c)buildCourt(o);const C=v.court(L.c),act=C.steps[L.si];
+          o.hi.visible=!!act&&L.mode==='local';if(act){const s=act,x=L.x+(s.side?s.side*PK.BOXW*.5:0);o.hi.position.set(x,1.1,PK.START-(s.ri+1)*PK.ROWH+PK.ROWH/2);o.hi.scale.x=C.rows[s.ri]===2&&!s.side?2:1;}
+          const u=L.hopT>0?1-L.hopT/PK.HOP:1,a=L.hopT>0&&L.from?L.from:v.spot(L,L.c,L.si),b=L.hopT>0&&L.to?L.to:a,x=lerp(a.x,b.x,Ez.inOut(u)),z=lerp(a.y,b.y,Ez.inOut(u));
+          pose(kidOf(L.p),x,z,{dir:'back',lift:L.hopT>0&&!RM?Math.sin(Math.PI*u)*16:0,mood:L.patT>0?'sad':(L.hopT>0?'hop':L.p.mood),sy:L.press&&!L.press.fired?.92:1,blink:L.p.blink>0},1.05);}};
+      over=g=>{for(const o of L3){const L=o.L;badge(g,L.x-30,0,PK.START+44,L.p.color,Math.max(0,L.hk),L.p.name,'hakbang',tagOf(L.p),{x:W*L.i/4+2,w:W/4-4});
+          if(L.flash){const m=L.flash,s=B3.proj(L.x,60,PK.START-PK.ROWH*3);g.save();g.globalAlpha=Math.min(1,(1-m.t)/.3);otext(g,m.txt,s.x,s.y-m.t*14,15,m.col,4);g.restore();}
+          if(L.press&&L.mode==='local'){const sp=L.hopT>0&&L.to?L.to:v.spot(L,L.c,L.si),s=B3.proj(sp.x+20,70,sp.y),k=Math.min(1,(v.t()-L.press.t0)/PK.HOLD);g.beginPath();g.arc(s.x,s.y,9,-Math.PI/2,-Math.PI/2+TAU*k);g.strokeStyle=k>=1?'#2FA35A':'#F2B21B';g.lineWidth=4.5;g.stroke();}}};}
     shadowAll(root);
     const updAll=dt=>{spect.forEach(({s,K})=>{const j=RM?0:Math.max(0,Math.sin(now*4+s.n*1.7))*8;pose(K,s.x,s.y,{lift:j,mood:j>4?'cheer':'happy',dir:'front'},.9);});upd(dt);};
     return{root,upd:updAll,over,cam,render};}

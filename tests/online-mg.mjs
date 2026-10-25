@@ -16,6 +16,10 @@ const GAMES = {
   taguan: {
     player: `(sc, i) => { const v = sc.peek(); if (v.clue === 'kid' && !v.tapped && !v.locked) sc.action(); }`,
     totals: `sc => sc.v3.P.map(pl => pl.mode === 'remote' ? Math.max(0, Math.min(100, (pl.rf | 0) * 10 - (pl.rw | 0) * 2)) : sc.v3.score(pl))`
+  },
+  piko: {
+    player: `(sc, i) => { const v = sc.peek()[i], s = window.__pk || (window.__pk = {}); if (s.down) { if (s.need === 'tap' || v.fired) { sc.actionUp(1); s.down = false; } return; } if (v.need && !v.hopping && !v.between && !v.patay && !v.pressing) { s.need = v.need; s.down = true; sc.actionDown(1); } }`,
+    totals: `sc => sc.v3.lanes.map(L => Math.max(0, L.hk))`
   }
 };
 
