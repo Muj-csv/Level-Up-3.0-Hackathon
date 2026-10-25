@@ -202,6 +202,21 @@ body{background:var(--sky);color:var(--ink);font-family:var(--body);overflow:hid
 .stamp b{font-size:14.5px}.stamp p{font-size:13px;margin:2px 0 6px;font-weight:700;line-height:1.4}
 .stamp.lock{opacity:.55}
 .stamp .btn{font-size:12.5px;padding:6px 10px;box-shadow:0 3px 0 var(--ink)}
+.gcard{display:grid;grid-template-columns:64px minmax(0,1fr);gap:10px;align-items:start;background:var(--sand);border-radius:14px;padding:9px 10px;margin:8px 0}
+.gcard .gart{width:64px;height:64px;display:block}.gcard .gart.soon{display:grid;place-items:center;border-radius:50%;border:2.5px dashed rgba(59,35,22,.35);font:400 24px var(--display);color:var(--muted)}
+.gcard .ghead{display:flex;align-items:center;justify-content:space-between;gap:8px}.gcard .ghead b{font-size:15px;min-width:0}
+.gcard .seal{flex:none;min-width:46px;padding:3px 6px;border-radius:99px;border:2px dashed rgba(59,35,22,.35);font:400 10.5px var(--display);color:var(--muted);text-align:center;transform:rotate(-4deg)}
+.gcard.on .seal{border:2.5px solid var(--red);color:var(--red);background:var(--paper)}.gcard.gold .seal{border:2.5px solid #B57F05;color:#8A5E00;background:#FFE58A}
+.gcard .gshort{font-size:13px;font-weight:700;line-height:1.35;margin:2px 0 6px}
+.gcard .gdbtn{font-size:12.5px;padding:6px 10px;box-shadow:0 3px 0 var(--ink)}
+.gcard .gdet{grid-column:1/-1;border-top:2px dashed rgba(59,35,22,.25);padding-top:6px}.gcard .gdet .aka{font-size:12.5px;margin:0 0 4px;color:var(--muted);font-weight:700}
+.gcard .gsec{margin:8px 0 6px}.gcard .gsec b{display:block;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}.gcard .gsec ul{margin:3px 0 0;padding-left:18px;font-size:13px;line-height:1.4}
+.gcard .gdet .btn{font-size:12.5px;padding:6px 10px;box-shadow:0 3px 0 var(--ink);margin-top:4px}.gcard.lock{opacity:.55}
+h3.album{font:400 17px var(--display);margin:12px 0 0}
+.modal.tour{background:transparent;align-items:flex-end;pointer-events:none}.modal.tour .card{pointer-events:auto;max-height:min(60%,460px)}
+.pcard.tour-hl{outline:4px solid var(--sun);outline-offset:3px;animation:tourPulse 1.2s ease-in-out infinite;z-index:7;position:relative}
+@keyframes tourPulse{50%{outline-color:rgba(255,201,60,.35)}}
+.tgames{display:flex;gap:8px;justify-content:center;margin:6px 0}.tgames .gart{width:52px;height:52px}
 .passbar{height:12px;border:2.5px solid var(--ink);border-radius:99px;background:var(--paper);overflow:hidden;margin:6px 0 2px}
 .passbar i{display:block;height:100%;background:var(--sun)}
 .labas{background:#E3F3D6;border:2px solid #7CB55A;border-radius:12px;padding:8px 11px;margin:10px 0 4px}
@@ -333,7 +348,7 @@ body{background:var(--sky);color:var(--ink);font-family:var(--body);overflow:hid
 .sp-go:focus-visible{outline:3px dashed #2E6FD8;outline-offset:5px}
 .sp-credit{font-weight:700;font-size:12px;color:#7A5A44;letter-spacing:.04em}
 @keyframes sp-breathe{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
-@media (prefers-reduced-motion: reduce){.lbar i::after{animation:none;display:none}}
+@media (prefers-reduced-motion: reduce){.lbar i::after{animation:none;display:none}.pcard.tour-hl{animation:none}}
 @media (prefers-reduced-motion: reduce){
   .sp-go{animation:none}.splash{transition:none}
 }
@@ -1317,6 +1332,8 @@ function updateStatus(turnText2){
 }
 let toastT=0;
 function toast(text,color,ms){const el=$('#toast');el.textContent=text;el.style.color=color||'#fff';el.classList.remove('show');void el.offsetWidth;el.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('show'),ms||1300);}
+/* progress of an island rebuilt for a new Kalidad (the old island stays on screen meanwhile): pct, -1 when done, -2 if it failed */
+function qualityChip(pct){if(pct>=0)toast('Inaayos ang isla para sa bagong kalidad… '+pct+'%','#fff',6000);else if(pct===-1)toast('Handa na ang isla','#BDE7A6',1300);else toast('Hindi naayos ang isla; subukan ulit','#FFB4A8',1800);}
 async function say(text,color,ms){toast(text,color,ms||1300);await wait((ms||1300)*.8);}
 function setHint(t){const h=$('#hint');h.textContent=t||'';h.hidden=!t;}
 /* screen readers hear what the canvas shows: coins, items, rolls */
@@ -1373,7 +1390,7 @@ syncSoundBtn();
 /* cards */
 let CARD_VALS={},cardTimer=0;
 function openCard(html){clearInterval(cardTimer);const m=$('#modal'),c=$('#card');c.innerHTML=html;m.hidden=false;const h2=c.querySelector('h2');if(h2){h2.id='cardTitle';c.setAttribute('aria-labelledby','cardTitle');}else c.removeAttribute('aria-labelledby');const f=c.querySelector('[data-focus]')||c.querySelector('[data-primary]')||c.querySelector('button');if(f)setTimeout(()=>{try{f.focus({preventScroll:true});}catch(e){}},40);return c;}
-function closeCard(){clearInterval(cardTimer);$('#modal').hidden=true;$('#card').innerHTML='';}
+function closeCard(){clearInterval(cardTimer);const m=$('#modal');m.hidden=true;m.classList.remove('tour');$('#card').innerHTML='';}
 function topDialog(){return !$('#menu').hidden?$('#menuCard'):($('#modal').hidden?null:$('#card'));}
 function cardChoice(c){return new Promise(res=>{c.querySelectorAll('button[data-v]').forEach(b=>b.addEventListener('click',()=>{Sfx.init();Sfx.tick(4);CARD_VALS={};c.querySelectorAll('input[id]').forEach(i=>{CARD_VALS[i.id]=i.value;});if(c.id==='card')closeCard();res(b.dataset.v);},{once:true}));});}
 function esc(s){return String(s).replace(/[&<>"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));}
@@ -1745,11 +1762,40 @@ function passSave(o){PASS_MEM=null;try{localStorage.setItem(PASS_KEY,JSON.string
 function stampGame(kind){const o=passGet();const first=!o.played[kind];o.played[kind]=(o.played[kind]|0)+1;passSave(o);return first;}
 const SOON=[{t:'Agawan Base',d:'2 team, 2 base, maraming takbuhan.'},{t:'Sungka',d:'Tablang may butas at mga sigay. Laro ng diskarte.'}];
 function labasBox(def){return def.labas?'<div class="labas"><b>Subukan sa labas</b><p>'+esc(def.labas)+'</p></div>':'';}
+/* a small picture of each game for the Pasaporte: one of the kids and the game's own thing (the can and slipper, the
+   lines, the sipa, the pole, the tinik, the palayok, a hiding spot, the court), drawn with the game's 2D helpers */
+function gameArt(cv,k){const g=cv.getContext('2d'),d=Math.min(2,window.devicePixelRatio||1);cv.width=cv.height=64*d;g.setTransform(d,0,0,d,0,0);
+  const kid=CHARS[{tumbang:0,patintero:1,sipa:2,palosebo:3,luksong:0,palayok:1,taguan:2,piko:3}[k]||0];
+  g.beginPath();g.arc(32,32,31,0,TAU);fs(g,tint(kid.color,.45));g.save();g.beginPath();g.arc(32,32,30,0,TAU);g.clip();
+  g.fillStyle='#E9C995';g.fillRect(0,46,64,18);
+  const K=(x,y,o)=>drawKid(g,kid,x,y,Object.assign({scale:.48},o));
+  if(k==='tumbang'){rr(g,40,30,11,16,3);fs(g,'#B9C2C9',INK,1.6);g.fillStyle='#E2452E';g.fillRect(40,35,11,4);rr(g,30,20,12,5,2.5);g.save();g.translate(36,22);g.rotate(-.5);rr(g,-6,-2.5,12,5,2.5);fs(g,'#3A7BD5',INK,1.2);g.restore();K(20,56,{mood:'cheer'});}
+  else if(k==='patintero'){g.strokeStyle='#fff';g.lineWidth=2.5;for(const y of [40,52]){g.beginPath();g.moveTo(4,y);g.lineTo(60,y);g.stroke();}g.beginPath();g.moveTo(32,34);g.lineTo(32,60);g.stroke();K(22,58,{dir:'side',walk:3});}
+  else if(k==='sipa'){K(30,60,{mood:'happy'});ell(g,42,14,5,2);fs(g,'#C9A060',INK,1.4);g.strokeStyle='#E2452E';g.lineWidth=2.5;g.beginPath();g.moveTo(42,13);g.lineTo(40,5);g.moveTo(42,13);g.lineTo(45,5);g.stroke();}
+  else if(k==='palosebo'){rr(g,29,4,7,56,3);fs(g,'#C9A060',INK,1.6);g.fillStyle='rgba(255,255,255,.4)';g.fillRect(31,6,2,52);ell(g,32.5,7,7,5);fs(g,'#E2452E',INK,1.4);K(22,48,{mood:'happy'});}
+  else if(k==='luksong'){for(let q=0;q<3;q++){rr(g,36,46-q*6,16,6,3);fs(g,['#F2C9A0','#E8B88C','#D9A57A'][q],INK,1.2);}K(22,50,{lift:6,mood:'cheer'});}
+  else if(k==='palayok'){g.strokeStyle=INK;g.lineWidth=1.5;g.beginPath();g.moveTo(2,8);g.quadraticCurveTo(32,16,62,8);g.stroke();g.beginPath();g.moveTo(42,12);g.lineTo(42,18);g.stroke();
+    ell(g,42,26,10,9);fs(g,'#B8643A',INK,1.6);rr(g,37,16,10,4,2);fs(g,'#9A4E2A',INK,1.2);K(22,58,{mood:'happy'});g.fillStyle=INK;g.fillRect(14,31,16,3);}
+  else if(k==='taguan'){for(const [x,y,r] of [[40,44,13],[52,40,11],[46,32,11]]){ell(g,x,y,r,r*.85);fs(g,'#4E9A3D',INK,1.6);}rr(g,40,33,11,6,3);fs(g,'rgba(20,10,5,.85)');for(const x of [43,48]){ell(g,x,36,1.6,1.6);g.fillStyle='#fff';g.fill();}K(18,58,{dir:'side'});}
+  else if(k==='piko'){g.strokeStyle='#fff';g.lineWidth=1.8;for(const [x,y,w] of [[34,48,12],[34,38,12],[28,28,12],[40,28,12],[34,18,12]])g.strokeRect(x,y,w,10);
+    g.fillStyle='rgba(59,35,22,.6)';for(const [x,y] of [[40,53],[40,43],[46,33]]){ell(g,x,y,1.8,3);g.fill();}ell(g,34,33,3.5,2.2);fs(g,'#8E8A86',INK,1);K(18,60,{lift:4});}
+  g.restore();g.beginPath();g.arc(32,32,30,0,TAU);g.lineWidth=2.5;g.strokeStyle=INK;g.stroke();}
+/* Pasaporte ng Laro, with the Album ng Laro in it: one card per game (picture, name, one line, stamp) and its details
+   (how it is played for real, how to try it outside, the rules in the app, the gold stamp) behind "Ipakita ang detalye" */
 async function passportFlow(){
+  let open=new Set();   // which games' details are open, kept while the card is redrawn
   for(;;){const o=passGet();const done=MG_KEYS.filter(k=>o.played[k]).length,gold=MG_KEYS.filter(k=>o.labas[k]).length,tot=MG_KEYS.length*2;
-    const rows=MG_KEYS.map(k=>{const d=MG[k],on=!!o.played[k],g=!!o.labas[k];return'<div class="stamp'+(g?' gold':(on?' on':''))+'"><span class="seal">'+(g?'GINTO':(on?'TATAK':'?'))+'</span><div><b>'+esc(d.title)+'</b><p>'+esc(on?d.labas:'Laruin ito sa board para makuha ang tatak.')+'</p>'+(on?'<button type="button" class="btn" data-v="labas:'+k+'">'+(g?'Nalaro ko na sa labas ✓':'Nalaro ko na ito sa labas')+'</button>':'')+'</div></div>';}).join('')
-      +SOON.map(x=>'<div class="stamp lock"><span class="seal">SOON</span><div><b>'+esc(x.t)+'</b><p>'+esc(x.d)+'</p></div></div>').join('');
-    const c=openCard('<span class="chip">Pasaporte ng Laro</span><h2>'+(done+gold)+' sa '+tot+' na tatak</h2><div class="passbar"><i style="width:'+Math.round((done+gold)/tot*100)+'%"></i></div><p class="note">Pula ang tatak pag nalaro mo sa app. Ginto pag nalaro mo nang totoo kasama ang barkada.</p>'+rows+'<div class="row"><button type="button" class="btn primary" data-v="close" data-primary>Isara</button></div>');
+    const rows=MG_KEYS.map(k=>{const d=MG[k],on=!!o.played[k],g=!!o.labas[k],ex=open.has(k);
+      return'<div class="gcard'+(g?' gold':(on?' on':''))+'" data-g="'+k+'"><canvas class="gart" width="64" height="64" aria-hidden="true"></canvas><div class="gmain"><div class="ghead"><b>'+esc(d.title)+'</b><span class="seal" title="'+(g?'Gintong tatak':(on?'Tatak':'Wala pang tatak'))+'">'+(g?'GINTO':(on?'TATAK':'?'))+'</span></div>'
+        +'<p class="gshort">'+esc(d.short||'')+'</p><button type="button" class="btn small gdbtn" data-det="'+k+'" aria-expanded="'+ex+'" aria-controls="gd-'+k+'">'+(ex?'Itago ang detalye':'Ipakita ang detalye')+'</button></div>'
+        +'<div class="gdet" id="gd-'+k+'"'+(ex?'':' hidden')+'>'+(d.aka?'<p class="aka">'+esc(d.aka)+'</p>':'')
+        +'<div class="real"><b>Sa totoong kalye</b><p>'+esc(d.real)+'</p></div>'+labasBox(d)
+        +'<div class="gsec"><b>Sa app</b><ul>'+d.rules.map(r=>'<li>'+esc(r)+'</li>').join('')+'</ul></div>'
+        +(on?'<button type="button" class="btn small" data-v="labas:'+k+'">'+(g?'Nalaro ko na sa labas ✓':'Nalaro ko na ito sa labas')+'</button>':'<p class="note">Laruin ito sa board para makuha ang tatak.</p>')+'</div></div>';}).join('')
+      +SOON.map(x=>'<div class="gcard lock"><span class="gart soon">?</span><div class="gmain"><div class="ghead"><b>'+esc(x.t)+'</b><span class="seal">SOON</span></div><p class="gshort">'+esc(x.d)+'</p></div></div>').join('');
+    const c=openCard('<span class="chip">Pasaporte ng Laro</span><h2>'+(done+gold)+' sa '+tot+' na tatak</h2><div class="passbar"><i style="width:'+Math.round((done+gold)/tot*100)+'%"></i></div><p class="note">Pula ang tatak pag nalaro mo sa app. Ginto pag nalaro mo nang totoo kasama ang barkada.</p><h3 class="album">Album ng Laro</h3>'+rows+'<div class="row"><button type="button" class="btn primary" data-v="close" data-primary>Isara</button></div>');
+    c.querySelectorAll('.gcard[data-g] .gart').forEach(cv=>{try{gameArt(cv,cv.closest('.gcard').dataset.g);}catch(e){}});
+    c.querySelectorAll('button[data-det]').forEach(b=>b.addEventListener('click',()=>{const k=b.dataset.det,det=c.querySelector('#gd-'+k),ex=det.hidden;det.hidden=!ex;b.setAttribute('aria-expanded',String(ex));b.textContent=ex?'Itago ang detalye':'Ipakita ang detalye';if(ex)open.add(k);else open.delete(k);Sfx.init();Sfx.tick(3);}));
     let top=passportFlow.top||0;if(top)c.scrollTop=top;passportFlow.top=null;const onScroll=()=>{top=c.scrollTop;};c.addEventListener('scroll',onScroll,{passive:true});   // kept, so the card reopens where it was
     const v=await cardChoice(c);c.removeEventListener('scroll',onScroll);
     /* a gold stamp is only taken back after asking: the button reads like a tick, so a second tap (or a double tap) used to
@@ -2024,36 +2070,36 @@ function mkSipa(pre,mgi){
   return sc;
 }
 const MG={
-  tumbang:{labas:'Kailangan: 1 lata, tig-isang tsinelas, at 3 o higit pang kalaro. Gumuhit ng bilog para sa lata. Gumuhit din ng guhit na tatayuan ng mga babato.',title:'Tumbang Preso',aka:'Tinatawag ding presohan, tumba-lata, o tumba-patis sa Visayas',chip:'4 na player · sabay-sabay',unit:'tumba',make:(pre,mgi)=>mkTumbang(pre,mgi),
+  tumbang:{labas:'Kailangan: 1 lata, tig-isang tsinelas, at 3 o higit pang kalaro. Gumuhit ng bilog para sa lata. Gumuhit din ng guhit na tatayuan ng mga babato.',title:'Tumbang Preso',short:'Patumbahin ang lata gamit ang tsinelas.',aka:'Tinatawag ding presohan, tumba-lata, o tumba-patis sa Visayas',chip:'4 na player · sabay-sabay',unit:'tumba',make:(pre,mgi)=>mkTumbang(pre,mgi),
     preroll:d=>{const pr=[.2,.35,.55][d]+G()*.32;return[0,1,2,3,4].map(()=>G()<pr);},botScore:pre=>pre.filter(Boolean).length,
     rules:['Ihagis ang tsinelas para matumba ang lata.','Gumagalaw ang guhit. Tumira pag nasa puting gitna ito.','5 tira bawat isa. Pabilis nang pabilis ang guhit. Pinakamaraming tumba, panalo!'],
     real:'Sa kalye, may taya na nagbabantay sa lata sa loob ng bilog. Binabato ng iba ang lata ng tsinelas mula sa guhit. Pag natumba ang lata, kunin agad ang tsinelas mo habang itinatayo ng taya ang lata. Pag nataya ka, ikaw na ang taya!'},
-  patintero:{labas:'Gumuhit ng mga linya sa bakuran o court, gamit ang chalk o tubig. Hatiin sa 2 team: mga bantay sa linya, at mga tatawid.',title:'Patintero',aka:'Tinatawag ding harang taga o tubigan',chip:'1 laban sa 3 · tig-isang takbo',unit:'puntos',
+  patintero:{labas:'Gumuhit ng mga linya sa bakuran o court, gamit ang chalk o tubig. Hatiin sa 2 team: mga bantay sa linya, at mga tatawid.',title:'Patintero',short:'Tumawid sa mga linya nang hindi natataya.',aka:'Tinatawag ding harang taga o tubigan',chip:'1 laban sa 3 · tig-isang takbo',unit:'puntos',
     preroll:d=>Math.round([2,6,14][d]+G()*[10,16,20][d]),botScore:pre=>pre,
     rules:['Tumawid sa bawat linya hanggang Dulo, tapos bumalik sa Bahay.','+2 bawat linya papunta, +3 pabalik, +5 pag-uwi.','Pag nataya ka, balik ka sa Bahay. Habang kumikislap ka pa, walang puntos ang linyang tatawirin mo.'],
     real:'Gumuguhit ng mga linya sa lupa, minsan gamit ang tubig. Kaya tubigan din ang tawag dito. 2 team ang naglalaro. Sa mga linya lang puwedeng gumalaw ang mga bantay. Ang kabilang team ay tatawid hanggang dulo, tapos pabalik. Pag may nataya, magpapalit ang 2 team.'},
-  sipa:{labas:'Gumawa ng sariling sipa: washer o takip ng bote na may ginupit na plastik o papel. Bilangin kung ilang sipa bago ito mahulog.',title:'Sipa',aka:'Pambansang laro ng Pilipinas hanggang 2009',chip:'4 na player · sabay-sabay',unit:'sipa',make:(pre,mgi)=>mkSipa(pre,mgi),
+  sipa:{labas:'Gumawa ng sariling sipa: washer o takip ng bote na may ginupit na plastik o papel. Bilangin kung ilang sipa bago ito mahulog.',title:'Sipa',short:'Sipain ang sipa nang hindi bumabagsak.',aka:'Pambansang laro ng Pilipinas hanggang 2009',chip:'4 na player · sabay-sabay',unit:'sipa',make:(pre,mgi)=>mkSipa(pre,mgi),
     preroll:d=>[2,3,8][d]+Math.floor(G()*[8,14,16][d]),botScore:pre=>pre,
     rules:['Sipain ang sipa bago ito mahulog.','Pindutin pag umiilaw ang bilog. Pag masyadong maaga o pindot nang pindot, saglit kang hindi makakasipa.','Pabilis nang pabilis. Pinakamaraming sipa, panalo!'],
     real:'Maliit na pabigat ang sipa, gaya ng tingga o washer, na may makukulay na papel o tela. Sinisipa ito pataas gamit ang loob ng paa o tuhod. Huwag itong hayaang mahulog! Pambansang laro ito hanggang 2009. Noon, ginawang pambansang martial art at sport ang arnis.'},
-  palosebo:{labas:'Laro sa pista ang palosebo. Abangan ito sa pista ng barangay! Tanungin din ang lolo o lola mo kung paano sila nanalo noon.',title:'Palosebo',aka:'Galing sa Espanyol na palo ensebado: kawayang pinahiran ng grasa',chip:'4 na player · sabay-sabay',unit:'puntos',make:(pre,mgi)=>mkPalosebo(pre,mgi),
+  palosebo:{labas:'Laro sa pista ang palosebo. Abangan ito sa pista ng barangay! Tanungin din ang lolo o lola mo kung paano sila nanalo noon.',title:'Palosebo',short:'Akyatin ang madulas na kawayan.',aka:'Galing sa Espanyol na palo ensebado: kawayang pinahiran ng grasa',chip:'4 na player · sabay-sabay',unit:'puntos',make:(pre,mgi)=>mkPalosebo(pre,mgi),
     preroll:d=>Math.round([20,40,85][d]+G()*[55,75,60][d]),botScore:pre=>pre,
     rules:['I-tap para umakyat sa kawayan. Pag berde ang kamay, puwede na.','Huwag magmadali! Madudulas ka pag sunod-sunod ang tap.','Abutin ang premyo sa tuktok sa loob ng 12 segundo. May bonus pag mabilis ka.'],
     real:'Laro ito tuwing pista. Pinapahiran ng mantika o grasa ang isang mahabang kawayan. May premyo sa tuktok, gaya ng pera o bandila. Paunahan sa pag-akyat ang mga sumali. Kailangan ng lakas, diskarte at tiyaga para hindi dumulas.'},
-  luksong:{labas:'2 kalaro ang uupo nang magkaharap sa damuhan. Pagpapatungin nila ang mga paa, tapos ang mga kamay. Iyan ang tinik! Lulundagan ito ng iba. Ang sumabit, siya ang uupo.',title:'Luksong Tinik',aka:'Laro ng lukso at lakas ng loob',chip:'4 na player · sabay-sabay',unit:'level',make:(pre,mgi)=>mkLuksong(pre,mgi),
+  luksong:{labas:'2 kalaro ang uupo nang magkaharap sa damuhan. Pagpapatungin nila ang mga paa, tapos ang mga kamay. Iyan ang tinik! Lulundagan ito ng iba. Ang sumabit, siya ang uupo.',title:'Luksong Tinik',short:'Lundagin ang tumataas na tinik ng kamay.',aka:'Laro ng lukso at lakas ng loob',chip:'4 na player · sabay-sabay',unit:'level',make:(pre,mgi)=>mkLuksong(pre,mgi),
     preroll:d=>Math.min(8,[1,2,4][d]+Math.floor(G()*[4,5,5][d])),botScore:pre=>pre,
     rules:['Tatakbo ka papunta sa tinik. I-tap para lumukso pag nasa dilaw na guhit ang paa mo.','Pag maaga o huli ka, sasabit ka at tapos na ang laro mo.','Bawat level, tataas at bibilis ang tinik. Pinakamataas na level, panalo!'],
     real:'2 kalaro ang nakaupo sa lupa. Pinagpapatong nila ang mga paa, tapos ang mga kamay, para tumaas ang tinik. Lumulukso ang iba nang hindi tumatama. Pag may sumabit, siya na ang uupo.'},
   /* new minigames go at the end (saves keep their round plans by key); off:true drops one from MG_KEYS without deleting it */
-  palayok:{labas:'Para ligtas, lumang kahon o supot na papel ang gamitin, hindi palayok. Lagyan ito ng kendi at isabit sa lubid. Piringan ang kalaro at paikutin nang 3 beses bago pumalo. Lumayo ang mga nanonood sa pumapalo!',title:'Pukpok Palayok',aka:'Tinatawag ding hampas-palayok o basag-palayok',chip:'4 na player · sabay-sabay',unit:'puntos',make:(pre,mgi)=>mkPalayok(pre,mgi),
+  palayok:{labas:'Para ligtas, lumang kahon o supot na papel ang gamitin, hindi palayok. Lagyan ito ng kendi at isabit sa lubid. Piringan ang kalaro at paikutin nang 3 beses bago pumalo. Lumayo ang mga nanonood sa pumapalo!',title:'Pukpok Palayok',short:'Basagin ang palayok nang nakapiring.',aka:'Tinatawag ding hampas-palayok o basag-palayok',chip:'4 na player · sabay-sabay',unit:'puntos',make:(pre,mgi)=>mkPalayok(pre,mgi),
     preroll:d=>palayokPre(d),botScore:pre=>pre.reduce((a,b)=>a+b,0),
     rules:['Tingnan kung ilang hakbang ang layo ng palayok bago ka piringan.','Bilangin sa isip ang bawat hakbang. Tapos pindutin para pumalo.','Basag: 10, sagi: 6, malapit: 3. May 3 subok ka. Huwag maniwala sa sigaw ng mga nanonood!'],
     real:'Laro ito tuwing pista at birthday. Isinasabit sa lubid, sa pagitan ng 2 poste, ang palayok na may kendi, barya o laruan. Pipiringan ang player, paiikutin nang ilang beses, at bibigyan ng patpat. Sumisigaw ang mga nanonood kung saan papalo. Minsan totoo, minsan biro lang! Pag nabasag ang palayok, nag-aagawan ang lahat sa kendi.'},
-  taguan:{labas:'Kailangan ng 3 o higit pang kalaro at ligtas na bakuran. Pumili ng base. Pipikit ang taya at bibilang hanggang 20. Magtago ang iba sa lugar na kita pa ng matatanda.',title:'Taguan',aka:'Tinatawag ding tagu-taguan',chip:'4 na player · sabay-sabay',unit:'puntos',make:(pre,mgi)=>mkTaguan(pre,mgi),
+  taguan:{labas:'Kailangan ng 3 o higit pang kalaro at ligtas na bakuran. Pumili ng base. Pipikit ang taya at bibilang hanggang 20. Magtago ang iba sa lugar na kita pa ng matatanda.',title:'Taguan',short:'Hanapin ang mga nagtatago sa bakuran.',aka:'Tinatawag ding tagu-taguan',chip:'4 na player · sabay-sabay',unit:'puntos',make:(pre,mgi)=>mkTaguan(pre,mgi),
     preroll:d=>({f:[3,5,7][d]+Math.floor(G()*3),w:d>=2?0:Math.floor(G()*(d?2:3))}),botScore:pre=>Math.max(0,Math.min(100,pre.f*10-pre.w*2)),
     rules:['Kusang naglalakad ang taya at tumitigil sa bawat taguan. 10 puntos bawat mahanap.','I-tap pag may bakas ng bata: tsinelas, buhok, mata, anino, hagikgik, kaluskos o daliri.','Hayop lang ang pusa, manok at aso! Mali: −2, at bawal mag-tap sa susunod na 2 taguan.'],
     real:'Pipikit at bibilang ang taya habang nagtatago ang iba. Kinakanta niya ang "Tagu-taguan, maliwanag ang buwan…". Tapos, hahanapin niya ang mga nagtago. Pag may nakita siya, uunahan niya itong makabalik sa base. Ang unang nahuli, siya ang bagong taya.'},
-  piko:{labas:'Gumuhit ng piko sa ligtas na semento o lupa, gamit ang tisa o uling. Maghanap ng patag na pamato. Puwede kahit 2 lang kayo.',title:'Piko',aka:'Tinatawag ding piko-piko; hopscotch sa Ingles',chip:'4 na player · sabay-sabay',unit:'hakbang',make:(pre,mgi)=>mkPiko(pre,mgi),
+  piko:{labas:'Gumuhit ng piko sa ligtas na semento o lupa, gamit ang tisa o uling. Maghanap ng patag na pamato. Puwede kahit 2 lang kayo.',title:'Piko',short:'Lumukso sa mga kahong iginuhit sa lupa.',aka:'Tinatawag ding piko-piko; hopscotch sa Ingles',chip:'4 na player · sabay-sabay',unit:'hakbang',make:(pre,mgi)=>mkPiko(pre,mgi),
     preroll:d=>pikoPre(d),botScore:pre=>PIKO_CUM[pre]||0,
     rules:['Pindot: 1 paa sa iisang kahon. Diinan: 2 paa sa magkatabing kahon.','Laktawan ang kahong may pamato. Pag nasa magkatabing kahon ito, 1 paa lang sa kabila.','Maling lukso? Patay! Balik sa simula, bawas ang hakbang sa guhit na iyon. +2 bawat tapos na guhit. 20 segundo.'],
     real:'Iginuguhit ng tisa o uling ang mga kahon sa lupa. Ihahagis ng player ang pamato (patag na bato o piraso ng paso) sa unang kahon. Lulukso siya: 1 paa sa iisang kahon, 2 paa sa magkatabi. Lalaktawan niya ang kahong may pamato. Pagbalik, pupulutin niya ang pamato nang hindi natutumba. Patay pag tumapak sa guhit, natumba o nagkamali ng kahon.'}
@@ -2070,7 +2116,7 @@ const BUILD_VER='2026-10-25b',BUILD=(window.LSU_NET&&window.LSU_NET.build)||BUIL
    ?lang=en or ?lang=fil opens that language for this visit without saving it (for testers). */
 let LANG_Q=(/[?&]lang=(en|fil)\b/.exec(location.search)||[])[1]||null;
 const lang=()=>LANG_Q||PREFS.lang;
-const CTXT=['title','aka','chip','unit','labas','rules','real'],CONTENT={fil:null,en:null};
+const CTXT=['title','short','aka','chip','unit','labas','rules','real'],CONTENT={fil:null,en:null};
 const BUILTIN={tanong:TANONG.map(t=>({q:t.q,a:t.a.slice(),f:t.f})),soon:SOON.map(s=>({t:s.t,d:s.d})),mg:{}};
 for(const k in MG){BUILTIN.mg[k]={};for(const x of CTXT)if(MG[k][x]!=null)BUILTIN.mg[k][x]=MG[k][x];}
 async function fetchContent(l){try{const res=await fetch('content/'+l+'.json');return res.ok?await res.json():null;}catch(e){console.warn('content/'+l+'.json not loaded',e);return null;}}
@@ -2661,6 +2707,7 @@ async function gameLoop(startRound,startTurn,token){
       if(r===1&&startTurn!==4)tip('torneo','Torneo: walang dice. Bawat panalo sa laro, 1 korona. Pag tabla, ang may mas maraming piso ang panalo.');
       await say(r===maxR()?'Huling laro!':'Laro '+r+' ng '+maxR(),'#FFC93C',1100);if(token!==gameToken)return;
       state.turn=4;checkpoint();await runMinigame(state.plan[r-1]);startTurn=0;continue;}
+    if(r===1&&startTurn===0&&TOUR_ON&&isParty()&&!NET.on&&locals().length&&!tourSeen()){await firstGameTour(locals()[0]);if(token!==gameToken)return;}
     if(r===1&&startTurn===0){tip('goal','Layunin: pinakamaraming korona sa dulo ng laro. Pag may 10 piso ka, dumaan sa korona para bilhin ito.');await say('Bunutan: una si '+state.players[state.order[0]].name+'!','#FFE07A',1300);if(token!==gameToken)return;}
     if(startTurn===0&&r>1)await say(r===maxR()?'Huling ikot!':'Ikot '+r,'#FFC93C',1100);
     if(startTurn===0&&r===maxR()&&maxR()>=3)await hulingHirit();
@@ -2690,9 +2737,10 @@ function beginGame(spec,seed,cp,cfg){
   state.cfg=normCfg(cfg);gs=seed|0;decK=0;mgSeq=0;state.ended=false;
   state.plan=isHamon()?[MG[state.cfg.mg]?state.cfg.mg:'tumbang']:mgPlan(seed|0,maxR());if(DEBUG_MG&&MG[DEBUG_MG]&&!isHamon())state.plan=state.plan.map(()=>DEBUG_MG);
   state.order=[0,1,2,3];if(!isHamon())for(let i=3;i>0;i--){const j=Math.floor(G()*(i+1)),t=state.order[i];state.order[i]=state.order[j];state.order[j]=t;}
-  /* every mode shows an island now (Torneo and Hamon used the old cloud board); a save names its board. Nobody moves in
-     Torneo, so an older Torneo save resumes on the island with everyone at the start */
-  setBoard(cp&&cp.board&&(MAPS[cp.board]||cp.board==='ulap')?cp.board:state.cfg.map);state.players=makePlayers(spec);state.players.forEach(p=>{p.pos=BOARD.start;});resetKorona();state.round=1;state.turn=0;state.overview=false;state.active=null;state.party=false;mapBtn.setAttribute('aria-pressed','false');
+  /* Party and Torneo show an island (Torneo used the old cloud board); a save names its board. Nobody moves in Torneo,
+     so an older Torneo save resumes on the island with everyone at the start */
+  /* Hamon ng Araw has no board: it starts at once, with only the sky behind its cards (B3.render) */
+  setBoard(isHamon()?'ulap':cp&&cp.board&&(MAPS[cp.board]||cp.board==='ulap')?cp.board:state.cfg.map);state.players=makePlayers(spec);state.players.forEach(p=>{p.pos=BOARD.start;});resetKorona();state.round=1;state.turn=0;state.overview=false;state.active=null;state.party=false;mapBtn.setAttribute('aria-pressed','false');
   let r0=1,t0=0;
   if(cp&&cp.players&&cp.players.length===4){cp.players.forEach((q,i)=>{const p=state.players[i];p.pos=clamp(q.pos|0,0,N-1);p.trail=Array.isArray(q.trail)?q.trail.map(v=>clamp(v|0,0,N-1)).slice(-16):[];p.piso=q.piso|0;p.korona=q.korona|0;p.item=q.item&&ITEMS[q.item]?q.item:null;if(q.ctrl==='bot'){if(q.away&&p.ctrl!=='bot')p.away=p.ctrl;p.ctrl='bot';}if(Array.isArray(q.allies))p.allies=q.allies.slice(0,2).map(a=>({n:cleanName(a.n)||'Kasama',look:clamp(a.look|0,0,3),x:0,y:0}));if(q.stats)p.stats={wins:q.stats.wins|0,steps:q.stats.steps|0,dice:q.stats.dice|0,dn:q.stats.dn|0};});
     if(Array.isArray(cp.korona)&&cp.korona.length===korona.spots.length)korona.spots=cp.korona.map(v=>clamp(v|0,0,N-1));r0=clamp(cp.round|0,1,maxR());t0=clamp(cp.turn|0,0,4);gs=cp.gs|0;decK=cp.decK|0;mgSeq=cp.mgSeq|0;
@@ -2934,8 +2982,7 @@ function guidePages(){
     {t:'Mga mapa',h:'<p>Pumili ng isla bago maglaro: <b>Plaza, Palengke, Aplaya</b> o <b>Palayan</b>. May <b>4 na korona</b> sa bawat mapa.</p><ul><li><b>Sangandaan:</b> may daan na humihiwalay, tapos bumabalik sa ikot. Ikaw ang pipili kung saan dadaan.</li><li><b>Sakay:</b> malapit sa simula ang hintuan ng Kalesa, Padyak, Bangka o Kariton ng kalabaw. Tumigil o dumaan doon at magbayad (8 piso; Bangka 6). Dadalhin ka nito sa malayong dulo ng mapa, at doon ka titigil.</li><li><b>Space ng isla:</b> may sariling space ang bawat mapa, gaya ng Banda at Kampana sa Plaza, Tawad at Basa sa Palengke, Alon at Huli sa Aplaya, Ani at Balang sa Palayan. Pag unang tapak mo rito, sasabihin ng tip kung ano ang ginagawa nito.</li></ul>'},
     {t:'Mga item',h:'<p>1 item lang ang puwedeng dalhin. Bilhin ito sa Sari-sari store, o makuha sa Swerte.</p><ul class="legend items">'+Object.keys(ITEMS).map(k=>'<li><span class="iic">'+ITEM_ICON[k]+'</span><span><b>'+esc(ITEMS[k].name)+' · '+ITEMS[k].cost+' piso</b><br>'+esc(ITEMS[k].desc)+'</span></li>').join('')+'</ul><p class="note">Bago bumili, magtira ng 10 piso para sa korona!</p>'},
     {t:'Mga laro',h:'<p>Pagkatapos ng bawat ikot, maglalaro ang lahat ng isang larong kalye: '+(t=>'<b>'+t.slice(0,-1).join(', ')+'</b> o <b>'+t[t.length-1]+'</b>')(MG_KEYS.map(k=>esc(MG[k].title)))+'.</p><p>Premyo: <b>+10</b> piso sa una, <b>+5</b> sa ikalawa, <b>+3</b> sa ikatlo.</p><p><b>Huling Hirit:</b> sa huling ikot, doble ang premyo. May tulong pa ang nasa huli.</p><p><b>Bonus na korona</b> sa dulo: <b>Hari ng Laro</b> (pinakamaraming panalo sa mga laro), <b>Mayaman</b> (pinakamaraming piso) at <b>Malas sa Dice</b> (pinakamababang average ng dice).</p>'},
-    {t:'Mga paraan ng paglaro',h:'<ul><li><b>Party</b>: board, dice at laro, 3, 5 o 8 ikot.</li><li><b>Torneo</b>: laro lang, walang dice. Bawat panalo, 1 korona. Kaya galing ang labanan dito.</li><li><b>Hamon ng Araw</b>: solo laban sa mahihirap na bot. Pare-pareho ang hamon ng lahat ngayong araw. May listahan ng score.</li><li><b>Online</b>: gumawa ng room at ipa-scan ang QR, o ibigay ang 4-letrang code.</li></ul>'},
-    {t:'Album ng Laro',h:'<p>Ganito nilalaro ang mga ito sa totoong kalye at pista.</p>'+MG_KEYS.map(k=>'<div class="real"><b>'+esc(MG[k].title)+'</b><p>'+esc(MG[k].real)+'</p></div>').join('')+'<div class="row"><button type="button" class="btn small" data-v="tips">Ipakita ulit ang mga tip</button></div>'}
+    {t:'Mga paraan ng paglaro',h:'<ul><li><b>Party</b>: board, dice at laro, 3, 5 o 8 ikot.</li><li><b>Torneo</b>: laro lang, walang dice. Bawat panalo, 1 korona. Kaya galing ang labanan dito.</li><li><b>Hamon ng Araw</b>: solo laban sa mahihirap na bot. Pare-pareho ang hamon ng lahat ngayong araw. May listahan ng score.</li><li><b>Online</b>: gumawa ng room at ipa-scan ang QR, o ibigay ang 4-letrang code.</li></ul><p class="note">Nasa <b>Pasaporte</b> sa main menu ang <b>Album ng Laro</b>: kung paano nilalaro ang bawat isa sa totoong kalye.</p><div class="row"><button type="button" class="btn small" data-v="tips">Ipakita ulit ang gabay at mga tip</button></div>'}
   ];
 }
 async function guideFlow(open){
@@ -2943,8 +2990,36 @@ async function guideFlow(open){
   for(;;){const pg=P[i],lastPg=i===P.length-1;
     const c=open('<span class="chip">Paano maglaro · '+(i+1)+'/'+P.length+'</span><h2>'+esc(pg.t)+'</h2>'+pg.h+'<div class="row"><button type="button" class="btn" data-v="prev">'+(i?'Balik':'Isara')+'</button><button type="button" class="btn primary" data-v="next" data-primary>'+(lastPg?'Tapos':'Susunod')+'</button></div>');
     const v=await cardChoice(c);
-    if(v==='tips'){resetTips();toast('Lalabas ulit ang mga tip','#BDE7A6',1300);continue;}
+    if(v==='tips'){resetTips();tourMark(false);toast('Lalabas ulit ang gabay at mga tip sa susunod na laro','#BDE7A6',1600);continue;}
     if(v==='next'){if(lastPg)return;i++;}else if(v==='prev'){if(!i)return;i--;}else return;}
+}
+
+/* ================= first-game guide: six short steps over the real board, at the start of a first local Party game.
+   The card sits at the bottom without dimming the board, the part being explained is shown or outlined, and
+   Balik / Susunod / Laktawan move through it. Seen once (lsu-tour); "Ipakita ulit ang gabay at mga tip" in Paano
+   maglaro shows it again on the next game. The tips that pop up during play (first roll, first space, …) still come */
+const TOUR_KEY='lsu-tour',TOUR_ON=!DEBUG||/[?&]tour\b/.test(location.search);   // like the splash: the tests open the game with ?debug, and ?debug&tour shows the guide
+function tourSeen(){try{return localStorage.getItem(TOUR_KEY)==='1';}catch(e){return!!tourSeen.mem;}}
+function tourMark(v){try{if(v)localStorage.setItem(TOUR_KEY,'1');else localStorage.removeItem(TOUR_KEY);}catch(e){tourSeen.mem=v;}}
+function tourSteps(p){const ic=k=>'<span class="iic">'+ITEM_ICON[k]+'</span>';
+  return[
+    {t:'Ang isla',show:'board',h:'<p>Ito ang board: isang daan na umiikot sa isla. May mga <b>sangandaan</b> kung saan ikaw ang pipili ng daan, at <b>'+BOARD.korona+' korona</b> na naghihintay sa daan.</p><p class="note">Ang kulay ng espasyo ang nagsasabi kung ano ang mangyayari kapag huminto ka roon.</p>'},
+    {t:'Paggalaw',show:'reach',h:'<p>Sa turn mo, pindutin ang <b>Tamaan ang dice</b>: 1 hanggang 10 hakbang. Ang may <b>puting bilog</b> ang maaabot mo.</p><p class="note">May <b>kasama</b> ka? Bawat isa ay +1 o +2 hakbang. Tikbalang: atras ng 3.</p>'},
+    {t:'Piso at korona',show:'hud',h:'<p>'+COIN_SVG+' <b>Piso</b>: pambili. Nakukuha sa asul na espasyo at sa mga laro. Nagsisimula ka sa 10.</p><p>'+CROWN_SVG+' <b>Korona</b>: ito ang bilang sa dulo. Kapag <b>dumaan</b> ka sa korona na may '+KCOST+' piso, mabibili mo ito.</p>'},
+    {t:'Mga item',show:'hud',h:'<p>Isang item lang ang madadala. Bilhin sa <b>Sari-sari</b> o makuha sa <b>Swerte</b>, at pindutin ang <b>Gamitin</b> bago gumulong.</p><ul class="legend items">'+['doble','kendi','ginto','agimat'].map(k=>'<li>'+ic(k)+'<span><b>'+esc(ITEMS[k].name)+'</b> · '+esc(ITEMS[k].desc)+'</span></li>').join('')+'</ul>'},
+    {t:'Mga laro',show:'games',h:'<p>Pagkatapos ng bawat ikot, maglalaro ang lahat ng isang <b>larong kalye</b>. Premyo: <b>+10</b> piso sa una, <b>+5</b> sa ikalawa, <b>+3</b> sa ikatlo.</p><div class="tgames"></div><p class="note">Sasabihin ng bawat laro kung paano ito laruin bago magsimula.</p>'},
+    {t:'Paano manalo',show:'hud',h:'<p>Ang may <b>pinakamaraming korona</b> sa dulo ang panalo. Kapag tabla, <b>piso</b> ang batayan.</p><p>Sa dulo, may <b>bonus na korona</b>: Hari ng Laro, Mayaman at Malas sa Dice. Sa huling ikot (<b>Huling Hirit</b>), doble ang premyo ng laro.</p>'}
+  ];}
+async function firstGameTour(p){
+  const st=tourSteps(p),m=$('#modal');let i=0;const card=state.players.map(q=>q===p&&cards[q.id]&&cards[q.id].el).find(Boolean);
+  const hl=on=>{if(card)card.classList.toggle('tour-hl',on);};
+  try{for(;;){const s=st[i],last=i===st.length-1;
+      state.overview=s.show==='board';if(s.show==='reach')setReach(p,null);else state.reach=null;hl(s.show==='hud');
+      m.classList.add('tour');const c=openCard('<span class="chip">Unang laro · '+(i+1)+'/'+st.length+'</span><h2>'+esc(s.t)+'</h2>'+s.h+'<div class="row"><button type="button" class="btn" data-v="skip">Laktawan</button>'+(i?'<button type="button" class="btn" data-v="prev">Balik</button>':'')+'<button type="button" class="btn primary" data-v="next" data-primary>'+(last?'Tara, laro na!':'Susunod')+'</button></div>');
+      if(s.show==='games'){const box=c.querySelector('.tgames');MG_KEYS.slice(0,4).forEach(k=>{const cv=document.createElement('canvas');cv.className='gart';cv.title=MG[k].title;box.appendChild(cv);try{gameArt(cv,k);}catch(e){}});}
+      const v=await cardChoice(c);
+      if(v==='next'){if(last)break;i++;}else if(v==='prev'){i=Math.max(0,i-1);}else break;}}
+  finally{m.classList.remove('tour');hl(false);state.overview=false;state.reach=null;closeCard();tourMark(true);TIPS_SEEN.add('goal');}
 }
 
 /* ================= in-game menu: pause (local games), settings, leave ================= */
@@ -3040,7 +3115,7 @@ window.addEventListener('keyup',e=>{if(scene&&scene.key)scene.key(e,false);});
 const releaseHeld=()=>{if(scene&&scene.releaseAll)scene.releaseAll();};
 window.addEventListener('blur',releaseHeld);document.addEventListener('visibilitychange',()=>{if(document.hidden)releaseHeld();});
 /* dialogs: Tab stays inside the open card, Escape presses its back/close button */
-const ESC_V=['back','prev','n','none','leave','close'];
+const ESC_V=['back','prev','n','none','leave','close','skip'];   // skip: Escape ends the first-game guide
 document.addEventListener('keydown',e=>{const top=topDialog();if(!top)return;
   if(e.key==='Tab'){const f=[...top.querySelectorAll('button:not([disabled]),input')].filter(x=>x.offsetParent);if(!f.length)return;const i=f.indexOf(document.activeElement);
     if(i<0||(e.shiftKey&&i===0)||(!e.shiftKey&&i===f.length-1)){e.preventDefault();f[i<0||!e.shiftKey?0:f.length-1].focus();}}
@@ -3291,37 +3366,56 @@ function init3D(){
     palayan:{seed:14,hat:true,vendorLines:['Gulay, gulay!','Bigas!'],vendors:2,vehicles:['kalabaw_cart','kuliglig'],dogs:2,cats:1,chickens:8}};
   const nextFrame=()=>new Promise(r=>requestAnimationFrame(()=>setTimeout(r,0)));
   B3.island=null;B3.loading=null;
-  function dropIsland(){const I=B3.island;if(!I)return;B3.island=null;I.stop.v=true;if(ISTAGE._living){ISTAGE._living.islands.length=0;ISTAGE._living.lights=null;}
-    meterSpace.remove(I.grp);I.grp.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material)[].concat(o.material).forEach(m=>{for(const k in m){const v=m[k];if(v&&v.isTexture)v.dispose();}m.dispose();});});
-    if(I.env.env)I.env.env.dispose();}
-  B3.loadIsland=(id,prog)=>{if(B3.island&&B3.island.id===id)return Promise.resolve(true);if(B3.loading&&B3.loading.id===id)return B3.loading.p;
+  /* frees an island: its meshes, its textures and its entry in the living-island list (only its own, so an island built
+     to replace it keeps animating) */
+  function freeIsland(I){I.stop.v=true;const LV=ISTAGE._living;if(LV){const i=I.living?LV.islands.indexOf(I.living):-1;if(i>=0)LV.islands.splice(i,1);else if(!I.living)LV.islands.length=0;}
+    if(I.grp.parent)I.grp.parent.remove(I.grp);I.grp.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material)[].concat(o.material).forEach(m=>{for(const k in m){const v=m[k];if(v&&v.isTexture)v.dispose();}m.dispose();});});
+    if(I.env&&I.env.env)I.env.env.dispose();}
+  function dropIsland(){const I=B3.island;if(!I)return;B3.island=null;freeIsland(I);if(ISTAGE._living)ISTAGE._living.lights=null;}
+  /* B3.hold > 0 keeps the 3D view on its last frame (the 2D overlay and the game go on) while shaders compile */
+  B3.hold=0;
+  B3.loadIsland=(id,prog)=>{const qk=gqIsland();if(B3.island&&B3.island.id===id&&B3.island.q===qk)return Promise.resolve(true);if(B3.loading&&B3.loading.id===id&&B3.loading.q===qk)return B3.loading.p;
+    if(B3.loading)B3.loading.stop.v=true;   // a build for another island or an older quality stops at its next step
+    const stop={v:false};
     const p=(async()=>{const say=(f,t)=>{try{prog&&prog(f,t);}catch(e){}};const m=MAPS[id];
+      /* a new Kalidad on the same island: the old island stays on screen while the new one is built, then they swap */
+      const swap=!!(B3.island&&B3.island.id===id);
       say(.05,'Inihahanda ang '+m.name+'…');
       const [isl,pol,lif,liv]=await Promise.all(['islands/'+id,'polish','life','living'].map(f=>import('./maps/'+f+'.js')));
-      await nextFrame();dropIsland();say(.2,'Itinatayo ang '+m.name+'…');await nextFrame();
-      const Q=gq(),qk=gqIsland(),b=await isl.build(T3),root=b.root,isc=new T3.Scene(),stop={v:false};isc.add(root);
+      await nextFrame();if(stop.v)return false;if(!swap)dropIsland();say(.2,'Itinatayo ang '+m.name+'…');await nextFrame();
+      const Q=gq(),b=await isl.build(T3),root=b.root,isc=new T3.Scene();isc.add(root);
       root.traverse(o=>{if(o.isMesh){o.castShadow=Q.isl;o.receiveShadow=true;}});
       say(.55,'Pinapaganda ang '+m.name+'…');await nextFrame();
       ISTAGE._scene=isc;pol.polish(T3,ISTAGE,root,{normals:false,skyRadius:220,grade:GRADE[id],stopped:()=>stop.v});
       say(.7,'Binubuhay ang '+m.name+'…');await nextFrame();
       try{const lf=lif.addLife(T3,ISTAGE,root,Object.assign({name:id,ui:false,korona:0,seed:91,stopped:()=>stop.v},OPTS[id]));if(lf&&lf.setKorona)lf.setKorona(0);}catch(e){console.warn(e);}
-      try{await liv.addLiving(T3,ISTAGE,root,Object.assign({name:id,ui:false,post:false,leafCards:Q.leaf,grassLayers:Q.grass},LIVE[id]));}catch(e){console.warn(e);}
+      let living=null;if(ISTAGE._living)ISTAGE._living.lights=null;   // the weather follows this island's lights
+      try{living=await liv.addLiving(T3,ISTAGE,root,Object.assign({name:id,ui:false,post:false,leafCards:Q.leaf,grassLayers:Q.grass},LIVE[id]))||null;}catch(e){console.warn(e);}
       say(.9,'Halos tapos na…');await nextFrame();
-      const grp=new T3.Group();grp.name='island_'+id;[...isc.children].forEach(c=>grp.add(c));setAniso(grp,gq().aniso);meterSpace.add(grp);
-      const f=isc.fog;B3.island={id,grp,root,stop,q:qk,tiles:new Map(),
+      const grp=new T3.Group();grp.name='island_'+id;[...isc.children].forEach(c=>grp.add(c));setAniso(grp,gq().aniso);
+      const f=isc.fog,I={id,grp,root,stop,q:qk,living,tiles:new Map(),
         env:{bg:isc.background||ENV.classic.bg,fog:f?new T3.Fog(f.color.getHex(),f.near*UPM,f.far*UPM):null,env:isc.environment||null,envI:isc.environmentIntensity==null?1:isc.environmentIntensity}};
-      const bs=root.getObjectByName('board_spaces'),bx=new T3.Box3();if(bs)bs.children.forEach(g=>{if(g.userData&&g.userData.id)B3.island.tiles.set(g.userData.id,{g,y:g.position.y,top:bx.setFromObject(g).max.y*UPM});});
-      B3.envKey='';fitTops();
+      if(stop.v){freeIsland(I);return false;}
+      const bs=root.getObjectByName('board_spaces'),bx=new T3.Box3();if(bs)bs.children.forEach(g=>{if(g.userData&&g.userData.id)I.tiles.set(g.userData.id,{g,y:g.position.y,top:bx.setFromObject(g).max.y*UPM});});
       /* the first frame of a new island used to freeze the screen for seconds (shader compiles and texture uploads); do
-         that work now, behind the loading card: shaders through compileAsync, then the textures a few at a time */
-      say(.94,'Halos tapos na…');await warmIsland(grp,stop);say(1,'');return true;})();
-    B3.loading={id,p};p.then(()=>{if(B3.loading&&B3.loading.p===p)B3.loading=null;},e=>{console.warn(e);if(B3.loading&&B3.loading.p===p)B3.loading=null;});return p;};
+         that work now: behind the loading card on a first load, or with the 3D view held on its last frame on a swap */
+      say(.94,'Halos tapos na…');B3.hold++;
+      try{const old=B3.island;if(old){B3.island=null;freeIsland(old);}if(B3.q!==PREFS.gq)applyQ();
+        meterSpace.add(grp);B3.island=I;B3.envKey='';fitTops();await warmIsland(grp,stop);}
+      finally{B3.hold--;}
+      say(1,'');return true;})();
+    B3.loading={id,q:qk,stop,p};p.then(()=>{if(B3.loading&&B3.loading.p===p)B3.loading=null;},e=>{console.warn(e);if(B3.loading&&B3.loading.p===p)B3.loading=null;});return p;};
+  /* without KHR_parallel_shader_compile, compileAsync returns at once and every program's link is waited for on the
+     first frame that uses it; wait for them here instead, a few at a time with a frame between (three.js links a
+     program the first time its uniforms are read) */
+  async function linkPrograms(root,stop){const progs=new Set();root.traverse(o=>{if(!o.material)return;for(const m of [].concat(o.material)){const pr=ren.properties.get(m).currentProgram;if(pr&&pr.getUniforms)progs.add(pr);}});
+    let t0=performance.now();for(const pr of progs){if(stop&&stop.v)return;try{pr.getUniforms();}catch(e){}if(performance.now()-t0>30){await nextFrame();t0=performance.now();}}}
   async function warmIsland(grp,stop){try{
       if(!B3.mg&&BOARD.map&&B3.island&&B3.island.grp===grp)syncWorld(false);   // compile with the island's own fog and light
-      await ren.compileAsync(S,camera);if(stop.v)return;
+      await ren.compileAsync(S,camera);if(stop.v)return;await linkPrograms(grp,stop);if(stop.v)return;
       const tex=new Set();grp.traverse(o=>{const ms=o.material?(Array.isArray(o.material)?o.material:[o.material]):[];for(const m of ms)for(const k in m){const v=m[k];if(v&&v.isTexture&&!v.isRenderTargetTexture)tex.add(v);}});
       let t0=performance.now();for(const t of tex){if(stop.v)return;ren.initTexture(t);if(performance.now()-t0>40){await nextFrame();t0=performance.now();}}
-      await nextFrame();if(!stop.v&&!B3.mg&&APP.screen==='game')B3.render(0);   // one whole board frame (kids, korona, shadows) while the card still shows
+      await nextFrame();if(!stop.v&&!B3.mg&&APP.screen==='game')B3.render(0,true);   // one whole board frame (kids, korona, shadows) before it shows
     }catch(e){console.warn('island warm-up',e);}}
   /* which world is showing: the cloud board (title, minigames) or the loaded island */
   B3.envKey='';
@@ -3563,22 +3657,30 @@ function init3D(){
       r2.render(pr.s2,cam);const out=document.createElement('canvas');out.width=w;out.height=h;out.getContext('2d').drawImage(r2.domElement,0,0,w,h);
       pr.s2.remove(W.g);if(W.blob)W.blob.visible=true;if(par)par.add(W.g);W.g.position.copy(pos);W.g.rotation.y=rot;W.g.scale.copy(scl);r2.setSize(104,104,false);return out;}catch(e){console.warn('figure',e);return null;}};
 
-  B3.render=dt=>{
-    if(B3.q!==PREFS.gq)applyQ();
-    if(B3.island&&B3.island.q!==gqIsland()&&!B3.loading)dropIsland();
+  B3.render=(dt,force)=>{
+    if(B3.hold>0&&!force)return;
+    /* a new Kalidad: shadows on/off or a new shadow size recompile every material, so hold the view while that happens
+       off the main thread (compileAsync); the island is rebuilt in the background for its own leaves and grass */
+    const rebuild=!!(B3.island&&B3.island.q!==gqIsland());   // the island is rebuilt too: its swap applies the new shadows, compiled once
+    if(B3.q!==PREFS.gq&&!rebuild){applyQ();B3.hold++;ren.compileAsync(S,camera).then(()=>linkPrograms(S)).catch(()=>{}).then(()=>{B3.hold--;});return;}
+    if(rebuild&&!(B3.loading&&B3.loading.q===gqIsland())){const id=B3.island.id;
+      B3.loadIsland(id,(f,t)=>{if(f<1)qualityChip(Math.round(f*100));}).then(ok=>{if(ok)qualityChip(-1);}).catch(()=>{B3.failed[id]=1;qualityChip(-2);});}
     const pr3=Math.min(DPR,gq().pr);
     if(B3.w!==W||B3.h!==H||B3.dpr!==pr3){B3.w=W;B3.h=H;B3.dpr=pr3;ren.setPixelRatio(pr3);ren.setSize(W,H,false);camera.aspect=W/H;}
     const sh=RM?0:cam.shake*14,sx=(R()-.5)*sh,sz=(R()-.5)*sh;
     const mgS=scene&&APP.screen==='game'?scene:null;
     if(mgS!==B3.curMg){if(B3.mg){S.remove(B3.mg.root);freeTree(B3.mg.root);B3.mg=null;}B3.curMg=mgS;if(mgS){B3.mg=buildMg(mgS);S.add(B3.mg.root);}
       B3.crowns.forEach(c=>c.visible=!mgS);reachGrp.visible=!mgS;B3.rings.forEach(r=>r.visible=!mgS);B3.dice.forEach(d=>d.m.visible=false);for(const K of B3.kids.values())K.g.visible=!mgS;for(const K of B3.allies.values())K.g.visible=!mgS;}
-    syncWorld(!!B3.mg);
+    /* Hamon ng Araw (and Pagsasanay) has no board: behind its cards only the sky shows, not the old cloud board */
+    const bare=!B3.mg&&APP.screen==='game'&&isHamon();
+    if(bare!==!!B3.bare){B3.bare=bare;if(!bare&&!B3.mg){B3.crowns.forEach(c=>c.visible=true);reachGrp.visible=true;B3.rings.forEach(r=>r.visible=true);}}   // back to a board: show them again
+    syncWorld(!!B3.mg||bare);
     if(B3.mg){const c=B3.mg.cam;camera.position.set(c.x+sx,c.y+c.d*Math.sin(c.el),c.z+sz+c.d*Math.cos(c.el));camera.lookAt(c.x+sx,c.y,c.z+sz);}
     else if(APP.screen==='title'&&state.players.length){const p0=state.players.at(0),az=now*.12,d=(H/.95)/(2*fovT)*.62,el=.42;camera.position.set(p0.x+40+Math.sin(az)*d*Math.cos(el),d*Math.sin(el),p0.y+Math.cos(az)*d*Math.cos(el));camera.lookAt(p0.x+40,30,p0.y);}
     else{const far=state.overview||!state.active&&!korona.fly&&!state.focus,fit=!far&&state.reach&&!korona.fly;B3.vf=lerp(B3.vf||1,far?1.02:(fit?.9:.58),1-Math.exp(-dt*3));const d=(H/cam.z)/(2*fovT)*B3.vf,el=BOARD.map?lerp(1.12,1.22,(B3.vf-.58)/.44):lerp(.8,.95,(B3.vf-.58)/.44);/* the maps look down more steeply, over roofs and trees */const gy=BOARD.map?groundAt(cam.x,cam.y):0;B3.gy=lerp(B3.gy||0,gy,1-Math.exp(-dt*4));camera.position.set(cam.x+sx,B3.gy+d*Math.sin(el),cam.y+sz+d*Math.cos(el));camera.lookAt(cam.x+sx,B3.gy,cam.y+sz);}
     camera.setViewOffset(W,H,0,-camOffY(),W,H);camera.updateProjectionMatrix();
     if(B3.plRef!==state.players){for(const K of B3.kids.values()){S.remove(K.g);if(!K.nk)freeTree(K.g);}for(const K of B3.allies.values()){S.remove(K.g);freeTree(K.g);}B3.kids.clear();B3.allies.clear();B3.plRef=state.players;}
-    if(B3.mg){B3.mg.upd(dt);}else{
+    if(B3.mg){B3.mg.upd(dt);}else if(bare){B3.crowns.forEach(c=>c.visible=false);reachGrp.visible=false;B3.rings.forEach(r=>r.visible=false);for(const K of B3.kids.values())K.g.visible=false;for(const K of B3.allies.values())K.g.visible=false;}else{
     for(const p of state.players){const K=kidFor(p);
       const o=kidOpts(p),mp=!!BOARD.map;o.walk=p.hopping?now*16:null;o.y0=groundAt(p.x,p.y);pose(K,p.x,p.y,o,1.3);
       p.allies.forEach(a=>{let A=B3.allies.get(a);if(!A){A=extraKid(NPCS[a.look],{shadow:true});B3.allies.set(a,A);}pose(A,a.x,a.y,{dir:p.hopping?p.dir:'front',face:p.face,walk:p.hopping?now*14:null,mood:p.mood==='cheer'?'cheer':'happy',lift:p.hopping?Math.abs(Math.sin(now*12))*6:0,y0:mp?groundAt(a.x,a.y):0},mp?.85:.95);});}

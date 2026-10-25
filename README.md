@@ -142,8 +142,14 @@ The boards in `maps/boards.js` are exported from the islands by `tools/boards-ex
 - **Bonus korona at the end:** Hari ng Laro (most minigame wins), Mayaman (most piso),
   Malas sa Dice (lowest average roll).
 - **Pasaporte ng Laro** (title screen): a stamp for each street game played in the app,
-  and a gold stamp when you tick that you played it for real outside. Each result card
-  says how to play the game outside ("Subukan sa labas"). Kept on the device.
+  and a gold stamp when you tick that you played it for real outside. It holds the
+  **Album ng Laro**: a card per game with a picture, a one-line description and its stamp;
+  "Ipakita ang detalye" opens how it is played on the real street, how to try it outside
+  ("Subukan sa labas"), the rules in the app and the gold-stamp button. Kept on the device.
+- **First game:** a six-step guide over the real board (the island, moving, piso and
+  korona, items, the street games, winning) before the first roll of a first local Party
+  game, with Balik / Susunod / Laktawan; tips then pop up the first time each thing
+  happens. "Ipakita ulit ang gabay at mga tip" in Paano maglaro shows both again.
 
 ## Controls and settings
 

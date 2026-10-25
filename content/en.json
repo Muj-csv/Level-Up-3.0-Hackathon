@@ -270,6 +270,7 @@
   "minigames": {
     "tumbang": {
       "title": "Tumbang Preso",
+      "short": "Knock the can down with your slipper.",
       "aka": "Also called presohan, tumba-lata, or tumba-patis in the Visayas",
       "chip": "4 players · all at once",
       "unit": "hits",
@@ -285,6 +286,7 @@
     },
     "patintero": {
       "title": "Patintero",
+      "short": "Cross every line without getting tagged.",
       "aka": "Also called harang taga or tubigan",
       "chip": "1 against 3 · one run each",
       "unit": "points",
@@ -300,6 +302,7 @@
     },
     "sipa": {
       "title": "Sipa",
+      "short": "Keep the sipa up without letting it fall.",
       "aka": "National game of the Philippines until 2009",
       "chip": "4 players · all at once",
       "unit": "sipa",
@@ -315,6 +318,7 @@
     },
     "palosebo": {
       "title": "Palosebo",
+      "short": "Climb the slippery bamboo pole.",
       "aka": "From the Spanish palo ensebado: a bamboo pole covered in grease",
       "chip": "4 players · all at once",
       "unit": "points",
@@ -330,6 +334,7 @@
     },
     "luksong": {
       "title": "Luksong Tinik",
+      "short": "Jump over the rising \"tinik\" of hands.",
       "aka": "A game of jumping and courage",
       "chip": "4 players · all at once",
       "unit": "level",
@@ -345,6 +350,7 @@
     },
     "palayok": {
       "title": "Pukpok Palayok",
+      "short": "Break the clay pot while blindfolded.",
       "aka": "Also called hampas-palayok or basag-palayok",
       "chip": "4 players · all at once",
       "unit": "points",
@@ -360,6 +366,7 @@
     },
     "taguan": {
       "title": "Taguan",
+      "short": "Find the kids hiding in the yard.",
       "aka": "Also called tagu-taguan",
       "chip": "4 players · all at once",
       "unit": "points",
@@ -375,6 +382,7 @@
     },
     "piko": {
       "title": "Piko",
+      "short": "Hop through the boxes drawn on the ground.",
       "aka": "Also called piko-piko; hopscotch in English",
       "chip": "4 players · all at once",
       "unit": "steps",

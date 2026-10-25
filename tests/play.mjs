@@ -78,7 +78,9 @@ for (const [label, w, h] of [['phone 360x740', 360, 740], ['phone landscape 740x
   await opens('#mHamon', () => /Hamon ng Araw/.test(document.querySelector('#card').textContent), 'Hamon ng Araw opens today\'s challenge');
   await page.click('#card [data-v="back"]');
   await opens('#mGuide', () => /Paano maglaro · 1\//.test(document.querySelector('#card').textContent), 'Paano maglaro opens the guide');
-  for (let i = 0; i < 7; i++) await page.click('#card [data-v="next"]');
+  // 7 pages since the Album ng Laro moved into the Pasaporte (tests/ux.mjs checks it there)
+  for (let i = 0; i < 6; i++) await page.click('#card [data-v="next"]');
+  check(/Tapos/.test(await page.textContent('#card [data-v="next"]')), 'the guide\'s last page ends with Tapos');
   await page.click('#card [data-v="next"]');
   check(await page.evaluate(() => document.querySelector('#modal').hidden), 'guide pages through to the end and closes');
   await opens('#mSprites', () => window.__lsu.screen === 'gallery', 'Mga karakter opens the character gallery');
