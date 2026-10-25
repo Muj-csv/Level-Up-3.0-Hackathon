@@ -57,7 +57,8 @@ shadows, 1024 shadow map, 800 leaf cards, 3 grass layers). Title and minigames s
 at pixel ratio 2 with a 2048 shadow map on every device.
 
 **What is there now:** **Kalidad** in the pause menu (Mababa / Katamtaman / Mataas), saved
-in `lsu-prefs` as `gq`, separate from Grapiko 3D/2D. One table (`GQ` in `index.html`) sets
+in `lsu-prefs` as `gq`. (The separate Grapiko 3D/2D choice was removed in F11: 3D is always used when
+the device can draw it, and an old saved `g3d:false` becomes Mababa.) One table (`GQ` in `index.html`) sets
 every 3D screen: title, board, islands and minigames. Katamtaman is the default for every
 device (no touch-screen guess any more). The title's Plaza scene (`maps/title.js`, own renderer) takes the
 quality's pixel ratio, shadows and foliage (at most the design's 2500 leaf cards and 6 grass layers) each time it is
@@ -76,7 +77,7 @@ built at 0.6 detail on Mababa (as phones had) and full detail otherwise.
 Katamtaman draws the islands exactly as phones did before, and the title and minigames
 lighter than before (1.5 and 1024 instead of 2 and 2048). Changing Kalidad mid-game takes
 effect at once; if the island's foliage changes, the island is built again in the
-background while the 2D board shows, and the game is not touched.
+background while the flat board shows, and the game is not touched.
 
 **Measurements** (`node tests/perf.mjs ab --ab`: 360×640 at 2× pixel density, Chromium with
 software WebGL; the same still frame drawn and waited for, settings taking turns, median

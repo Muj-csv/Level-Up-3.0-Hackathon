@@ -37,10 +37,26 @@ const matches = (i, q) => i.pr === WANT[q].pr && i.shadow === WANT[q].shadow && 
 
 // ---------- 1. saved settings: old saves, broken values, and the new one next to the others ----------
 {
+  const page = await newPage(JSON.stringify({ music: true, sfx: true, vib: true, g3d: false }));
+  const i = await info(page), on3d = await page.evaluate(() => window.__lsu.b3.ok && !document.getElementById('titleCv').hidden);
+  check(i.q === 'low' && on3d, 'a device that had picked 2D (Grapiko, now gone) starts in 3D on Mababa', JSON.stringify({ q: i.q, on3d }));
+  await page.context().close();
+}
+{
+  const page = await newPage(JSON.stringify({ g3d: false, gq: 'high' }));
+  check((await info(page)).q === 'high', 'a quality the player picked is kept even if 2D had been picked too');
+  await page.context().close();
+}
+{
   const page = await newPage(JSON.stringify({ music: false, sfx: true, vib: false, g3d: true }));
   check((await info(page)).q === 'mid', 'a save from before Kalidad loads with Katamtaman (the default)');
   await page.evaluate(() => window.__lsu.startLocal({ n: 1, names: ['Ian'], cfg: { mode: 'party', rounds: 3, diff: 1, map: 'ulap' } }));
-  await page.waitForTimeout(1200);
+  // the game saves at the start of each turn, after the opening draw (Bunutan); software WebGL is slow to get there, so the
+  // opening runs sped up until that first save exists
+  await page.evaluate(() => window.__lsu.setSpeed(8));
+  const firstSave = await page.waitForFunction(() => !!localStorage.getItem('lsu-save'), null, { timeout: 120000, polling: 250 }).then(() => true, () => false);
+  await page.evaluate(() => window.__lsu.setSpeed(1));
+  check(firstSave, 'the game saves when the first turn starts');
   await page.click('#menuBtn');
   const row = await page.evaluate(() => [...document.querySelectorAll('#menuCard button[data-k="gq"]')].map(b => b.textContent + ':' + b.getAttribute('aria-pressed')));
   check(row.join() === 'Mababa:false,Katamtaman:true,Mataas:false', 'pause menu has Kalidad with three choices, Katamtaman picked', row.join());
@@ -48,10 +64,11 @@ const matches = (i, q) => i.pr === WANT[q].pr && i.shadow === WANT[q].shadow && 
   const r = await pick(page, 'low'), pressed = r.pressed;
   const p = await prefs(page);
   check(pressed.join() === 'low' && p.gq === 'low', 'picking Mababa marks it and saves it', JSON.stringify(p));
-  check(p.music === false && p.sfx === true && p.vib === false && p.g3d === true, 'the other settings and the 3D/2D choice stay as they were', JSON.stringify(p));
+  check(p.music === false && p.sfx === true && p.vib === false, 'the other settings stay as they were', JSON.stringify(p));
+  check(p.g3d === undefined, 'the old Grapiko 3D/2D choice is not saved any more', JSON.stringify(p));
   check(await page.evaluate(() => window.__lsu.b3.on), 'Mababa keeps the game in 3D (it is not the 2D setting)');
   check(r.same, 'changing the quality mid-game keeps the round, turn, korona, piso and items');
-  check(await page.evaluate(() => !!localStorage.getItem('lsu-save')), 'the saved game is still there');
+  check(await page.evaluate(() => !!localStorage.getItem('lsu-save')), 'the saved game is still there after changing the quality');
   await page.reload(); await page.waitForFunction(() => window.__lsu && window.__lsu.b3 && window.__lsu.b3.ok, null, { timeout: 30000 }); await page.waitForTimeout(600);
   check((await info(page)).q === 'low', 'Mababa is still picked after a reload');
   await page.evaluate(() => localStorage.setItem('lsu-prefs', JSON.stringify({ music: 'yes', gq: 'ultra' })));

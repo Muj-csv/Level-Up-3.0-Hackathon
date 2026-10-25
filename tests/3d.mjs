@@ -1,5 +1,5 @@
 // 3D play-test: the board and minigames drawn with Three.js (WebGL through SwiftShader, so no GPU is needed).
-// Checks the 3D title and board, reach rings, screen-to-board mapping, the 3D/2D setting, save and resume
+// Checks the 3D title and board, reach rings, screen-to-board mapping, the Kalidad setting (always 3D), save and resume
 // with Kasama allies, every minigame's 3D arena, the 2D fallback when Three.js cannot load, the 3D gallery and result
 // picture, and a slow kids/kids.js (the board waits in 2D, never an older kid).
 // Screenshots go to test-results/3d-*.png. Run: node tests/3d.mjs
@@ -70,21 +70,13 @@ const step = page => page.evaluate(() => {
   const ms = await page.evaluate(() => window.__lsu.bench(10));
   console.log(`      (board frame in software WebGL: ${ms.toFixed(1)} ms; a phone GPU is much faster)`);
 
-  // the 3D/2D setting in the pause menu
+  // graphics in the pause menu: Kalidad (Mababa, Katamtaman, Mataas), always 3D; the old Grapiko 3D/2D switch is gone
   await page.click('#menuBtn');
-  const row = await page.$('#menuCard button[data-k="g3d"][data-val="0"]');
-  check(!!row, 'pause menu has the Grapiko 3D/2D setting');
-  if (row) {
-    // the switch shows on the next drawn frame, which software WebGL can take a while to reach
-    await row.click(); await page.waitForFunction(() => !window.__lsu.b3.on, null, { timeout: 20000 }).catch(() => {});
-    const two = await page.evaluate(() => ({ on: window.__lsu.b3.on, cv3: document.getElementById('stage3d').hidden, saved: JSON.parse(localStorage.getItem('lsu-prefs')).g3d }));
-    check(!two.on && two.cv3 && two.saved === false, 'switching to 2D hides the 3D canvas and is saved', JSON.stringify(two));
-    await page.click('#menuCard [data-v="close"]'); await page.waitForTimeout(500); await shot(page, 'board-2d');
-    await page.click('#menuBtn'); await page.click('#menuCard button[data-k="g3d"][data-val="1"]'); await page.waitForFunction(() => window.__lsu.b3.on, null, { timeout: 20000 }).catch(() => {});
-    const three = await page.evaluate(() => window.__lsu.b3.on && !document.getElementById('stage3d').hidden);
-    check(three, 'switching back to 3D shows the 3D board again');
-    await page.click('#menuCard [data-v="close"]');
-  }
+  const g = await page.evaluate(() => ({ q: [...document.querySelectorAll('#menuCard button[data-k="gq"]')].map(b => b.textContent), g3d: !!document.querySelector('#menuCard button[data-k="g3d"]') }));
+  check(g.q.join() === 'Mababa,Katamtaman,Mataas' && !g.g3d, 'pause menu: Kalidad has three choices and there is no 2D switch', JSON.stringify(g));
+  await page.click('#menuCard button[data-k="gq"][data-val="low"]'); await page.waitForTimeout(300);
+  check(await page.evaluate(() => window.__lsu.b3.on && !document.getElementById('stage3d').hidden), 'Mababa keeps the board in 3D');
+  await page.click('#menuCard button[data-k="gq"][data-val="mid"]'); await page.click('#menuCard [data-v="close"]'); await page.waitForTimeout(500);
 
   // save and resume keep the Kasama allies (given here to a bot, then saved at the next turn)
   await page.evaluate(() => { window.__lsu.state.players[1].allies.push({ n: 'Lito', look: 0, x: 0, y: 0 }); });
@@ -170,7 +162,7 @@ for (const kind of Object.keys(MASH)) {
   await page.click('#mLocal'); await page.click('#card [data-v="go"]'); await page.click('#mapGo'); await page.waitForTimeout(1500);
   check(await page.evaluate(() => window.__lsu.screen === 'game' && window.__lsu.board.id === 'plaza' && document.querySelector('#loadIsl').hidden), 'no Three.js: a map game starts at once on the 2D board');
   await page.click('#menuBtn');
-  check(!(await page.$('#menuCard button[data-k="g3d"]')), 'no Three.js: the menu does not offer a 3D setting');
+  check(!(await page.$('#menuCard button[data-k="g3d"]')) && !(await page.$('#menuCard button[data-k="gq"]')), 'no Three.js: the menu offers no graphics settings (the 2D board is automatic)');
   await page.context().close();
 }
 
