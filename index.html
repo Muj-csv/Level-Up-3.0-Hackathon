@@ -1281,10 +1281,10 @@ const roomAvailable=()=>inClaude()||!!(SUPA.url&&SUPA.key);
 const APPID='lsu1',SHARE_URL=inClaude()?'https://claude.ai/artifact/FQqtor9NZvLytPNJotsPuc':location.href.split(/[?#]/)[0];
 const KCOST=10;
 const ITEMS={
-  doble:{name:'Dobleng dice',tag:'x2',cost:5,desc:'Dalawang dice: 2 hanggang 20 hakbang.'},
-  kendi:{name:'Kendi',tag:'+3',cost:3,desc:'Dagdag na 3 hakbang sa roll.'},
+  doble:{name:'Dobleng dice',tag:'x2',cost:5,desc:'2 dice: 2 hanggang 20 hakbang.'},
+  kendi:{name:'Kendi',tag:'+3',cost:3,desc:'+3 hakbang sa roll mo.'},
   ginto:{name:'Gintong dice',tag:'pili',cost:8,desc:'Ikaw ang pipili ng bilang, 1 hanggang 10.'},
-  agimat:{name:'Agimat',tag:'ag',cost:4,desc:'Kusang sasalag sa susunod na Utang, Tikbalang o talo sa Jack en Poy.',passive:true}
+  agimat:{name:'Agimat',tag:'ag',cost:4,desc:'Ligtas ka sa susunod na Utang, Tikbalang o talo sa Jack en Poy.',passive:true}
 };
 const ITEM_ICON={
   doble:'<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1" y="5.5" width="8" height="8" rx="2" fill="#FFF6E6" stroke="#3B2316" stroke-width="1.5"/><rect x="7" y="2" width="8" height="8" rx="2" fill="#FFF6E6" stroke="#3B2316" stroke-width="1.5"/><circle cx="5" cy="9.5" r="1.1" fill="#3B2316"/><circle cx="9.3" cy="4.3" r="1" fill="#3B2316"/><circle cx="12.7" cy="7.7" r="1" fill="#3B2316"/></svg>',
@@ -1386,11 +1386,11 @@ function nextTip(){const el=$('#tip');const text=tipQ.shift();if(!text){tipOn=fa
 function clearTips(){tipQ.length=0;clearTimeout(tipT);tipOn=false;const el=$('#tip');if(el)el.hidden=true;}
 function resetTips(){TIPS_SEEN.clear();try{localStorage.removeItem('lsu-tips');}catch(e){}}
 $('#tip').addEventListener('click',()=>{clearTimeout(tipT);nextTip();});
-const SPACE_TIP={banda:'Banda: sumabay sa parada, abante ng 3.',kampana:'Kampana: tumunog ang kampana ng simbahan, +5 piso.',munisipyo:'Munisipyo: libreng item (Kendi o Agimat), o +3 piso kung may item ka na.',rizal:'Bantayog ni Rizal: sagutin ang Tanong ni Lola, +5 piso kapag tama.',
-  tawad:'Tawad: nakatawad ka, +3 piso.',timbangan:'Timbangan ng Bayan: tapat ang timbang, +2 piso.',suki:'Suki: may libreng item mula sa tindera, o +3 piso.',basa:'Basa ang sahig: nadulas ka, atras ng 2. Sasalagin ito ng agimat.',
-  alon:'Alon: tinangay ka ng alon, abante ng 2.',huli:'Huli: nakahuli ka ng isda, +4 piso.',taog:'Taog: tumaas ang tubig, atras ng 2. Sasalagin ito ng agimat.',buko:'Buko: presko! Libreng item, o +3 piso.',araw:'Tirik ang araw: bumili ng tubig, −2 piso. Sasalagin ito ng agimat.',
-  tanim:'Tanim: nagtanim ka, +2 piso.',ani:'Anihan: +5 piso.',balang:'Balang: sinalakay ang tanim, −4 piso. Sasalagin ito ng agimat.',bayanihan:'Bayanihan: tulong-tulong, +2 piso sa lahat ng manlalaro.',
-  kalesa:'Kalesa: magbayad para sumakay papunta sa malayong bahagi ng plaza.',padyak:'Padyak: magbayad para sumakay papunta sa kabilang dulo ng palengke.',bangka:'Bangka: magbayad para tumawid sa lagoon.',kalabaw:'Kariton ng kalabaw: magbayad para sumakay sa kabilang bukid.',kasama:'Kasama: may sasama sa barkada mo. Sa bawat gulong, magdadagdag ang bawat kasama ng 1 o 2 hakbang. Hanggang 2 kasama.',tanong:'Tanong ni Lola: sagutin ang tanong tungkol sa larong Pilipino. +5 piso kapag tama.',piso:'Piso: dagdag na 3 piso.',utang:'Utang: babayaran mo ang 3 piso. Sasalagin ito ng agimat.',swerte:'Swerte: bonus na piso o libreng item.',tikbalang:'Tikbalang: ililigaw ka nito, atras ng 3 espasyo. Sasalagin ito ng agimat.',sari:'Sari-sari store: bumili ng isang item. Itira ang 10 piso para sa korona!',jack:'Jack en Poy: ikaw ang pipili ng kalaban. Ang panalo ay kukuha ng hanggang 5 piso.'};
+const SPACE_TIP={banda:'Banda: sumabay ka sa parada! Abante ng 3.',kampana:'Kampana: tumunog ang kampana ng simbahan! +5 piso.',munisipyo:'Munisipyo: libreng item (Kendi o Agimat). Kung may item ka na, +3 piso.',rizal:'Bantayog ni Rizal: sagutin ang Tanong ni Lola. +5 piso pag tama.',
+  tawad:'Tawad: nakatawad ka! +3 piso.',timbangan:'Timbangan ng Bayan: tapat ang timbang! +2 piso.',suki:'Suki: may libreng item ka mula sa tindera, o +3 piso.',basa:'Basa: madulas ang sahig, nadulas ka! Atras ng 2. Hindi ka aatras kung may Agimat ka.',
+  alon:'Alon: tinangay ka ng alon! Abante ng 2.',huli:'Huli: nakahuli ka ng isda! +4 piso.',taog:'Taog: tumaas ang tubig! Atras ng 2. Hindi ka aatras kung may Agimat ka.',buko:'Buko: presko! Libreng item, o +3 piso.',araw:'Araw: tirik ang araw, bumili ka ng tubig. −2 piso. Hindi ka mababawasan kung may Agimat ka.',
+  tanim:'Tanim: nagtanim ka! +2 piso.',ani:'Ani: anihan na! +5 piso.',balang:'Balang: kinain ng balang ang tanim! −4 piso. Hindi ka mababawasan kung may Agimat ka.',bayanihan:'Bayanihan: tulong-tulong! +2 piso sa lahat ng player.',
+  kalesa:'Kalesa: magbayad para sumakay papunta sa malayong dulo ng plaza.',padyak:'Padyak: magbayad para sumakay papunta sa kabilang dulo ng palengke.',bangka:'Bangka: magbayad para tumawid sa lagoon.',kalabaw:'Kariton ng kalabaw: magbayad para sumakay papunta sa kabilang bukid.',kasama:'Kasama: may sasama sa barkada mo! Bawat roll, dagdag na 1 o 2 hakbang ang bawat kasama. Hanggang 2 kasama.',tanong:'Tanong ni Lola: sagutin ang tanong tungkol sa larong Pilipino. +5 piso pag tama.',piso:'Piso: dagdag na 3 piso.',utang:'Utang: magbabayad ka ng 3 piso. Hindi ka mababawasan kung may Agimat ka.',swerte:'Swerte: bonus na piso o libreng item.',tikbalang:'Tikbalang: ililigaw ka nito! Atras ng 3. Hindi ka aatras kung may Agimat ka.',sari:'Sari-sari store: bumili ng 1 item. Magtira ng 10 piso para sa korona!',jack:'Jack en Poy: pumili ka ng kalaban. Ang panalo, kukuha ng hanggang 5 piso.'};
 
 /* coins that fly from the board into the HUD */
 const flyers=[];
