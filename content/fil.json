@@ -87,6 +87,22 @@
       "reviewed_at": null
     },
     {
+      "id": "palayok-laman",
+      "q": "Sa Pukpok Palayok, ano ang karaniwang laman ng palayok?",
+      "a": ["Kendi, barya o maliliit na laruan", "Tubig", "Bigas"],
+      "f": "Kapag nabasag ang palayok, nag-aagawan ang mga bata sa kendi at baryang nalalaglag.",
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
+      "id": "taguan-kanta",
+      "q": "Anong awit ang kinakanta habang nagbibilang ang taya sa Taguan?",
+      "a": ["Tagu-taguan, maliwanag ang buwan", "Bahay Kubo", "Leron, Leron Sinta"],
+      "f": "Kinakanta ito ng taya habang nakapikit at nagbibilang, para may oras magtago ang iba.",
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    {
       "id": "plaza-kiosko",
       "island": "plaza",
       "q": "Ano ang kiosko na madalas makikita sa gitna ng plaza ng bayan?",
@@ -232,6 +248,36 @@
         "Tataas at bibilis ang tinik bawat antas. Pinakamataas na antas ang panalo."
       ],
       "real": "Dalawang manlalaro ang nakaupo sa lupa at pinagpapatong ang kanilang mga paa, tapos ang mga kamay, para tumaas ang tinik. Lumulukso ang iba nang hindi sumasagi. Kapag may sumabit, siya ang papalit sa nakaupo.",
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    "palayok": {
+      "title": "Pukpok Palayok",
+      "aka": "Tinatawag ding hampas-palayok o basag-palayok",
+      "chip": "4 na manlalaro · sabay-sabay",
+      "unit": "puntos",
+      "labas": "Gumamit ng lumang kahon o supot na papel sa halip na palayok para ligtas, at lagyan ng kendi. Isabit ito sa lubid, piringan ang kalaro at paikutin nang tatlong beses bago pumalo. Lumayo ang mga nanonood sa pumapalo!",
+      "rules": [
+        "Tingnan kung ilang hakbang ang palayok bago ka piringan.",
+        "Bilangin sa isip ang bawat hakbang, tapos pindutin para pumalo.",
+        "Basag: 10, sagi: 6, malapit: 3. Tatlong subok. Huwag maniwala sa sigaw ng mga nanonood!"
+      ],
+      "real": "Laro ito tuwing pista at kaarawan. Isinasabit ang palayok na may kendi, barya o laruan sa lubid sa pagitan ng dalawang poste. Pipiringan ang manlalaro, paiikutin nang ilang beses at bibigyan ng patpat. Sumisigaw ang mga nanonood ng direksiyon, minsan tama, minsan panloloko. Kapag nabasag ang palayok, nag-aagawan ang lahat sa kendi.",
+      "reviewed_by": null,
+      "reviewed_at": null
+    },
+    "taguan": {
+      "title": "Taguan",
+      "aka": "Tinatawag ding tagu-taguan",
+      "chip": "4 na manlalaro · sabay-sabay",
+      "unit": "puntos",
+      "labas": "Kailangan ng 3 o higit pang kalaro at isang ligtas na bakuran. Pumili ng base, magbilang ang taya hanggang 20 nang nakapikit, at magtago ang iba sa lugar na kita pa ng matatanda.",
+      "rules": [
+        "Kusang naglalakad ang taya at tumitigil sa bawat taguan.",
+        "I-tap kapag may palatandaan ng bata: tsinelas, buhok, mata, anino, hagikgik, kaluskos o daliri. Hayop lang ang pusa, manok at aso!",
+        "10 bawat nahanap. Mali: −2, at hindi ka makaka-tap sa susunod na 2 taguan."
+      ],
+      "real": "Pipikit at bibilang ang taya habang nagtatago ang iba, at kinakanta ang \"Tagu-taguan, maliwanag ang buwan…\". Pagkatapos, hahanapin niya ang mga nagtatago. Kapag may nakita siya, uunahan niyang makabalik sa base ang nakita. Ang unang nahuli ang magiging bagong taya.",
       "reviewed_by": null,
       "reviewed_at": null
     }

@@ -61,6 +61,7 @@ Do these the **day before** and again **on the morning** of the finals.
 | "Wala na ang larong ito sa room …" after a reload | The game ended or the host left while the page was closed | Join the next game from the host's QR |
 | "Puno na ang laro" | The host started without this phone in the list | Wait for the next game (rematch) |
 | Everyone waiting on one player for a long time | That phone is slow or offline | After 60 s offline a bot plays for it; a slow player loses only that one choice |
+| "Iba ang bersiyon ng laro mo. I-refresh para makasali." | This phone has an older (cached) copy of the game than the host, so it would pick different minigames | Reload the page on that phone, then join again |
 | "Wala pang online dito" on the title screen | The game was opened without the Supabase settings | Use the team's link above, not an old copy of `index.html` |
 
 ## How it works
@@ -69,6 +70,9 @@ Do these the **day before** and again **on the morning** of the finals.
   broadcasts its whole state at most every 250 ms (plus a 2 s heartbeat); Supabase presence only
   tells who disconnected. The game code sees the same `join / peers / onPeers / presence / leave`
   room as inside Claude (`tests/mock-room.js`).
+- Build check: the host and every guest put the game's build id (`BUILD` in `index.html`: a version string
+  plus the list of minigames) in their presence. The host never seats a guest on another build, and that guest
+  is asked to reload, because the round plan comes from the seed and the minigame list.
 - The host keeps the decision log (every human choice, numbered) and publishes it; everyone else
   waits for each entry, so all phones make the same moves. Dice, bots and board events come from one
   shared seed and are never sent.

@@ -1,6 +1,8 @@
 // Minigame play-test: each street game is started from Pagsasanay (practice) and played by a scripted
 // "skilled" player that reacts within one frame, plus a "masher" for Sipa, Palosebo and Luksong Tinik. It checks that
 // every game starts, takes input, ends, records a score, and that timing beats button-mashing.
+// Pukpok Palayok: a player that counts the steps (it sees the pot only before the blindfold, like a person), one that
+// swings at once and one that never swings.
 // Run: node tests/minigames.mjs
 import { chromium, serve, watchErrors, check, done, renderer } from './lib.mjs';
 
@@ -29,7 +31,14 @@ const PLAYERS = {
   // luksong tinik: jump as soon as the feet are in the yellow take-off zone; the masher jumps whenever
   luksong: `sc => { const L = sc.peek()[0]; if (L.cd <= .6 && L.st === 'run' && L.inZone) sc.action(); }`,
   luksongMash: `sc => { if (Math.random() < 0.35) sc.action(); }`,
-  patinteroStraight: `sc => { const v = sc.peek(); const up = v.run.dir < 0; sc.key({ code: 'ArrowUp', preventDefault() {} }, up); sc.key({ code: 'ArrowDown', preventDefault() {} }, !up); }`
+  patinteroStraight: `sc => { const v = sc.peek(); const up = v.run.dir < 0; sc.key({ code: 'ArrowUp', preventDefault() {} }, up); sc.key({ code: 'ArrowDown', preventDefault() {} }, !up); }`,
+  // pukpok palayok: remember how many steps away the pot is while looking, then swing on that step
+  palayok: `sc => { const L = sc.peek()[0], m = window.__pp || (window.__pp = {}); if (L.ph === 'look' && L.pot != null) m[L.tri] = Math.round(L.pot); if (L.ph === 'walk' && !L.out && m[L.tri] != null && L.steps >= m[L.tri]) sc.action(); }`,
+  palayokOnce: `sc => { const L = sc.peek()[0]; if (L.ph === 'walk' && !L.out) sc.action(); }`,
+  palayokNever: `sc => {}`,
+  // taguan: tap only while a kid's clue is showing (never on cats, chickens and dogs); the other taps at every stop
+  taguan: `sc => { const v = sc.peek(); if (v.clue === 'kid' && !v.tapped && !v.locked) sc.action(); }`,
+  taguanEvery: `sc => { const v = sc.peek(); if (v.k >= 0 && !v.tapped && !v.locked) sc.action(); }`
 };
 
 async function practice(kind, player) {
@@ -60,11 +69,13 @@ async function practice(kind, player) {
   return { score, back, errs };
 }
 
-const results = {};
+const results = {}, runs = {};
 const only = process.argv[2];
-for (const [kind, player] of [['tumbang', 'tumbang'], ['sipa', 'sipa'], ['sipa', 'sipaMash'], ['palosebo', 'palosebo'], ['palosebo', 'paloseboMash'], ['patintero', 'patintero'], ['patintero', 'patinteroStraight'], ['luksong', 'luksong'], ['luksong', 'luksongMash']].filter(([k]) => !only || k === only)) {
+for (const [kind, player] of [['tumbang', 'tumbang'], ['sipa', 'sipa'], ['sipa', 'sipaMash'], ['palosebo', 'palosebo'], ['palosebo', 'paloseboMash'], ['patintero', 'patintero'], ['patintero', 'patinteroStraight'], ['luksong', 'luksong'], ['luksong', 'luksongMash'],
+  ['palayok', 'palayok'], ['palayok', 'palayok'], ['palayok', 'palayok'], ['palayok', 'palayokOnce'], ['palayok', 'palayokNever'],
+  ['taguan', 'taguan'], ['taguan', 'taguanEvery']].filter(([k]) => !only || k === only)) {
   const r = await practice(kind, player);
-  results[player] = r.score;
+  results[player] = r.score; (runs[player] || (runs[player] = [])).push(r.score);
   check(r.score >= 0 && r.back === 'title', `${player}: starts, takes input, ends and returns to the menu`, 'score ' + r.score);
   check(r.errs.length === 0, `${player}: no script errors`, r.errs.slice(0, 2).join(' | '));
 }
@@ -76,5 +87,25 @@ if (!only || only === 'patintero') check(results.patintero > 0, 'Patintero: a do
 if (!only || only === 'patintero') check(results.patintero > results.patinteroStraight, 'Patintero: dodging beats running straight into the guards', results.patintero + ' vs ' + results.patinteroStraight);
 if (!only || only === 'luksong') check(results.luksong >= 6, 'Luksong Tinik: jumping from the zone clears most heights', results.luksong + '/8');
 if (!only || only === 'luksong') check(results.luksong > results.luksongMash, 'Luksong Tinik: timing beats mashing', results.luksong + ' vs ' + results.luksongMash);
+if (!only || only === 'palayok') {
+  // bots: each level's three tries add up inside its range (Madali 6–15, Sakto 12–21, Mahirap 18–27)
+  const page = await browser.newPage(); await renderer(page, '2d'); await page.goto(srv.url + '?debug'); await page.waitForFunction(() => window.__lsu);
+  const bots = await page.evaluate(() => [0, 1, 2].map(d => { const M = window.__lsu.MG.palayok, a = []; for (let i = 0; i < 400; i++) { const pre = M.preroll(d); a.push(pre.length === 3 ? M.botScore(pre) : -1); } return [Math.min(...a), Math.max(...a), a.reduce((x, y) => x + y, 0) / a.length]; }));
+  await page.close();
+  check(bots[0][0] >= 6 && bots[0][1] <= 15 && bots[1][0] >= 12 && bots[1][1] <= 21 && bots[2][0] >= 18 && bots[2][1] <= 27 && bots[0][2] < bots[1][2] && bots[1][2] < bots[2][2],
+    'Pukpok Palayok: bots score inside their level (Madali 6–15, Sakto 12–21, Mahirap 18–27)', bots.map(b => b[0] + '–' + b[1] + ' avg ' + b[2].toFixed(1)).join(' / '));
+  const avg = runs.palayok.reduce((a, b) => a + b, 0) / runs.palayok.length;
+  check(avg >= 20, 'Pukpok Palayok: counting the steps averages 20 points or more', runs.palayok.join(', ') + ' (average ' + avg.toFixed(1) + ')');
+  check(results.palayokOnce === 0 && results.palayokNever === 0, 'Pukpok Palayok: swinging at once or never swinging scores 0', results.palayokOnce + ' / ' + results.palayokNever);
+}
+if (!only || only === 'taguan') {
+  check(results.taguan >= 80, 'Taguan: tapping only on real clues finds at least 8 of 10 kids', results.taguan + ' points');
+  check(results.taguan > results.taguanEvery, 'Taguan: reading the clues beats tapping at every spot', results.taguan + ' vs ' + results.taguanEvery);
+  const page = await browser.newPage(); await renderer(page, '2d'); await page.goto(srv.url + '?debug'); await page.waitForFunction(() => window.__lsu);
+  const bots = await page.evaluate(() => [0, 1, 2].map(d => { const M = window.__lsu.MG.taguan, a = []; for (let i = 0; i < 400; i++) a.push(M.preroll(d)); return { f: [Math.min(...a.map(p => p.f)), Math.max(...a.map(p => p.f))], w: [Math.min(...a.map(p => p.w)), Math.max(...a.map(p => p.w))], s: M.botScore({ f: 9, w: 1 }) }; }));
+  await page.close();
+  check(bots[0].f[0] === 3 && bots[0].f[1] === 5 && bots[0].w[1] === 2 && bots[1].f[0] === 5 && bots[1].f[1] === 7 && bots[1].w[1] === 1 && bots[2].f[0] === 7 && bots[2].f[1] === 9 && bots[2].w[1] === 0 && bots[0].s === 88,
+    'Taguan: bots find 3–5 / 5–7 / 7–9 kids with 0–2 / 0–1 / 0 wrong taps, scored found × 10 − wrong × 2', JSON.stringify(bots));
+}
 console.log('scores', JSON.stringify(results));
 await browser.close(); srv.close(); done();

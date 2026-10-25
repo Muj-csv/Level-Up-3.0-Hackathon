@@ -21,7 +21,7 @@ copy your name and the date into each item's `reviewed_by`/`reviewed_at` fields.
 
 ---
 
-## Part 1 — Tanong ni Lola trivia (18 questions)
+## Part 1 — Tanong ni Lola trivia (20 questions)
 
 Each question is multiple choice; the **first (bolded) answer is always the one the
 game marks correct**. The "why" line is the explanation shown after answering.
@@ -118,9 +118,19 @@ game marks correct**. The "why" line is the explanation shown after answering.
     Why: "Ang bayanihan ay tradisyong Pilipino ng pagtutulungan, gaya ng sama-samang paglipat ng bahay, na nagmula sa salitang 'bayan.'"
     ⬜ Correct  ⬜ Needs a fix  ⬜ Flag
 
+19. **[Pukpok Palayok] Sa Pukpok Palayok, ano ang karaniwang laman ng palayok?**
+    Answers: **Kendi, barya o maliliit na laruan** / Tubig / Bigas
+    Why: "Kapag nabasag ang palayok, nag-aagawan ang mga bata sa kendi at baryang nalalaglag."
+    ⬜ Correct  ⬜ Needs a fix  ⬜ Flag
+
+20. **[Taguan] Anong awit ang kinakanta habang nagbibilang ang taya sa Taguan?**
+    Answers: **Tagu-taguan, maliwanag ang buwan** / Bahay Kubo / Leron, Leron Sinta
+    Why: "Kinakanta ito ng taya habang nakapikit at nagbibilang, para may oras magtago ang iba."
+    ⬜ Correct  ⬜ Needs a fix  ⬜ Flag
+
 ---
 
-## Part 2 — Minigame facts (5 games currently in the app)
+## Part 2 — Minigame facts (7 games currently in the app)
 
 For each game: the in-app name, other names it's known by, what you need to play it
 for real ("Subukan sa labas"), the simplified in-app rules, and how it's really played
@@ -185,6 +195,56 @@ and faster each level.
 their hands, to raise the "tinik." Others jump over without touching it. Whoever snags
 it swaps places with one of the seated players.
 ⬜ Correct  ⬜ Needs a fix  ⬜ Flag
+
+### Pukpok Palayok
+*Also known as:* hampas-palayok or basag-palayok
+*To play for real:* use an old box or paper bag instead of a clay pot so it's safe, and
+fill it with candy; hang it from a rope, blindfold a player and spin them three times
+before they swing; everyone watching stays away from the swinger.
+*In-app rules:* look at how many steps away the pot is before the blindfold goes on;
+count every step in your head, then tap to swing; a break is 10 points, a graze 6, close 3;
+three tries; don't trust what the crowd shouts.
+*How it's really played:* a game at fiestas and birthdays. A clay pot (palayok) with candy,
+coins or toys is hung from a rope between two posts. The player is blindfolded, spun a few
+times and given a stick. The crowd shouts directions, sometimes true, sometimes tricks.
+When the pot breaks, everyone scrambles for the candy.
+⬜ Correct  ⬜ Needs a fix  ⬜ Flag
+
+### Taguan
+*Also known as:* tagu-taguan
+*To play for real:* 3 or more players and a safe yard; pick a base, the taya counts to 20
+with eyes closed, and the others hide where grown-ups can still see them.
+*In-app rules:* the taya walks the yard by itself and stops at every hiding spot; tap when
+there's a sign of a kid (a slipper, hair, eyes, a shadow, a giggle, rustling or fingers);
+cats, chickens and dogs are only animals; 10 points per kid found, a wrong tap is −2 and
+locks you out of the next 2 spots.
+*How it's really played:* the taya closes their eyes and counts while the others hide,
+singing "Tagu-taguan, maliwanag ang buwan…". Then the taya looks for them; when one is
+spotted, the taya races them back to the base. The first one caught becomes the new taya.
+*Also for the reviewer (PRD N6):* is the taya's call/chant right for your region?
+⬜ Correct  ⬜ Needs a fix  ⬜ Flag
+
+**Taguan clue check** (PRD Phase 2 acceptance: fake clues never use a kid's clue shapes).
+In the game, a hidden kid shows one of these 7 clues; the 3 fake clues are animals. Tick if
+none of the animal clues could be mistaken for a kid's clue.
+
+| Kid clue (real) | What is drawn |
+|---|---|
+| Tsinelas | a blue slipper sticking out beside the spot |
+| Tirintas | a pigtail with a hair tie above the spot |
+| Mata | two eyes blinking in a dark gap |
+| Anino | a kid-shaped shadow on the ground |
+| Hagikgik | a speech bubble saying "hihi" |
+| Kaluskos | the spot shakes, with rustle lines on both sides |
+| Daliri | four fingers gripping the spot's edge |
+
+| Fake clue (animal) | What is drawn |
+|---|---|
+| Pusa | a whole orange cat head with pointed ears and whiskers, and "ngiyaw!" in italics (no bubble) |
+| Manok | a whole white chicken head with a red comb and yellow beak, and "puták!" in italics (no bubble) |
+| Aso | a whole brown dog head with floppy ears and a snout, and "aw aw!" in italics (no bubble) |
+
+⬜ No fake clue looks like a kid's clue  ⬜ Needs a fix
 
 ---
 
