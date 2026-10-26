@@ -11,7 +11,7 @@ it here.
 | Preview of the working branch (Vercel) | https://taympers-git-claude-sharp-thompson-xec8ut-mujjs-projects.vercel.app | Rebuilds from `claude/sharp-thompson-xec8ut` before it is merged. Vercel may ask visitors to log in, so use it for team testing only. |
 | Preview of the language testing branch (Vercel) | https://taympers-git-lang-testing-mujjs-projects.vercel.app | **Not checked yet:** `lang/testing` (Simpler Filipino and English work) is not pushed, so Vercel has not built it. The address follows the pattern above; after the push, confirm it in Vercel → Deployments, fix it here if it differs, and note whether it asks for a login. If it does, test from a laptop instead: `python3 -m http.server 8000` on `lang/testing`, phones on the same Wi-Fi. |
 | Backup copy (GitHub Pages) | https://muj-csv.github.io/Level-Up-3.0-Hackathon/ | Also built from `main`, if Pages is turned on in the repo settings. |
-| Original prototype (Claude artifact) | https://claude.ai/artifact/FQqtor9NZvLytPNJotsPuc | Private and older than the live game. Currently the only place where online rooms work. |
+| Original prototype (Claude artifact) | https://claude.ai/artifact/FQqtor9NZvLytPNJotsPuc | Private and older than the live game. Its online rooms use Claude's room service; the live game and the backup copy use Supabase (see [ONLINE.md](ONLINE.md)). |
 
 ## Code
 
