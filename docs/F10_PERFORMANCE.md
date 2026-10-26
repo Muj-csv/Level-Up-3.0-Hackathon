@@ -126,6 +126,19 @@ islands holds 420 against 467 the first time (Mababa) or 959 against 995 (Katamt
   test shows it.
 - *Pausing the 3D in a hidden tab:* browsers already stop animation frames in hidden tabs.
 
+**Draw-call census (F11, Oct 25):** `B3.census()` (`?debug`) on each island's board at the start of a game,
+390×844 at 2×. Draw calls / triangles:
+
+| Island | Mababa | Katamtaman | Mataas |
+|---|---|---|---|
+| Plaza | 343 / 388k | 353 / 491k | 359 / 508k |
+| Palengke | 581 / 354k | 576 / 455k | 697 / 481k |
+| Aplaya | 387 / 307k | 413 / 410k | 411 / 413k |
+| Palayan | 382 / 374k | 379 / 487k | 411 / 560k |
+
+Repeated minigames no longer leave GPU textures behind (the 3D barrio kids' skeleton textures are freed with the
+minigame). Details in `docs/F11_HANDOFF.md`.
+
 **How far these numbers go:** software WebGL draws on the CPU, so these are relative
 costs between settings, not phone frame rates. They also drift: the same 2D board measured
 10.8 fps in one run and 24 fps in another on the same PC, which is why only settings
